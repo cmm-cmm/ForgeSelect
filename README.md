@@ -25,6 +25,19 @@ ForgeSelect is designed to provide:
 
 ---
 
+Documentation
+
+Full documentation lives in [`docs/`](./docs/README.md):
+
+- [API Reference](./docs/api-reference.md) — constructor, options, methods, events
+- [Examples](./docs/examples.md) — copy-pasteable snippets for every feature and framework
+- [Playground](./docs/playground.md) — try it in the browser (planned)
+- [Migration from Select2](./docs/migration-from-select2.md) — option/event/method mapping and a migration checklist
+- [Benchmarks](./docs/benchmarks.md) — performance methodology and results (planned)
+- [Plugin Development Guide](./docs/plugin-development.md) — write and register your own plugins
+
+---
+
 Features
 
 - Single Select
@@ -101,6 +114,39 @@ select.on("close", () => {});
 
 ---
 
+Examples
+
+new ForgeSelect("#users", {
+    ajax: {
+        url: query => `/api/users?q=${encodeURIComponent(query)}`,
+        debounce: 300,
+        transform: response => response.items.map(u => ({ value: u.id, label: u.name }))
+    }
+});
+
+More copy-pasteable snippets (multi-select, tags, custom templates, virtual scrolling, React/Vue/Svelte) are in [`docs/examples.md`](./docs/examples.md).
+
+---
+
+Playground
+
+An interactive, in-browser playground is planned for the first release. See [`docs/playground.md`](./docs/playground.md) for the current status and how to try ForgeSelect locally in the meantime.
+
+---
+
+API Reference
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `placeholder` | `string` | `""` | Text shown when nothing is selected |
+| `searchable` | `boolean` | `true` | Show a search input in the dropdown |
+| `multiple` | `boolean` | `false` | Allow selecting more than one option |
+| `theme` | `string` | `"default"` | Named theme applied to the control |
+
+Full constructor signature, all options, instance methods, and events are documented in [`docs/api-reference.md`](./docs/api-reference.md).
+
+---
+
 Framework Support
 
 - Vanilla JavaScript
@@ -124,6 +170,18 @@ Browser Support
 
 ---
 
+Migration from Select2
+
+ForgeSelect is designed as a drop-in-concept replacement for Select2: no jQuery dependency, native accessibility, and a smaller API surface. A full option/event/method mapping table and a step-by-step migration checklist are available in [`docs/migration-from-select2.md`](./docs/migration-from-select2.md).
+
+---
+
+Benchmarks
+
+Performance benchmarking (bundle size, init time, search latency, virtual scroll performance) against Select2 is planned once the first release ships. Methodology and the results format are documented in [`docs/benchmarks.md`](./docs/benchmarks.md).
+
+---
+
 Roadmap
 
 - [ ] Tree Select
@@ -136,6 +194,12 @@ Roadmap
 - [ ] Vue Component
 - [ ] Angular Component
 - [ ] Svelte Component
+
+---
+
+Plugin Development Guide
+
+ForgeSelect uses a small plugin architecture (`onInit`, `onOpen`, `onClose`, `onDestroy` lifecycle hooks) so behavior can be extended without forking the core. See [`docs/plugin-development.md`](./docs/plugin-development.md) for the plugin interface and a complete example plugin.
 
 ---
 
