@@ -4,7 +4,7 @@
 
 ForgeSelect is a next-generation JavaScript select component built for modern web applications. It provides a clean API, powerful customization options, excellent performance, and accessibility while remaining framework-agnostic.
 
-Why ForgeSelect?
+## Why ForgeSelect?
 
 Select2 has served the community well for many years, but modern web development has evolved.
 
@@ -23,9 +23,7 @@ ForgeSelect is designed to provide:
 - 🌍 Internationalization (i18n)
 - 📦 Zero dependency
 
----
-
-Documentation
+## Documentation
 
 Full documentation lives in [`docs/`](./docs/README.md):
 
@@ -36,63 +34,59 @@ Full documentation lives in [`docs/`](./docs/README.md):
 - [Benchmarks](./docs/benchmarks.md) — performance methodology and results (planned)
 - [Plugin Development Guide](./docs/plugin-development.md) — write and register your own plugins
 
----
-
-Features
+## Features
 
 - Single Select
 - Multiple Select
 - Searchable Dropdown
-- Async Data Source
+- Async Data Source (AJAX with debounce)
 - Virtual Scrolling
 - Custom Templates
-- Tags Mode
+- Tags Mode (create options from free text)
 - Keyboard Navigation
 - Disabled Options
 - Option Groups
 - Clear Selection
 - Placeholder
-- Custom Icons
-- Custom Themes
+- Custom Themes (CSS variables, dark mode included)
 - Event System
-- TypeScript Support
+- Plugin Architecture
+- Internationalization (en/vi built in, custom string tables)
+- TypeScript Support (written in strict TypeScript, ships `.d.ts`)
 - Tree Select (planned)
 - Infinite Scroll (planned)
 
----
+## Installation
 
-Installation
-
+```bash
 npm install forge-select
-
-or
-
+# or
 yarn add forge-select
-
-or
-
+# or
 pnpm add forge-select
+```
 
----
+## Quick Start
 
-Quick Start
-
+```html
 <select id="country">
     <option value="vn">Vietnam</option>
     <option value="jp">Japan</option>
     <option value="us">United States</option>
 </select>
+```
 
+```js
 import ForgeSelect from "forge-select";
 import "forge-select/styles.css";
 
 new ForgeSelect("#country");
+```
 
----
+## Configuration
 
-Configuration
-
-new ForgeSelect("#country", {
+```js
+const select = new ForgeSelect("#country", {
     placeholder: "Select a country",
     searchable: true,
     multiple: false,
@@ -100,23 +94,25 @@ new ForgeSelect("#country", {
     allowCreate: false,
     theme: "default"
 });
+```
 
----
+See the [API Reference](./docs/api-reference.md) for all options, including `data`, `ajax`, `templateResult`, `templateSelection`, `virtualScroll`, `language`, and `plugins`.
 
-Events
+## Events
 
-select.on("change", value => {
-    console.log(value);
-});
-
+```js
+select.on("change", value => console.log(value));
 select.on("open", () => {});
-
 select.on("close", () => {});
+select.on("search", query => console.log("searching:", query));
+select.on("clear", () => {});
+```
 
----
+Unsubscribe with `select.off(event, handler)`.
 
-Examples
+## Examples
 
+```js
 new ForgeSelect("#users", {
     ajax: {
         url: query => `/api/users?q=${encodeURIComponent(query)}`,
@@ -124,18 +120,15 @@ new ForgeSelect("#users", {
         transform: response => response.items.map(u => ({ value: u.id, label: u.name }))
     }
 });
+```
 
 More copy-pasteable snippets (multi-select, tags, custom templates, virtual scrolling, React/Vue/Svelte) are in [`docs/examples.md`](./docs/examples.md).
 
----
-
-Playground
+## Playground
 
 An interactive, in-browser playground is planned for the first release. See [`docs/playground.md`](./docs/playground.md) for the current status and how to try ForgeSelect locally in the meantime.
 
----
-
-API Reference
+## API Reference
 
 | Option | Type | Default | Description |
 |---|---|---|---|
@@ -146,9 +139,22 @@ API Reference
 
 Full constructor signature, all options, instance methods, and events are documented in [`docs/api-reference.md`](./docs/api-reference.md).
 
----
+## Theming
 
-Framework Support
+Styling is driven entirely by CSS custom properties, and a dark theme ships out of the box:
+
+```js
+new ForgeSelect("#country", { theme: "dark" });
+```
+
+```css
+.forge-select {
+    --fs-border-focus: #e11d48;
+    --fs-radius: 4px;
+}
+```
+
+## Framework Support
 
 - Vanilla JavaScript
 - React
@@ -159,9 +165,7 @@ Framework Support
 - Nuxt
 - Astro
 
----
-
-Browser Support
+## Browser Support
 
 - Chrome
 - Edge
@@ -169,24 +173,18 @@ Browser Support
 - Safari
 - Mobile Browsers
 
----
-
-Migration from Select2
+## Migration from Select2
 
 ForgeSelect is designed as a drop-in-concept replacement for Select2: no jQuery dependency, native accessibility, and a smaller API surface. A full option/event/method mapping table and a step-by-step migration checklist are available in [`docs/migration-from-select2.md`](./docs/migration-from-select2.md).
 
----
-
-Benchmarks
+## Benchmarks
 
 Performance benchmarking (bundle size, init time, search latency, virtual scroll performance) against Select2 is planned once the first release ships. Methodology and the results format are documented in [`docs/benchmarks.md`](./docs/benchmarks.md).
 
----
-
-Roadmap
+## Roadmap
 
 - [ ] Tree Select
-- [ ] Virtualized List
+- [x] Virtualized List
 - [ ] Async Pagination
 - [ ] Drag & Drop Ordering
 - [ ] Theme Builder
@@ -196,23 +194,28 @@ Roadmap
 - [ ] Angular Component
 - [ ] Svelte Component
 
----
-
-Plugin Development Guide
+## Plugin Development Guide
 
 ForgeSelect uses a small plugin architecture (`onInit`, `onOpen`, `onClose`, `onDestroy` lifecycle hooks) so behavior can be extended without forking the core. See [`docs/plugin-development.md`](./docs/plugin-development.md) for the plugin interface and a complete example plugin.
 
----
+## Development
 
-Contributing
+```bash
+npm install       # install dev dependencies
+npm test          # run the vitest + jsdom test suite
+npm run typecheck # strict TypeScript check
+npm run build     # build ESM + CJS + type declarations into dist/
+```
+
+Source lives in `src/`, styles in `styles/forge-select.css`, and tests in `tests/`.
+
+## Contributing
 
 Contributions are welcome!
 
 Please feel free to open an issue or submit a pull request.
 
----
-
-License
+## License
 
 MIT License.
 
