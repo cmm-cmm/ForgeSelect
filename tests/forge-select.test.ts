@@ -350,19 +350,127 @@ describe("ajax", () => {
   });
 });
 
+describe("rich items", () => {
+  const richData = [
+    {
+      value: "u1",
+      label: "Ana Trần",
+      description: "ana@example.com",
+      avatar: "data:image/svg+xml;utf8,<svg/>",
+    },
+    { value: "u2", label: "Bảo Lê", description: "bao@example.com" },
+  ];
+
+  it("renders avatar and description with the built-in renderer", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: richData });
+    select.open();
+
+    const first = optionEls()[0];
+    const avatar = first.querySelector<HTMLImageElement>(".forge-select__option-avatar")!;
+    expect(avatar.getAttribute("loading")).toBe("lazy");
+    expect(first.querySelector(".forge-select__option-label")?.textContent).toBe("Ana Trần");
+    expect(first.querySelector(".forge-select__option-desc")?.textContent).toBe("ana@example.com");
+    // second option has no avatar
+    expect(optionEls()[1].querySelector(".forge-select__option-avatar")).toBeNull();
+  });
+
+  it("escapes HTML in rich fields", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      data: [{ value: "x", label: "<b>bold</b>", description: "<script>alert(1)</script>" }],
+    });
+    select.open();
+    const li = optionEls()[0];
+    expect(li.querySelector("b")).toBeNull();
+    expect(li.querySelector("script")).toBeNull();
+    expect(li.querySelector(".forge-select__option-label")?.textContent).toBe("<b>bold</b>");
+  });
+
+  it("matches the description when searching", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: richData });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "bao@";
+    input.dispatchEvent(new Event("input"));
+    const labels = optionEls().map(
+      (li) => li.querySelector(".forge-select__option-label")?.textContent,
+    );
+    expect(labels).toEqual(["Bảo Lê"]);
+  });
+
+  it("shows the inline avatar in the selected value", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: richData });
+    select.setValue("u1");
+    const single = document.querySelector(".forge-select__single-value")!;
+    expect(single.querySelector(".forge-select__inline-avatar")).not.toBeNull();
+    expect(single.textContent).toBe("Ana Trần");
+    expect(single.querySelector(".forge-select__option-desc")).toBeNull();
+  });
+});
+
 describe("virtual scrolling", () => {
+  const bigData = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ value: String(i), label: `Item ${i}` }));
+
   it("renders a window with spacers for large lists", () => {
     mountSelect("");
-    const data = Array.from({ length: 5000 }, (_, i) => ({
-      value: String(i),
-      label: `Item ${i}`,
-    }));
-    const select = new ForgeSelect("#country", { virtualScroll: true, data });
+    const select = new ForgeSelect("#country", { virtualScroll: true, data: bigData(5000) });
     select.open();
 
     const rendered = optionEls();
     expect(rendered.length).toBeLessThan(100);
     expect(document.querySelectorAll(".forge-select__spacer")).toHaveLength(2);
+  });
+
+  it("virtualizes automatically for large lists without the option", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: bigData(1000) });
+    select.open();
+    expect(optionEls().length).toBeLessThan(100);
+    expect(document.querySelectorAll(".forge-select__spacer")).toHaveLength(2);
+  });
+
+  it("virtualScroll: false renders everything", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { virtualScroll: false, data: bigData(1000) });
+    select.open();
+    expect(optionEls()).toHaveLength(1000);
+    expect(document.querySelectorAll(".forge-select__spacer")).toHaveLength(0);
+  });
+
+  it("honors itemHeight in spacer math", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { itemHeight: 52, data: bigData(1000) });
+    select.open();
+    const spacers = document.querySelectorAll<HTMLElement>(".forge-select__spacer");
+    const total =
+      parseInt(spacers[0].style.height) + parseInt(spacers[1].style.height);
+    expect(total % 52).toBe(0);
+    expect(total).toBeGreaterThan(52 * 900);
+  });
+
+  it("runs templates once per option, not once per scroll frame", () => {
+    mountSelect("");
+    const template = vi.fn((o: { label: string }) => `<em>${o.label}</em>`);
+    const select = new ForgeSelect("#country", {
+      data: bigData(500),
+      templateResult: template,
+    });
+    select.open();
+    const callsAfterOpen = template.mock.calls.length;
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    for (let i = 1; i <= 5; i++) {
+      list.scrollTop = i * 100;
+      list.dispatchEvent(new Event("scroll"));
+    }
+    // Scrolling re-renders rows from the cache; the template ran at most once per option.
+    expect(template.mock.calls.length).toBeLessThanOrEqual(500);
+    expect(template.mock.calls.length).toBeGreaterThanOrEqual(callsAfterOpen);
+    const values = new Set(template.mock.calls.map(([o]) => (o as { value?: string }).value));
+    expect(values.size).toBe(template.mock.calls.length);
   });
 });
 

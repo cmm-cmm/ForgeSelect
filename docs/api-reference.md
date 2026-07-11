@@ -28,7 +28,8 @@ const select = new ForgeSelect(target, options);
 | `ajax` | `AjaxConfig` | `undefined` | Remote data source config (`url`, `params`, `debounce`, `transform`). |
 | `templateResult` | `(option) => string \| Node` | `undefined` | Custom renderer for dropdown list items. |
 | `templateSelection` | `(option) => string \| Node` | `undefined` | Custom renderer for the selected value display. |
-| `virtualScroll` | `boolean` | `false` | Enable virtualized rendering for large option lists. |
+| `virtualScroll` | `boolean` | *(auto)* | `true`/unset = virtualize once the list exceeds ~100 rows; `false` = never virtualize. |
+| `itemHeight` | `number` | `36` | Row height in px used by the virtual scroller. Raise it (e.g. `52`) for rich items with avatars/descriptions. |
 | `language` | `string \| Record<string, string>` | `"en"` | Locale code or a custom string table for i18n. |
 | `plugins` | `Array<ForgeSelectPlugin>` | `[]` | Plugins to register on this instance. See the [Plugin Development Guide](./plugin-development.md). |
 
@@ -39,6 +40,9 @@ interface Option {
   value: string;
   label: string;
   disabled?: boolean;
+  avatar?: string;                 // image URL/data URI, shown as a round avatar
+  description?: string;            // secondary line under the label
+  meta?: Record<string, unknown>;  // arbitrary payload for custom templates
 }
 
 interface OptionGroup {
@@ -46,6 +50,12 @@ interface OptionGroup {
   options: Option[];
 }
 ```
+
+### Rich items
+
+When an option has `avatar` and/or `description` and no custom template is set, ForgeSelect renders them with a built-in layout (avatar + label + description in the dropdown; small avatar + label in the selected value/tags). All built-in fields are inserted via `textContent`, so they are **XSS-safe** — no escaping needed on your side. `description` is also matched by the search filter.
+
+Custom templates (`templateResult`/`templateSelection`) receive the full option including `meta`. A **string** return value is injected as raw HTML — sanitize any user-provided data yourself. Rendered row content is cached per option value and cloned on scroll, so templates run once per option regardless of scrolling; if your template returns a DOM **Node**, don't rely on event listeners attached inside it (clones don't carry listeners — use event delegation on the document instead).
 
 ### `AjaxConfig` shape
 
