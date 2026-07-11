@@ -29,7 +29,7 @@ Full documentation lives in [`docs/`](./docs/README.md):
 
 - [API Reference](./docs/api-reference.md) — constructor, options, methods, events
 - [Examples](./docs/examples.md) — copy-pasteable snippets for every feature and framework
-- [Playground](./docs/playground.md) — try it in the browser (planned)
+- [Playground](./docs/playground.md) — [live demo](https://cmm-cmm.github.io/ForgeSelect/demo/) on GitHub Pages
 - [Migration from Select2](./docs/migration-from-select2.md) — option/event/method mapping and a migration checklist
 - [Benchmarks](./docs/benchmarks.md) — performance methodology and results (planned)
 - [Plugin Development Guide](./docs/plugin-development.md) — write and register your own plugins
@@ -126,7 +126,7 @@ More copy-pasteable snippets (multi-select, tags, custom templates, virtual scro
 
 ## Playground
 
-An interactive, in-browser playground is planned for the first release. See [`docs/playground.md`](./docs/playground.md) for the current status and how to try ForgeSelect locally in the meantime.
+Try the live demo at **<https://cmm-cmm.github.io/ForgeSelect/demo/>** — single/multiple selects, tags, option groups, custom templates, virtual scrolling with 10,000 options, Vietnamese locale, an event log, and a dark-mode toggle. See [`docs/playground.md`](./docs/playground.md) for running it locally.
 
 ## API Reference
 
