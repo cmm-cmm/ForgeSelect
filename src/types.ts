@@ -4,6 +4,12 @@ export interface Option {
   value: string;
   label: string;
   disabled?: boolean;
+  /** Image URL or data URI rendered as a round avatar next to the label. */
+  avatar?: string;
+  /** Secondary line rendered under the label in the dropdown. */
+  description?: string;
+  /** Arbitrary payload for custom templates; ForgeSelect never reads it. */
+  meta?: Record<string, unknown>;
 }
 
 export interface OptionGroup {
@@ -43,7 +49,13 @@ export interface ForgeSelectOptions {
   ajax?: AjaxConfig;
   templateResult?: TemplateFn;
   templateSelection?: TemplateFn;
+  /**
+   * false = never virtualize. true or unset = virtualize automatically
+   * once the list exceeds ~100 rows.
+   */
   virtualScroll?: boolean;
+  /** Row height in px used by the virtual scroller. Default 36; raise for rich items. */
+  itemHeight?: number;
   language?: string | Record<string, string>;
   plugins?: ForgeSelectPlugin[];
 }

@@ -83,12 +83,56 @@ new ForgeSelect("#country", {
 });
 ```
 
+## Rich items (avatar + name + description)
+
+Options with `avatar`/`description` get a built-in rich layout — no template needed, and the fields are XSS-safe:
+
+```js
+new ForgeSelect("#users", {
+  itemHeight: 52, // taller rows for the two-line layout
+  data: [
+    {
+      value: "1",
+      label: "Ana Trần",
+      description: "ana@example.com",
+      avatar: "https://example.com/avatars/ana.png",
+    },
+    // …works great with 1,000+ items: virtualization kicks in automatically
+  ],
+});
+```
+
+The same data can be rendered with a fully custom template instead. Prefer returning a **DOM Node** built with `textContent` — it stays XSS-safe even when the data comes from users or a remote API (a string return value is injected as raw HTML, so only use it with trusted or pre-sanitized content):
+
+```js
+new ForgeSelect("#users", {
+  templateResult: (o) => {
+    const row = document.createElement("span");
+    const img = document.createElement("img");
+    img.className = "my-avatar";
+    if (/^(https:|data:image\/)/.test(o.avatar ?? "")) img.src = o.avatar;
+    const name = document.createElement("strong");
+    name.textContent = o.label;
+    const email = document.createElement("small");
+    email.textContent = o.description ?? "";
+    row.append(img, name, email);
+    return row;
+  },
+  templateSelection: (o) => {
+    const span = document.createElement("span");
+    span.textContent = o.label;
+    return span;
+  },
+});
+```
+
 ## Virtual scrolling (large lists)
+
+Lists over ~100 rows are virtualized automatically — only the visible window is in the DOM, and row content is cached so templates run once per option. Set `virtualScroll: false` to opt out, or `itemHeight` if your rows are taller than the default 36px:
 
 ```js
 new ForgeSelect("#big-list", {
-  virtualScroll: true,
-  data: largeArrayOfThousandsOfOptions,
+  data: largeArrayOfThousandsOfOptions, // nothing else to configure
 });
 ```
 

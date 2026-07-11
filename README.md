@@ -40,7 +40,8 @@ Full documentation lives in [`docs/`](./docs/README.md):
 - Multiple Select
 - Searchable Dropdown
 - Async Data Source (AJAX with debounce)
-- Virtual Scrolling
+- Rich Item Rendering (avatar + label + description, XSS-safe built-in fields)
+- Virtual Scrolling (automatic for large lists, with per-option render caching)
 - Custom Templates
 - Tags Mode (create options from free text)
 - Keyboard Navigation
