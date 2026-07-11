@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ForgeSelect — Demo</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+<link rel="stylesheet" href="../styles/forge-select.css">
+<style>
+  :root {
+    --page-bg: #f8fafc;
+    --page-fg: #0f172a;
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
+  }
+  body.dark {
+    --page-bg: #0f172a;
+    --page-fg: #f1f5f9;
+    --card-bg: #1e293b;
+    --card-border: #334155;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page-bg);
+    color: var(--page-fg);
+    transition: background 0.2s, color 0.2s;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  header h1 { margin: 0; font-size: 22px; }
+  header a { color: inherit; opacity: 0.7; margin-right: 16px; }
+  main {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px;
+  }
+  .card {
+    padding: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+  }
+  .card h2 { margin: 0 0 4px; font-size: 15px; }
+  .card p { margin: 0 0 14px; font-size: 13px; opacity: 0.65; }
+  .forge-select { width: 100%; }
+  #event-log {
+    grid-column: 1 / -1;
+    max-height: 180px;
+    overflow-y: auto;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  #event-log div { border-bottom: 1px dashed var(--card-border); }
+  button.toggle {
+    padding: 8px 14px;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: inherit;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>ForgeSelect <small style="font-weight:normal;opacity:.6">demo</small></h1>
+  <div>
+    <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+    <button class="toggle" id="theme-toggle">🌙 Dark mode</button>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Single select</h2>
+    <p>Searchable, clearable, with placeholder.</p>
+    <select id="demo-single"></select>
+  </div>
+
+  <div class="card">
+    <h2>Multiple + tags</h2>
+    <p><code>multiple</code> with <code>allowCreate</code> — type to add your own.</p>
+    <select id="demo-multi"></select>
+  </div>
+
+  <div class="card">
+    <h2>Option groups</h2>
+    <p>Nested groups from a <code>data</code> array.</p>
+    <select id="demo-groups"></select>
+  </div>
+
+  <div class="card">
+    <h2>Custom templates</h2>
+    <p><code>templateResult</code> and <code>templateSelection</code>.</p>
+    <select id="demo-template"></select>
+  </div>
+
+  <div class="card">
+    <h2>Virtual scroll</h2>
+    <p>10,000 options with windowed rendering.</p>
+    <select id="demo-virtual"></select>
+  </div>
+
+  <div class="card">
+    <h2>Vietnamese locale</h2>
+    <p><code>language: "vi"</code> — search for something missing.</p>
+    <select id="demo-i18n"></select>
+  </div>
+
+  <div class="card" id="event-log-card">
+    <h2>Event log</h2>
+    <p>Every event from every instance above.</p>
+    <div id="event-log"></div>
+  </div>
+</main>
+
+<script src="../dist/index.global.js"></script>
+<script>
+  const ForgeSelect = ForgeSelectBundle.default;
+
+  const countries = [
+    { value: "vn", label: "Vietnam" }, { value: "jp", label: "Japan" },
+    { value: "us", label: "United States" }, { value: "fr", label: "France" },
+    { value: "de", label: "Germany" }, { value: "br", label: "Brazil" },
+    { value: "in", label: "India" }, { value: "kr", label: "South Korea" },
+  ];
+  const flags = { vn: "🇻🇳", jp: "🇯🇵", us: "🇺🇸", fr: "🇫🇷", de: "🇩🇪", br: "🇧🇷", in: "🇮🇳", kr: "🇰🇷" };
+
+  const log = document.getElementById("event-log");
+  function watch(name, select) {
+    for (const event of ["change", "open", "close", "search", "clear"]) {
+      select.on(event, (payload) => {
+        const row = document.createElement("div");
+        row.textContent = `[${name}] ${event}` + (payload !== undefined ? ` → ${JSON.stringify(payload)}` : "");
+        log.prepend(row);
+      });
+    }
+    return select;
+  }
+
+  const instances = [
+    watch("single", new ForgeSelect("#demo-single", {
+      placeholder: "Select a country", clearable: true, data: countries,
+    })),
+    watch("multi", new ForgeSelect("#demo-multi", {
+      placeholder: "Pick or create tags", multiple: true, allowCreate: true, clearable: true,
+      data: [{ value: "js", label: "JavaScript" }, { value: "ts", label: "TypeScript" }, { value: "css", label: "CSS" }],
+    })),
+    watch("groups", new ForgeSelect("#demo-groups", {
+      placeholder: "Grouped options",
+      data: [
+        { label: "Asia", options: [{ value: "vn", label: "Vietnam" }, { value: "jp", label: "Japan" }] },
+        { label: "Europe", options: [{ value: "fr", label: "France" }, { value: "de", label: "Germany" }] },
+      ],
+    })),
+    watch("template", new ForgeSelect("#demo-template", {
+      placeholder: "With flags", data: countries,
+      templateResult: (o) => `${flags[o.value] ?? ""} ${o.label}`,
+      templateSelection: (o) => `${flags[o.value] ?? ""} ${o.label}`,
+    })),
+    watch("virtual", new ForgeSelect("#demo-virtual", {
+      placeholder: "10,000 options", virtualScroll: true,
+      data: Array.from({ length: 10000 }, (_, i) => ({ value: String(i), label: `Item ${i + 1}` })),
+    })),
+    watch("i18n", new ForgeSelect("#demo-i18n", {
+      placeholder: "Chọn một quốc gia", language: "vi", clearable: true, data: countries,
+    })),
+  ];
+
+  const toggle = document.getElementById("theme-toggle");
+  toggle.addEventListener("click", () => {
+    const dark = document.body.classList.toggle("dark");
+    toggle.textContent = dark ? "☀️ Light mode" : "🌙 Dark mode";
+    for (const root of document.querySelectorAll(".forge-select")) {
+      root.dataset.theme = dark ? "dark" : "default";
+    }
+  });
+</script>
+</body>
+</html>
