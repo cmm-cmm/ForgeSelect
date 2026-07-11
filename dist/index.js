@@ -54,9 +54,10 @@ function format(template, vars) {
 }
 
 // src/ForgeSelect.ts
-var ROW_HEIGHT = 36;
+var DEFAULT_ITEM_HEIGHT = 36;
 var VIRTUAL_BUFFER = 5;
 var VIRTUAL_THRESHOLD = 100;
+var ROW_CACHE_LIMIT = 2e3;
 var uidCounter = 0;
 function isGroup(item) {
   return item.options !== void 0;
@@ -75,6 +76,7 @@ var ForgeSelect = class {
     this.rows = [];
     this.navItems = [];
     this.highlightedIndex = -1;
+    this.rowContentCache = /* @__PURE__ */ new Map();
     this.loading = false;
     this.ajaxTimer = null;
     this.ajaxRequestId = 0;
@@ -100,7 +102,8 @@ var ForgeSelect = class {
       ajax: options.ajax,
       templateResult: options.templateResult,
       templateSelection: options.templateSelection,
-      virtualScroll: options.virtualScroll ?? false,
+      virtualScroll: options.virtualScroll,
+      itemHeight: options.itemHeight ?? DEFAULT_ITEM_HEIGHT,
       language: options.language ?? "en",
       plugins: options.plugins ?? []
     };
@@ -154,6 +157,7 @@ var ForgeSelect = class {
     for (const plugin of this.plugins) plugin.onDestroy?.(this);
     this.destroyed = true;
     if (this.ajaxTimer) clearTimeout(this.ajaxTimer);
+    this.rowContentCache.clear();
     this.root.remove();
     this.el.style.display = "";
     this.emitter.clear();
@@ -194,6 +198,7 @@ var ForgeSelect = class {
     this.root = document.createElement("div");
     this.root.className = "forge-select";
     this.root.dataset.theme = this.opts.theme;
+    this.root.style.setProperty("--fs-item-height", `${this.opts.itemHeight}px`);
     this.control = document.createElement("div");
     this.control.className = "forge-select__control";
     this.control.setAttribute("role", "combobox");
@@ -407,7 +412,7 @@ var ForgeSelect = class {
         tag.className = "forge-select__tag";
         const label = document.createElement("span");
         label.className = "forge-select__tag-label";
-        this.renderTemplate(label, option, this.opts.templateSelection);
+        this.renderTemplate(label, option, this.opts.templateSelection, "inline");
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "forge-select__tag-remove";
@@ -427,24 +432,53 @@ var ForgeSelect = class {
       };
       const span = document.createElement("span");
       span.className = "forge-select__single-value";
-      this.renderTemplate(span, option, this.opts.templateSelection);
+      this.renderTemplate(span, option, this.opts.templateSelection, "inline");
       this.valueEl.append(span);
     }
   }
-  renderTemplate(container, option, template) {
-    if (!template) {
+  renderTemplate(container, option, template, variant = "row") {
+    if (template) {
+      const result = template(option);
+      if (typeof result === "string") container.innerHTML = result;
+      else container.append(result);
+      return;
+    }
+    if (!option.avatar && !option.description) {
       container.textContent = option.label;
       return;
     }
-    const result = template(option);
-    if (typeof result === "string") container.innerHTML = result;
-    else container.append(result);
+    if (option.avatar) {
+      const avatar = document.createElement("img");
+      avatar.className = variant === "row" ? "forge-select__option-avatar" : "forge-select__inline-avatar";
+      avatar.src = option.avatar;
+      avatar.alt = "";
+      avatar.setAttribute("loading", "lazy");
+      avatar.setAttribute("decoding", "async");
+      container.append(avatar);
+    }
+    if (variant === "row" && option.description) {
+      const body = document.createElement("span");
+      body.className = "forge-select__option-body";
+      const label = document.createElement("span");
+      label.className = "forge-select__option-label";
+      label.textContent = option.label;
+      const desc = document.createElement("span");
+      desc.className = "forge-select__option-desc";
+      desc.textContent = option.description;
+      body.append(label, desc);
+      container.append(body);
+    } else {
+      const label = document.createElement("span");
+      label.className = "forge-select__option-label";
+      label.textContent = option.label;
+      container.append(label);
+    }
   }
   buildRows() {
     this.rows = [];
     this.navItems = [];
     const query = this.query.trim().toLowerCase();
-    const matches = (option) => query === "" || option.label.toLowerCase().includes(query);
+    const matches = (option) => query === "" || option.label.toLowerCase().includes(query) || (option.description?.toLowerCase().includes(query) ?? false);
     const pushOption = (option) => {
       let navIndex = -1;
       if (!option.disabled) {
@@ -482,7 +516,7 @@ var ForgeSelect = class {
     return false;
   }
   usesVirtualScroll() {
-    return this.opts.virtualScroll && this.rows.length > VIRTUAL_THRESHOLD;
+    return this.opts.virtualScroll !== false && this.rows.length > VIRTUAL_THRESHOLD;
   }
   renderList() {
     this.buildRows();
@@ -490,16 +524,17 @@ var ForgeSelect = class {
   }
   renderRows() {
     this.list.textContent = "";
+    const rowHeight = this.opts.itemHeight;
     let start = 0;
     let end = this.rows.length;
     if (this.usesVirtualScroll()) {
-      const viewport = this.list.clientHeight || ROW_HEIGHT * 8;
-      start = Math.max(0, Math.floor(this.list.scrollTop / ROW_HEIGHT) - VIRTUAL_BUFFER);
-      end = Math.min(this.rows.length, start + Math.ceil(viewport / ROW_HEIGHT) + VIRTUAL_BUFFER * 2);
+      const viewport = this.list.clientHeight || rowHeight * 8;
+      start = Math.max(0, Math.floor(this.list.scrollTop / rowHeight) - VIRTUAL_BUFFER);
+      end = Math.min(this.rows.length, start + Math.ceil(viewport / rowHeight) + VIRTUAL_BUFFER * 2);
       const topSpacer = document.createElement("li");
       topSpacer.className = "forge-select__spacer";
       topSpacer.setAttribute("aria-hidden", "true");
-      topSpacer.style.height = `${start * ROW_HEIGHT}px`;
+      topSpacer.style.height = `${start * rowHeight}px`;
       this.list.append(topSpacer);
     }
     for (let i = start; i < end; i++) {
@@ -509,7 +544,7 @@ var ForgeSelect = class {
       const bottomSpacer = document.createElement("li");
       bottomSpacer.className = "forge-select__spacer";
       bottomSpacer.setAttribute("aria-hidden", "true");
-      bottomSpacer.style.height = `${(this.rows.length - end) * ROW_HEIGHT}px`;
+      bottomSpacer.style.height = `${(this.rows.length - end) * rowHeight}px`;
       this.list.append(bottomSpacer);
     }
     this.updateActiveDescendant();
@@ -552,11 +587,32 @@ var ForgeSelect = class {
           li.dataset.navIndex = String(row.navIndex);
           if (row.navIndex === this.highlightedIndex) li.classList.add("forge-select__option--highlighted");
         }
-        this.renderTemplate(li, row.option, this.opts.templateResult);
+        li.append(this.optionContent(row.option));
         break;
       }
     }
     return li;
+  }
+  /**
+   * Rendered row content is cached per option value and cloned on each render,
+   * so templates run once per option instead of once per scroll frame.
+   * State classes (selected/highlighted/disabled) live on the <li>, keeping the
+   * cached content state-free.
+   */
+  optionContent(option) {
+    let cached = this.rowContentCache.get(option.value);
+    if (!cached) {
+      const holder = document.createElement("span");
+      holder.className = "forge-select__option-content";
+      this.renderTemplate(holder, option, this.opts.templateResult);
+      if (this.rowContentCache.size >= ROW_CACHE_LIMIT) {
+        const oldest = this.rowContentCache.keys().next().value;
+        this.rowContentCache.delete(oldest);
+      }
+      this.rowContentCache.set(option.value, holder);
+      cached = holder;
+    }
+    return cached.cloneNode(true);
   }
   moveHighlight(delta) {
     if (this.navItems.length === 0) return;
@@ -567,11 +623,12 @@ var ForgeSelect = class {
         (row) => (row.kind === "option" || row.kind === "create") && row.navIndex === next
       );
       if (rowIndex >= 0) {
-        const top = rowIndex * ROW_HEIGHT;
-        const viewport = this.list.clientHeight || ROW_HEIGHT * 8;
+        const rowHeight = this.opts.itemHeight;
+        const top = rowIndex * rowHeight;
+        const viewport = this.list.clientHeight || rowHeight * 8;
         if (top < this.list.scrollTop) this.list.scrollTop = top;
-        else if (top + ROW_HEIGHT > this.list.scrollTop + viewport) {
-          this.list.scrollTop = top + ROW_HEIGHT - viewport;
+        else if (top + rowHeight > this.list.scrollTop + viewport) {
+          this.list.scrollTop = top + rowHeight - viewport;
         }
       }
       this.renderRows();
@@ -607,10 +664,12 @@ var ForgeSelect = class {
       const json = await response.json();
       if (requestId !== this.ajaxRequestId || this.destroyed) return;
       this.data = ajax.transform ? ajax.transform(json) : json;
+      this.rowContentCache.clear();
       this.remoteLoaded = true;
     } catch {
       if (requestId !== this.ajaxRequestId || this.destroyed) return;
       this.data = [];
+      this.rowContentCache.clear();
     } finally {
       if (requestId === this.ajaxRequestId && !this.destroyed) {
         this.loading = false;

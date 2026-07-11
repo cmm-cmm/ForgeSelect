@@ -159,9 +159,52 @@
 .forge-select__option {
   display: flex;
   align-items: center;
-  min-height: 36px;
+  gap: 10px;
+  min-height: var(--fs-item-height, 36px);
   padding: 0 12px;
   cursor: pointer;
+}
+
+.forge-select__option-content {
+  display: contents;
+}
+
+.forge-select__option-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.forge-select__inline-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  vertical-align: -4px;
+  margin-right: 5px;
+}
+
+.forge-select__option-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.forge-select__option-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forge-select__option-desc {
+  font-size: 0.85em;
+  color: var(--fs-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .forge-select__option--highlighted,
@@ -183,8 +226,13 @@
   font-style: italic;
 }
 
+/* All row types share --fs-item-height so virtual-scroll spacer math stays exact. */
 .forge-select__group-label {
-  padding: 6px 12px 2px;
+  display: flex;
+  align-items: flex-end;
+  box-sizing: border-box;
+  min-height: var(--fs-item-height, 36px);
+  padding: 0 12px 4px;
   font-size: 0.85em;
   font-weight: 600;
   text-transform: uppercase;

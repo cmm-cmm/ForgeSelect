@@ -4,6 +4,12 @@ interface Option {
     value: string;
     label: string;
     disabled?: boolean;
+    /** Image URL or data URI rendered as a round avatar next to the label. */
+    avatar?: string;
+    /** Secondary line rendered under the label in the dropdown. */
+    description?: string;
+    /** Arbitrary payload for custom templates; ForgeSelect never reads it. */
+    meta?: Record<string, unknown>;
 }
 interface OptionGroup {
     label: string;
@@ -37,7 +43,13 @@ interface ForgeSelectOptions {
     ajax?: AjaxConfig;
     templateResult?: TemplateFn;
     templateSelection?: TemplateFn;
+    /**
+     * false = never virtualize. true or unset = virtualize automatically
+     * once the list exceeds ~100 rows.
+     */
     virtualScroll?: boolean;
+    /** Row height in px used by the virtual scroller. Default 36; raise for rich items. */
+    itemHeight?: number;
     language?: string | Record<string, string>;
     plugins?: ForgeSelectPlugin[];
 }
@@ -69,6 +81,7 @@ declare class ForgeSelect {
     private rows;
     private navItems;
     private highlightedIndex;
+    private rowContentCache;
     private loading;
     private ajaxTimer;
     private ajaxRequestId;
@@ -103,6 +116,13 @@ declare class ForgeSelect {
     private renderList;
     private renderRows;
     private renderRow;
+    /**
+     * Rendered row content is cached per option value and cloned on each render,
+     * so templates run once per option instead of once per scroll frame.
+     * State classes (selected/highlighted/disabled) live on the <li>, keeping the
+     * cached content state-free.
+     */
+    private optionContent;
     private moveHighlight;
     private updateActiveDescendant;
     private scheduleRemoteLoad;

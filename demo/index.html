@@ -118,6 +118,18 @@
     <select id="demo-i18n"></select>
   </div>
 
+  <div class="card">
+    <h2>Rich items — 1,000 users</h2>
+    <p>Built-in <code>avatar</code> + <code>description</code> fields. Virtualization kicks in automatically; search also matches the email.</p>
+    <select id="demo-rich"></select>
+  </div>
+
+  <div class="card">
+    <h2>Custom HTML template</h2>
+    <p><code>templateResult</code> returning an HTML string, with a status dot from <code>meta</code>.</p>
+    <select id="demo-html"></select>
+  </div>
+
   <div class="card" id="event-log-card">
     <h2>Event log</h2>
     <p>Every event from every instance above.</p>
@@ -176,7 +188,42 @@
     watch("i18n", new ForgeSelect("#demo-i18n", {
       placeholder: "Chọn một quốc gia", language: "vi", clearable: true, data: countries,
     })),
+    watch("rich", new ForgeSelect("#demo-rich", {
+      placeholder: "Search 1,000 users…", clearable: true, itemHeight: 52,
+      data: makeUsers(1000),
+    })),
+    watch("html", new ForgeSelect("#demo-html", {
+      placeholder: "Custom template",
+      data: [
+        { value: "ana", label: "Ana Trần", meta: { status: "online" } },
+        { value: "bao", label: "Bảo Lê", meta: { status: "away" } },
+        { value: "chi", label: "Chi Phạm", meta: { status: "offline" } },
+      ],
+      templateResult: (o) => {
+        const colors = { online: "#22c55e", away: "#f59e0b", offline: "#94a3b8" };
+        return `<span style="width:8px;height:8px;border-radius:50%;background:${colors[o.meta.status]}"></span> ${o.label} <em style="opacity:.6">(${o.meta.status})</em>`;
+      },
+    })),
   ];
+
+  // Generate a user list with self-contained SVG data-URI avatars (no network).
+  function makeUsers(count) {
+    const first = ["An", "Bình", "Chi", "Dũng", "Giang", "Hà", "Khánh", "Lan", "Minh", "Ngọc", "Phúc", "Quân", "Thảo", "Tuấn", "Vy"];
+    const last = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Vũ", "Đặng", "Bùi", "Đỗ", "Ngô"];
+    const palette = ["#6366f1", "#ec4899", "#14b8a6", "#f59e0b", "#8b5cf6", "#ef4444", "#0ea5e9", "#84cc16"];
+    return Array.from({ length: count }, (_, i) => {
+      const name = `${last[i % last.length]} ${first[i % first.length]}`;
+      const initial = first[i % first.length][0];
+      const bg = palette[i % palette.length];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" rx="28" fill="${bg}"/><text x="28" y="37" font-family="sans-serif" font-size="26" fill="#fff" text-anchor="middle">${initial}</text></svg>`;
+      return {
+        value: `u${i}`,
+        label: `${name} #${i + 1}`,
+        description: `user${i + 1}@konexforge.dev`,
+        avatar: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`,
+      };
+    });
+  }
 
   const toggle = document.getElementById("theme-toggle");
   toggle.addEventListener("click", () => {
