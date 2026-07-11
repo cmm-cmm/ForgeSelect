@@ -1,30 +1,39 @@
 # Playground
 
 > [Docs home](./README.md)
->
-> **Status: planned.** ForgeSelect doesn't have a package release yet, so there's no hosted interactive playground. This page describes what's coming and how to try ForgeSelect locally in the meantime.
 
-## Planned: hosted playground
+## Live demo
 
-Once ForgeSelect publishes its first release, this page will link to live, editable sandboxes (StackBlitz / CodeSandbox) covering:
+The interactive demo is deployed to GitHub Pages on every push to `main`:
 
-- Vanilla JavaScript quick start
-- Single vs. multiple selection
-- Async/AJAX data source
-- Custom templates and themes
-- Each supported framework (React, Vue, Angular, Svelte)
+**<https://cmm-cmm.github.io/ForgeSelect/demo/>**
 
-## Try it locally today
+It showcases:
 
-Until the hosted playground ships, you can experiment locally:
+- Single searchable select with clear button
+- Multiple selection with tags and `allowCreate`
+- Option groups
+- Custom `templateResult` / `templateSelection`
+- Virtual scrolling with 10,000 options
+- Vietnamese locale (`language: "vi"`)
+- A live event log of every `change` / `open` / `close` / `search` / `clear` event
+- Dark mode toggle
+
+## Run the demo locally
 
 ```bash
 git clone https://github.com/cmm-cmm/ForgeSelect.git
 cd ForgeSelect
 npm install
+npm run build
+python3 -m http.server 8080   # or: npx serve
 ```
 
-Then copy any snippet from [Examples](./examples.md) into an HTML file alongside the built library, or wire it into the framework starter of your choice (`create-vite`, `create-react-app`, `vue create`, etc.).
+Then open <http://localhost:8080/demo/> in your browser. The demo page (`demo/index.html`) loads the IIFE bundle from `dist/index.global.js` and the stylesheet from `styles/forge-select.css`.
+
+## Hosted sandboxes
+
+StackBlitz / CodeSandbox starter templates are planned once the package is published to npm. Until then, copy any snippet from [Examples](./examples.md) into the local demo setup above.
 
 ## See also
 
