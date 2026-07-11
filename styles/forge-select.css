@@ -226,8 +226,13 @@
   font-style: italic;
 }
 
+/* All row types share --fs-item-height so virtual-scroll spacer math stays exact. */
 .forge-select__group-label {
-  padding: 6px 12px 2px;
+  display: flex;
+  align-items: flex-end;
+  box-sizing: border-box;
+  min-height: var(--fs-item-height, 36px);
+  padding: 0 12px 4px;
   font-size: 0.85em;
   font-weight: 600;
   text-transform: uppercase;

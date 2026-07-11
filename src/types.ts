@@ -50,8 +50,8 @@ export interface ForgeSelectOptions {
   templateResult?: TemplateFn;
   templateSelection?: TemplateFn;
   /**
-   * true = always virtualize, false = never virtualize.
-   * Unset = automatically virtualize once the list exceeds ~100 rows.
+   * false = never virtualize. true or unset = virtualize automatically
+   * once the list exceeds ~100 rows.
    */
   virtualScroll?: boolean;
   /** Row height in px used by the virtual scroller. Default 36; raise for rich items. */

@@ -102,14 +102,27 @@ new ForgeSelect("#users", {
 });
 ```
 
-The same data can be rendered with a fully custom template instead (string returns are raw HTML — sanitize user data yourself):
+The same data can be rendered with a fully custom template instead. Prefer returning a **DOM Node** built with `textContent` — it stays XSS-safe even when the data comes from users or a remote API (a string return value is injected as raw HTML, so only use it with trusted or pre-sanitized content):
 
 ```js
 new ForgeSelect("#users", {
-  templateResult: (o) =>
-    `<img src="${o.avatar}" class="my-avatar"> <strong>${o.label}</strong>
-     <small>${o.description}</small>`,
-  templateSelection: (o) => o.label,
+  templateResult: (o) => {
+    const row = document.createElement("span");
+    const img = document.createElement("img");
+    img.className = "my-avatar";
+    if (/^(https:|data:image\/)/.test(o.avatar ?? "")) img.src = o.avatar;
+    const name = document.createElement("strong");
+    name.textContent = o.label;
+    const email = document.createElement("small");
+    email.textContent = o.description ?? "";
+    row.append(img, name, email);
+    return row;
+  },
+  templateSelection: (o) => {
+    const span = document.createElement("span");
+    span.textContent = o.label;
+    return span;
+  },
 });
 ```
 

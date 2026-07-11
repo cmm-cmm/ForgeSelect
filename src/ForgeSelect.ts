@@ -42,6 +42,7 @@ interface ResolvedOptions {
 const DEFAULT_ITEM_HEIGHT = 36;
 const VIRTUAL_BUFFER = 5;
 const VIRTUAL_THRESHOLD = 100;
+const ROW_CACHE_LIMIT = 2000;
 
 let uidCounter = 0;
 
@@ -687,6 +688,11 @@ export default class ForgeSelect {
       const holder = document.createElement("span");
       holder.className = "forge-select__option-content";
       this.renderTemplate(holder, option, this.opts.templateResult);
+      if (this.rowContentCache.size >= ROW_CACHE_LIMIT) {
+        // FIFO eviction keeps memory bounded on very large lists.
+        const oldest = this.rowContentCache.keys().next().value as string;
+        this.rowContentCache.delete(oldest);
+      }
       this.rowContentCache.set(option.value, holder);
       cached = holder;
     }
