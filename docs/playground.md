@@ -4,7 +4,7 @@
 
 ## Live demo
 
-The interactive demo is deployed to GitHub Pages on every push to `main`:
+The interactive demo on GitHub Pages always reflects the latest `main` commit (deployments run on pushes to `main`; superseded in-progress runs may be canceled):
 
 **<https://cmm-cmm.github.io/ForgeSelect/demo/>**
 
@@ -26,7 +26,7 @@ git clone https://github.com/cmm-cmm/ForgeSelect.git
 cd ForgeSelect
 npm install
 npm run build
-python3 -m http.server 8080   # or: npx serve
+python3 -m http.server 8080   # or: npx serve -l 8080
 ```
 
 Then open <http://localhost:8080/demo/> in your browser. The demo page (`demo/index.html`) loads the IIFE bundle from `dist/index.global.js` and the stylesheet from `styles/forge-select.css`.
