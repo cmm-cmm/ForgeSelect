@@ -1,0 +1,49 @@
+{
+  "name": "forge-select",
+  "version": "0.1.0",
+  "description": "A modern, lightweight, highly customizable replacement for Select2.",
+  "keywords": [
+    "select",
+    "dropdown",
+    "combobox",
+    "select2",
+    "autocomplete",
+    "multiselect",
+    "tags"
+  ],
+  "license": "MIT",
+  "author": "KonexForge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cmm-cmm/ForgeSelect.git"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./styles.css": "./styles/forge-select.css"
+  },
+  "files": [
+    "dist",
+    "styles"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

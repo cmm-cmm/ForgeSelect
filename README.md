@@ -84,6 +84,7 @@ Quick Start
 </select>
 
 import ForgeSelect from "forge-select";
+import "forge-select/styles.css";
 
 new ForgeSelect("#country");
 
@@ -189,7 +190,7 @@ Roadmap
 - [ ] Async Pagination
 - [ ] Drag & Drop Ordering
 - [ ] Theme Builder
-- [ ] CSS Variables
+- [x] CSS Variables
 - [ ] React Component
 - [ ] Vue Component
 - [ ] Angular Component
