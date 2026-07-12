@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playground · ForgeSelect</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-logo" href="../"><span class="mark">⚒</span> ForgeSelect</a>
+  <nav class="site-nav">
+    <a href="../demo/">Live Demo</a>
+    <a href="./">Docs</a>
+    <a href="../playground/">Playground</a>
+    <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+  </nav>
+</header>
+<div class="docs-shell">
+  <aside class="docs-sidebar">
+    <p class="group">Documentation</p>
+    <ul>
+        <li><a href="./">Introduction</a></li>
+        <li><a href="./api-reference.html">API Reference</a></li>
+        <li><a href="./examples.html">Examples</a></li>
+        <li><a href="./playground.html" class="active">Playground</a></li>
+        <li><a href="./migration-from-select2.html">Migration from Select2</a></li>
+        <li><a href="./benchmarks.html">Benchmarks</a></li>
+        <li><a href="./plugin-development.html">Plugin Development</a></li>
+    </ul>
+  </aside>
+  <article class="docs-article">
+<h1>Playground</h1>
+<blockquote>
+<p><a href="./">Docs home</a></p>
+</blockquote>
+<h2>Interactive playground</h2>
+<p>Write and run ForgeSelect code directly in the browser — with presets for every major feature:</p>
+<p><strong><a href="https://cmm-cmm.github.io/ForgeSelect/playground/">https://cmm-cmm.github.io/ForgeSelect/playground/</a></strong></p>
+<p>Pick a preset (Basic, Multiple + tags, Rich items ×1000, Option groups, Custom template, Dark theme, Events), edit the snippet, and press <strong>Run</strong> (or Ctrl/Cmd + Enter). Your code receives a fresh <code>el</code> (<code>&lt;select&gt;</code> element) and a <code>log()</code> helper that prints into the preview pane.</p>
+<h2>Live demo</h2>
+<p>A curated showcase of every feature, deployed from the latest <code>main</code> commit:</p>
+<p><strong><a href="https://cmm-cmm.github.io/ForgeSelect/demo/">https://cmm-cmm.github.io/ForgeSelect/demo/</a></strong></p>
+<p>It showcases:</p>
+<ul>
+<li>Single searchable select with clear button</li>
+<li>Multiple selection with tags and <code>allowCreate</code></li>
+<li>Option groups</li>
+<li>Custom <code>templateResult</code> / <code>templateSelection</code></li>
+<li>Rich items (avatar + description) with 1,000 users</li>
+<li>Virtual scrolling with 10,000 options</li>
+<li>Vietnamese locale (<code>language: &quot;vi&quot;</code>)</li>
+<li>A live event log of every <code>change</code> / <code>open</code> / <code>close</code> / <code>search</code> / <code>clear</code> event</li>
+<li>Dark mode toggle</li>
+</ul>
+<h2>Run the demo locally</h2>
+<pre><code class="language-bash">git <span class="hljs-built_in">clone</span> https://github.com/cmm-cmm/ForgeSelect.git
+<span class="hljs-built_in">cd</span> ForgeSelect
+npm install
+npm run build
+python3 -m http.server 8080   <span class="hljs-comment"># or: npx serve -l 8080</span>
+</code></pre>
+<p>Then open <a href="http://localhost:8080/demo/">http://localhost:8080/demo/</a> in your browser. The demo page (<code>demo/index.html</code>) loads the IIFE bundle from <code>dist/index.global.js</code> and the stylesheet from <code>styles/forge-select.css</code>.</p>
+<h2>Hosted sandboxes</h2>
+<p>StackBlitz / CodeSandbox starter templates are planned once the package is published to npm. Until then, copy any snippet from <a href="./examples.html">Examples</a> into the local demo setup above.</p>
+<h2>See also</h2>
+<ul>
+<li><a href="./examples.html">Examples</a></li>
+<li><a href="./benchmarks.html">Benchmarks</a></li>
+</ul>
+
+  </article>
+</div>
+<footer class="site-footer">
+  MIT License · Built with ❤️ by KonexForge · <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Reference · ForgeSelect</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-logo" href="../"><span class="mark">⚒</span> ForgeSelect</a>
+  <nav class="site-nav">
+    <a href="../demo/">Live Demo</a>
+    <a href="./">Docs</a>
+    <a href="../playground/">Playground</a>
+    <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+  </nav>
+</header>
+<div class="docs-shell">
+  <aside class="docs-sidebar">
+    <p class="group">Documentation</p>
+    <ul>
+        <li><a href="./">Introduction</a></li>
+        <li><a href="./api-reference.html" class="active">API Reference</a></li>
+        <li><a href="./examples.html">Examples</a></li>
+        <li><a href="./playground.html">Playground</a></li>
+        <li><a href="./migration-from-select2.html">Migration from Select2</a></li>
+        <li><a href="./benchmarks.html">Benchmarks</a></li>
+        <li><a href="./plugin-development.html">Plugin Development</a></li>
+    </ul>
+  </aside>
+  <article class="docs-article">
+<h1>API Reference</h1>
+<blockquote>
+<p><a href="./">Docs home</a></p>
+</blockquote>
+<h2>Constructor</h2>
+<pre><code class="language-js"><span class="hljs-keyword">import</span> <span class="hljs-title class_">ForgeSelect</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;forge-select&quot;</span>;
+
+<span class="hljs-keyword">const</span> select = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(target, options);
+</code></pre>
+<ul>
+<li><code>target</code> — a CSS selector string, or an <code>HTMLSelectElement</code>/<code>HTMLElement</code>.</li>
+<li><code>options</code> — an options object (see below). All options are optional.</li>
+</ul>
+<h2>Options</h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>placeholder</code></td>
+<td><code>string</code></td>
+<td><code>&quot;&quot;</code></td>
+<td>Text shown when nothing is selected.</td>
+</tr>
+<tr>
+<td><code>searchable</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td>Show a search input inside the dropdown.</td>
+</tr>
+<tr>
+<td><code>multiple</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Allow selecting more than one option.</td>
+</tr>
+<tr>
+<td><code>clearable</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Show a button to clear the current selection.</td>
+</tr>
+<tr>
+<td><code>allowCreate</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Let the user create a new option from free text (tags mode).</td>
+</tr>
+<tr>
+<td><code>theme</code></td>
+<td><code>string</code></td>
+<td><code>&quot;default&quot;</code></td>
+<td>Named theme applied via a <code>data-theme</code> attribute / CSS class.</td>
+</tr>
+<tr>
+<td><code>disabled</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Render the control as disabled.</td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td><code>Array&lt;Option | OptionGroup&gt;</code></td>
+<td><code>undefined</code></td>
+<td>Static options, used instead of <code>&lt;option&gt;</code> children.</td>
+</tr>
+<tr>
+<td><code>ajax</code></td>
+<td><code>AjaxConfig</code></td>
+<td><code>undefined</code></td>
+<td>Remote data source config (<code>url</code>, <code>params</code>, <code>debounce</code>, <code>transform</code>).</td>
+</tr>
+<tr>
+<td><code>templateResult</code></td>
+<td><code>(option) =&gt; string | Node</code></td>
+<td><code>undefined</code></td>
+<td>Custom renderer for dropdown list items.</td>
+</tr>
+<tr>
+<td><code>templateSelection</code></td>
+<td><code>(option) =&gt; string | Node</code></td>
+<td><code>undefined</code></td>
+<td>Custom renderer for the selected value display.</td>
+</tr>
+<tr>
+<td><code>virtualScroll</code></td>
+<td><code>boolean</code></td>
+<td><em>(auto)</em></td>
+<td><code>true</code>/unset = virtualize once the list exceeds ~100 rows; <code>false</code> = never virtualize.</td>
+</tr>
+<tr>
+<td><code>itemHeight</code></td>
+<td><code>number</code></td>
+<td><code>36</code></td>
+<td>Row height in px used by the virtual scroller. Raise it (e.g. <code>52</code>) for rich items with avatars/descriptions.</td>
+</tr>
+<tr>
+<td><code>language</code></td>
+<td><code>string | Record&lt;string, string&gt;</code></td>
+<td><code>&quot;en&quot;</code></td>
+<td>Locale code or a custom string table for i18n.</td>
+</tr>
+<tr>
+<td><code>plugins</code></td>
+<td><code>Array&lt;ForgeSelectPlugin&gt;</code></td>
+<td><code>[]</code></td>
+<td>Plugins to register on this instance. See the <a href="./plugin-development.html">Plugin Development Guide</a>.</td>
+</tr>
+</tbody>
+</table>
+<h3><code>Option</code> shape</h3>
+<pre><code class="language-ts"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">Option</span> {
+  <span class="hljs-attr">value</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">label</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">disabled</span>?: <span class="hljs-built_in">boolean</span>;
+  <span class="hljs-attr">avatar</span>?: <span class="hljs-built_in">string</span>;                 <span class="hljs-comment">// image URL/data URI, shown as a round avatar</span>
+  <span class="hljs-attr">description</span>?: <span class="hljs-built_in">string</span>;            <span class="hljs-comment">// secondary line under the label</span>
+  <span class="hljs-attr">meta</span>?: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-built_in">unknown</span>&gt;;  <span class="hljs-comment">// arbitrary payload for custom templates</span>
+}
+
+<span class="hljs-keyword">interface</span> <span class="hljs-title class_">OptionGroup</span> {
+  <span class="hljs-attr">label</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">options</span>: <span class="hljs-title class_">Option</span>[];
+}
+</code></pre>
+<h3>Rich items</h3>
+<p>When an option has <code>avatar</code> and/or <code>description</code> and no custom template is set, ForgeSelect renders them with a built-in layout (avatar + label + description in the dropdown; small avatar + label in the selected value/tags). All built-in fields are inserted via <code>textContent</code>, so they are <strong>XSS-safe</strong> — no escaping needed on your side. <code>description</code> is also matched by the search filter.</p>
+<p>Custom templates (<code>templateResult</code>/<code>templateSelection</code>) receive the full option including <code>meta</code>. A <strong>string</strong> return value is injected as raw HTML — sanitize any user-provided data yourself. Rendered row content is cached per option value and cloned on scroll, so templates run once per option regardless of scrolling; if your template returns a DOM <strong>Node</strong>, don't rely on event listeners attached inside it (clones don't carry listeners — use event delegation on the document instead).</p>
+<h3><code>AjaxConfig</code> shape</h3>
+<pre><code class="language-ts"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">AjaxConfig</span> {
+  <span class="hljs-attr">url</span>: <span class="hljs-built_in">string</span> | (<span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span></span>) =&gt;</span> <span class="hljs-built_in">string</span>);
+  <span class="hljs-attr">params</span>?: <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span></span>) =&gt;</span> <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-built_in">unknown</span>&gt;;
+  <span class="hljs-attr">debounce</span>?: <span class="hljs-built_in">number</span>; <span class="hljs-comment">// ms, default 250</span>
+  <span class="hljs-attr">transform</span>?: <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">response</span>: <span class="hljs-built_in">unknown</span></span>) =&gt;</span> <span class="hljs-title class_">Option</span>[];
+}
+</code></pre>
+<h2>Instance methods</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Returns</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.open()</code></td>
+<td><code>void</code></td>
+<td>Opens the dropdown.</td>
+</tr>
+<tr>
+<td><code>.close()</code></td>
+<td><code>void</code></td>
+<td>Closes the dropdown.</td>
+</tr>
+<tr>
+<td><code>.destroy()</code></td>
+<td><code>void</code></td>
+<td>Removes ForgeSelect and restores the original element.</td>
+</tr>
+<tr>
+<td><code>.getValue()</code></td>
+<td><code>string | string[] | null</code></td>
+<td>Returns the current value(s).</td>
+</tr>
+<tr>
+<td><code>.setValue(value)</code></td>
+<td><code>void</code></td>
+<td>Programmatically sets the current value(s).</td>
+</tr>
+<tr>
+<td><code>.enable()</code></td>
+<td><code>void</code></td>
+<td>Enables the control.</td>
+</tr>
+<tr>
+<td><code>.disable()</code></td>
+<td><code>void</code></td>
+<td>Disables the control.</td>
+</tr>
+<tr>
+<td><code>.on(event, handler)</code></td>
+<td><code>void</code></td>
+<td>Subscribes to an event (see below).</td>
+</tr>
+<tr>
+<td><code>.off(event, handler)</code></td>
+<td><code>void</code></td>
+<td>Unsubscribes a previously registered handler.</td>
+</tr>
+</tbody>
+</table>
+<h2>Events</h2>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Payload</th>
+<th>Fired when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>change</code></td>
+<td><code>value</code></td>
+<td>The selection changes.</td>
+</tr>
+<tr>
+<td><code>open</code></td>
+<td>—</td>
+<td>The dropdown opens.</td>
+</tr>
+<tr>
+<td><code>close</code></td>
+<td>—</td>
+<td>The dropdown closes.</td>
+</tr>
+<tr>
+<td><code>search</code></td>
+<td><code>query: string</code></td>
+<td>The search input value changes.</td>
+</tr>
+<tr>
+<td><code>clear</code></td>
+<td>—</td>
+<td>The selection is cleared via the clear button.</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-js">select.<span class="hljs-title function_">on</span>(<span class="hljs-string">&quot;change&quot;</span>, <span class="hljs-function">(<span class="hljs-params">value</span>) =&gt;</span> <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(value));
+select.<span class="hljs-title function_">on</span>(<span class="hljs-string">&quot;search&quot;</span>, <span class="hljs-function">(<span class="hljs-params">query</span>) =&gt;</span> <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&quot;searching:&quot;</span>, query));
+</code></pre>
+<h2>See also</h2>
+<ul>
+<li><a href="./examples.html">Examples</a></li>
+<li><a href="./migration-from-select2.html">Migration from Select2</a></li>
+<li><a href="./plugin-development.html">Plugin Development Guide</a></li>
+</ul>
+
+  </article>
+</div>
+<footer class="site-footer">
+  MIT License · Built with ❤️ by KonexForge · <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+</footer>
+</body>
+</html>

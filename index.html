@@ -1,6 +1,90 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=./demo/">
-<link rel="canonical" href="./demo/">
-<title>ForgeSelect</title>
-<a href="./demo/">Redirecting to the ForgeSelect demo…</a>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ForgeSelect — A modern, lightweight replacement for Select2</title>
+<meta name="description" content="ForgeSelect is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, and a plugin architecture.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+<link rel="stylesheet" href="./assets/site.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="site-logo" href="./"><span class="mark">⚒</span> ForgeSelect</a>
+  <nav class="site-nav">
+    <a href="./demo/">Live Demo</a>
+    <a href="./docs/">Docs</a>
+    <a href="./playground/">Playground</a>
+    <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>The select component,<br><span class="grad">reforged for the modern web</span></h1>
+  <p class="lead">ForgeSelect is a zero-dependency, accessible, high-performance replacement for Select2 — rich items, automatic virtualization for huge lists, tags, AJAX, i18n, and a plugin architecture.</p>
+  <div class="actions">
+    <a class="btn btn-primary" href="./docs/">Get Started</a>
+    <a class="btn btn-ghost" href="./demo/">Live Demo</a>
+    <a class="btn btn-ghost" href="./playground/">Playground</a>
+  </div>
+  <div class="install">
+    <span id="install-cmd">npm install forge-select</span>
+    <button id="copy-install" title="Copy" aria-label="Copy install command">⧉</button>
+  </div>
+</section>
+
+<section class="section">
+  <div class="code-card">
+    <div class="bar"><span></span><span></span><span></span></div>
+    <pre><code>import ForgeSelect from "forge-select";
+import "forge-select/styles.css";
+
+const select = new ForgeSelect("#country", {
+  placeholder: "Select a country",
+  searchable: true,
+  clearable: true,
+});
+
+select.on("change", (value) =&gt; console.log(value));</code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Everything Select2 does — without the baggage</h2>
+  <p class="sub">No jQuery. No CSS fights. No performance cliffs.</p>
+  <div class="feature-grid">
+    <div class="feature"><div class="icon">🚀</div><h3>Fast by default</h3><p>Lists over 100 rows virtualize automatically — 1,000 rich items keep only ~11 rows in the DOM, and rendered rows are cached per option.</p></div>
+    <div class="feature"><div class="icon">🖼️</div><h3>Rich items</h3><p>Built-in <code>avatar</code> and <code>description</code> fields render avatar + label + subtext layouts with zero templates — and they're XSS-safe.</p></div>
+    <div class="feature"><div class="icon">🎨</div><h3>Fully themeable</h3><p>Styling is driven entirely by CSS variables. A dark theme ships out of the box; custom templates give you full HTML control.</p></div>
+    <div class="feature"><div class="icon">♿</div><h3>Accessible</h3><p>ARIA combobox/listbox semantics, aria-activedescendant, and complete keyboard navigation are built in, not bolted on.</p></div>
+    <div class="feature"><div class="icon">🏷️</div><h3>Tags &amp; multi-select</h3><p>Multiple selection with removable tags, and <code>allowCreate</code> to add options from free text.</p></div>
+    <div class="feature"><div class="icon">🌐</div><h3>Async data</h3><p>Debounced AJAX loading with a <code>transform</code> hook and stale-response guarding, ready for remote search.</p></div>
+    <div class="feature"><div class="icon">🧩</div><h3>Plugin architecture</h3><p>Extend behavior with lifecycle hooks (<code>onInit</code>, <code>onOpen</code>, <code>onClose</code>, <code>onDestroy</code>) instead of forking the core.</p></div>
+    <div class="feature"><div class="icon">📦</div><h3>Zero dependencies</h3><p>Written in strict TypeScript, ships ESM + CJS + IIFE bundles with type declarations. Works with every framework.</p></div>
+  </div>
+</section>
+
+<section class="section" style="text-align:center">
+  <h2>Migrating from Select2?</h2>
+  <p class="sub">There's a full option/event/method mapping table and a step-by-step checklist.</p>
+  <a class="btn btn-primary" href="./docs/migration-from-select2.html">Read the migration guide</a>
+</section>
+
+<footer class="site-footer">
+  MIT License · Built with ❤️ by KonexForge · <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+</footer>
+
+<script>
+document.getElementById("copy-install").addEventListener("click", async (e) => {
+  try {
+    await navigator.clipboard.writeText(document.getElementById("install-cmd").textContent);
+    e.target.textContent = "✓";
+  } catch {
+    e.target.textContent = "✗";
+  }
+  setTimeout(() => (e.target.textContent = "⧉"), 1200);
+});
+</script>
+</body>
+</html>

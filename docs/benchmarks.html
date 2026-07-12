@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benchmarks · ForgeSelect</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-logo" href="../"><span class="mark">⚒</span> ForgeSelect</a>
+  <nav class="site-nav">
+    <a href="../demo/">Live Demo</a>
+    <a href="./">Docs</a>
+    <a href="../playground/">Playground</a>
+    <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+  </nav>
+</header>
+<div class="docs-shell">
+  <aside class="docs-sidebar">
+    <p class="group">Documentation</p>
+    <ul>
+        <li><a href="./">Introduction</a></li>
+        <li><a href="./api-reference.html">API Reference</a></li>
+        <li><a href="./examples.html">Examples</a></li>
+        <li><a href="./playground.html">Playground</a></li>
+        <li><a href="./migration-from-select2.html">Migration from Select2</a></li>
+        <li><a href="./benchmarks.html" class="active">Benchmarks</a></li>
+        <li><a href="./plugin-development.html">Plugin Development</a></li>
+    </ul>
+  </aside>
+  <article class="docs-article">
+<h1>Benchmarks</h1>
+<blockquote>
+<p><a href="./">Docs home</a></p>
+<p><strong>Status: planned.</strong> ForgeSelect has no published release yet, so there are no real numbers to report. This page defines the methodology and the exact shape the results will be published in, so contributors can run and submit benchmarks as the library matures.</p>
+</blockquote>
+<h2>Methodology</h2>
+<p>Benchmarks will compare ForgeSelect against Select2 (and, where relevant, other popular alternatives) on:</p>
+<ul>
+<li><strong>Bundle size</strong> — minified and minified+gzip, zero-dependency build.</li>
+<li><strong>Initialization time</strong> — time to first render for a single instance, and for 50 instances on one page.</li>
+<li><strong>Search latency</strong> — time from keystroke to filtered list render, at 100 / 1,000 / 10,000 options.</li>
+<li><strong>Scroll performance</strong> — frame time while scrolling a large option list, with and without <code>virtualScroll</code>.</li>
+<li><strong>Memory footprint</strong> — heap usage after mounting and destroying N instances.</li>
+</ul>
+<h2>Planned results table</h2>
+<p>Once a release exists, results will be recorded here in this format:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Select2</th>
+<th>ForgeSelect</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bundle size (min+gzip)</td>
+<td><em>TBD</em></td>
+<td><em>TBD</em></td>
+<td>Zero-dependency vs. requires jQuery.</td>
+</tr>
+<tr>
+<td>Init time (1 instance)</td>
+<td><em>TBD</em></td>
+<td><em>TBD</em></td>
+<td>Cold render, ms.</td>
+</tr>
+<tr>
+<td>Init time (50 instances)</td>
+<td><em>TBD</em></td>
+<td><em>TBD</em></td>
+<td>Cold render, ms.</td>
+</tr>
+<tr>
+<td>Search latency (10,000 options)</td>
+<td><em>TBD</em></td>
+<td><em>TBD</em></td>
+<td>Keystroke to render, ms.</td>
+</tr>
+<tr>
+<td>Scroll frame time (10,000 options)</td>
+<td><em>TBD</em></td>
+<td><em>TBD</em></td>
+<td>With <code>virtualScroll: true</code>.</td>
+</tr>
+<tr>
+<td>Memory after 100 mount/destroy cycles</td>
+<td><em>TBD</em></td>
+<td><em>TBD</em></td>
+<td>Heap delta, MB.</td>
+</tr>
+</tbody>
+</table>
+<h2>Running benchmarks locally (once available)</h2>
+<pre><code class="language-bash">npm install
+npm run bench
+</code></pre>
+<p>Results will be produced as JSON under <code>bench/results/</code> and summarized into the table above on each tagged release.</p>
+<h2>See also</h2>
+<ul>
+<li><a href="./playground.html">Playground</a></li>
+<li><a href="./api-reference.html">API Reference</a></li>
+</ul>
+
+  </article>
+</div>
+<footer class="site-footer">
+  MIT License · Built with ❤️ by KonexForge · <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plugin Development · ForgeSelect</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-logo" href="../"><span class="mark">⚒</span> ForgeSelect</a>
+  <nav class="site-nav">
+    <a href="../demo/">Live Demo</a>
+    <a href="./">Docs</a>
+    <a href="../playground/">Playground</a>
+    <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+  </nav>
+</header>
+<div class="docs-shell">
+  <aside class="docs-sidebar">
+    <p class="group">Documentation</p>
+    <ul>
+        <li><a href="./">Introduction</a></li>
+        <li><a href="./api-reference.html">API Reference</a></li>
+        <li><a href="./examples.html">Examples</a></li>
+        <li><a href="./playground.html">Playground</a></li>
+        <li><a href="./migration-from-select2.html">Migration from Select2</a></li>
+        <li><a href="./benchmarks.html">Benchmarks</a></li>
+        <li><a href="./plugin-development.html" class="active">Plugin Development</a></li>
+    </ul>
+  </aside>
+  <article class="docs-article">
+<h1>Plugin Development Guide</h1>
+<blockquote>
+<p><a href="./">Docs home</a></p>
+</blockquote>
+<p>ForgeSelect is built around a small plugin architecture so behavior can be extended without forking the core. A plugin is a plain object with lifecycle hooks that ForgeSelect calls at the right time.</p>
+<h2>Plugin interface</h2>
+<pre><code class="language-ts"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">ForgeSelectPlugin</span> {
+  <span class="hljs-attr">name</span>: <span class="hljs-built_in">string</span>;
+  onInit?(<span class="hljs-attr">select</span>: <span class="hljs-title class_">ForgeSelect</span>): <span class="hljs-built_in">void</span>;
+  onOpen?(<span class="hljs-attr">select</span>: <span class="hljs-title class_">ForgeSelect</span>): <span class="hljs-built_in">void</span>;
+  onClose?(<span class="hljs-attr">select</span>: <span class="hljs-title class_">ForgeSelect</span>): <span class="hljs-built_in">void</span>;
+  onDestroy?(<span class="hljs-attr">select</span>: <span class="hljs-title class_">ForgeSelect</span>): <span class="hljs-built_in">void</span>;
+}
+</code></pre>
+<ul>
+<li><code>name</code> — a unique identifier, used in error messages and for debugging.</li>
+<li><code>onInit</code> — called once, right after the instance is created and the DOM is built.</li>
+<li><code>onOpen</code> / <code>onClose</code> — called every time the dropdown opens/closes.</li>
+<li><code>onDestroy</code> — called when <code>.destroy()</code> runs; use it to clean up listeners/timers the plugin added.</li>
+</ul>
+<p>All hooks are optional — implement only the ones your plugin needs.</p>
+<h2>Registering a plugin</h2>
+<pre><code class="language-js"><span class="hljs-keyword">import</span> <span class="hljs-title class_">ForgeSelect</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;forge-select&quot;</span>;
+<span class="hljs-keyword">import</span> clearOnEscape <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;./clear-on-escape-plugin&quot;</span>;
+
+<span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#country&quot;</span>, {
+  <span class="hljs-attr">plugins</span>: [clearOnEscape],
+});
+</code></pre>
+<p>Plugins run in the order they're listed. Multiple instances can share the same plugin object as long as the plugin doesn't keep instance-specific state on itself (keep instance state on <code>select</code> or in a closure per call).</p>
+<h2>Example: a complete plugin</h2>
+<p>A plugin that clears the selection when the user presses <kbd>Escape</kbd> while the dropdown is closed:</p>
+<pre><code class="language-js"><span class="hljs-comment">// clear-on-escape-plugin.js</span>
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> {
+  <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;clear-on-escape&quot;</span>,
+
+  <span class="hljs-title function_">onInit</span>(<span class="hljs-params">select</span>) {
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_handler</span> = <span class="hljs-function">(<span class="hljs-params">event</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (event.<span class="hljs-property">key</span> === <span class="hljs-string">&quot;Escape&quot;</span>) {
+        select.<span class="hljs-title function_">setValue</span>(<span class="hljs-literal">null</span>);
+      }
+    };
+    select.<span class="hljs-property">el</span>.<span class="hljs-title function_">addEventListener</span>(<span class="hljs-string">&quot;keydown&quot;</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_handler</span>);
+  },
+
+  <span class="hljs-title function_">onDestroy</span>(<span class="hljs-params">select</span>) {
+    select.<span class="hljs-property">el</span>.<span class="hljs-title function_">removeEventListener</span>(<span class="hljs-string">&quot;keydown&quot;</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_handler</span>);
+  },
+};
+</code></pre>
+<h2>Guidelines for authoring plugins</h2>
+<ul>
+<li>Keep plugins single-purpose — prefer composing several small plugins over one that does everything.</li>
+<li>Always remove listeners/timers added in <code>onInit</code>/<code>onOpen</code> inside <code>onDestroy</code> to avoid leaks.</li>
+<li>Don't mutate options the user passed in; read from <code>select</code> instead.</li>
+<li>Emit custom events via <code>select.on</code>/internal event bus conventions rather than calling consumer callbacks directly, so plugin behavior composes with <code>.on()</code> listeners.</li>
+<li>Document the options your plugin reads/writes on the <code>select</code> instance, since there's no separate plugin-options namespace.</li>
+</ul>
+<h2>See also</h2>
+<ul>
+<li><a href="./api-reference.html">API Reference</a></li>
+<li><a href="./examples.html">Examples</a></li>
+</ul>
+
+  </article>
+</div>
+<footer class="site-footer">
+  MIT License · Built with ❤️ by KonexForge · <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+</footer>
+</body>
+</html>

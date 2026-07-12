@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Migration from Select2 · ForgeSelect</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-logo" href="../"><span class="mark">⚒</span> ForgeSelect</a>
+  <nav class="site-nav">
+    <a href="../demo/">Live Demo</a>
+    <a href="./">Docs</a>
+    <a href="../playground/">Playground</a>
+    <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+  </nav>
+</header>
+<div class="docs-shell">
+  <aside class="docs-sidebar">
+    <p class="group">Documentation</p>
+    <ul>
+        <li><a href="./">Introduction</a></li>
+        <li><a href="./api-reference.html">API Reference</a></li>
+        <li><a href="./examples.html">Examples</a></li>
+        <li><a href="./playground.html">Playground</a></li>
+        <li><a href="./migration-from-select2.html" class="active">Migration from Select2</a></li>
+        <li><a href="./benchmarks.html">Benchmarks</a></li>
+        <li><a href="./plugin-development.html">Plugin Development</a></li>
+    </ul>
+  </aside>
+  <article class="docs-article">
+<h1>Migration from Select2</h1>
+<blockquote>
+<p><a href="./">Docs home</a></p>
+</blockquote>
+<p>Select2 has served the ecosystem well, but it depends on jQuery and predates modern accessibility and performance practices. ForgeSelect is designed as a drop-in-<em>concept</em> replacement: same core ideas (searchable dropdowns, tags, AJAX, templates), zero dependencies, and a smaller, framework-agnostic API.</p>
+<h2>Why migrate?</h2>
+<ul>
+<li>No jQuery dependency required.</li>
+<li>Smaller bundle size and no dependency on a full DOM utility library.</li>
+<li>Native accessibility (ARIA) support out of the box.</li>
+<li>A plugin architecture for extending behavior, instead of monkey-patching.</li>
+</ul>
+<h2>Option mapping</h2>
+<table>
+<thead>
+<tr>
+<th>Select2 option</th>
+<th>ForgeSelect option</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>placeholder</code></td>
+<td><code>placeholder</code></td>
+<td>Same meaning.</td>
+</tr>
+<tr>
+<td><code>multiple</code> (on the <code>&lt;select&gt;</code> element)</td>
+<td><code>multiple</code></td>
+<td>ForgeSelect takes it as an explicit option instead of relying on the native <code>multiple</code> attribute alone.</td>
+</tr>
+<tr>
+<td><code>allowClear</code></td>
+<td><code>clearable</code></td>
+<td>Same meaning.</td>
+</tr>
+<tr>
+<td><code>tags: true</code></td>
+<td><code>allowCreate: true</code> + <code>multiple: true</code></td>
+<td>Split into two explicit flags.</td>
+</tr>
+<tr>
+<td><code>ajax</code></td>
+<td><code>ajax</code></td>
+<td>Shape differs — see <a href="./api-reference.html#ajaxconfig-shape">API Reference</a>.</td>
+</tr>
+<tr>
+<td><code>templateResult</code></td>
+<td><code>templateResult</code></td>
+<td>Same purpose, may return a string or a DOM node.</td>
+</tr>
+<tr>
+<td><code>templateSelection</code></td>
+<td><code>templateSelection</code></td>
+<td>Same purpose.</td>
+</tr>
+<tr>
+<td><code>theme</code></td>
+<td><code>theme</code></td>
+<td>ForgeSelect ships CSS-variable-based themes instead of a bundled theme name registry.</td>
+</tr>
+<tr>
+<td><code>language</code></td>
+<td><code>language</code></td>
+<td>Accepts a locale code or a custom string table.</td>
+</tr>
+<tr>
+<td><code>minimumInputLength</code> / <code>minimumResultsForSearch</code></td>
+<td><em>(planned)</em></td>
+<td>Not yet available; track in the <a href="../#roadmap">Roadmap</a>.</td>
+</tr>
+</tbody>
+</table>
+<h2>Event mapping</h2>
+<table>
+<thead>
+<tr>
+<th>Select2 event</th>
+<th>ForgeSelect event</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>select2:select</code> / <code>select2:unselect</code></td>
+<td><code>change</code></td>
+</tr>
+<tr>
+<td><code>select2:open</code></td>
+<td><code>open</code></td>
+</tr>
+<tr>
+<td><code>select2:close</code></td>
+<td><code>close</code></td>
+</tr>
+<tr>
+<td><em>(no direct equivalent)</em></td>
+<td><code>search</code></td>
+</tr>
+<tr>
+<td><em>(no direct equivalent)</em></td>
+<td><code>clear</code></td>
+</tr>
+</tbody>
+</table>
+<h2>Method mapping</h2>
+<table>
+<thead>
+<tr>
+<th>Select2 (jQuery) call</th>
+<th>ForgeSelect call</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$('#el').select2(options)</code></td>
+<td><code>new ForgeSelect('#el', options)</code></td>
+</tr>
+<tr>
+<td><code>$('#el').val(value).trigger('change')</code></td>
+<td><code>select.setValue(value)</code></td>
+</tr>
+<tr>
+<td><code>$('#el').val()</code></td>
+<td><code>select.getValue()</code></td>
+</tr>
+<tr>
+<td><code>$('#el').select2('open')</code></td>
+<td><code>select.open()</code></td>
+</tr>
+<tr>
+<td><code>$('#el').select2('close')</code></td>
+<td><code>select.close()</code></td>
+</tr>
+<tr>
+<td><code>$('#el').select2('destroy')</code></td>
+<td><code>select.destroy()</code></td>
+</tr>
+<tr>
+<td><code>$('#el').prop('disabled', true)</code></td>
+<td><code>select.disable()</code></td>
+</tr>
+<tr>
+<td><code>$('#el').on('select2:select', fn)</code></td>
+<td><code>select.on('change', fn)</code></td>
+</tr>
+</tbody>
+</table>
+<h2>Step-by-step migration checklist</h2>
+<ol>
+<li>Remove the jQuery and Select2 script/style includes.</li>
+<li>Install ForgeSelect: <code>npm install forge-select</code>.</li>
+<li>Replace <code>$(el).select2(options)</code> calls with <code>new ForgeSelect(el, options)</code>, keeping a reference to the returned instance.</li>
+<li>Rename options per the <a href="#option-mapping">option mapping</a> table above.</li>
+<li>Replace jQuery event bindings (<code>select2:select</code>, etc.) with <code>select.on(...)</code> calls per the <a href="#event-mapping">event mapping</a> table.</li>
+<li>Replace direct jQuery method calls (<code>.select2('open')</code>, <code>.val()</code>, etc.) with the equivalent instance method from the <a href="#method-mapping">method mapping</a> table.</li>
+<li>Re-apply any custom Select2 theme CSS as ForgeSelect CSS variables/theme classes.</li>
+<li>Run your test suite and manually verify keyboard navigation and screen-reader behavior, since ForgeSelect's accessibility model differs from Select2's.</li>
+</ol>
+<h2>See also</h2>
+<ul>
+<li><a href="./api-reference.html">API Reference</a></li>
+<li><a href="./examples.html">Examples</a></li>
+</ul>
+
+  </article>
+</div>
+<footer class="site-footer">
+  MIT License · Built with ❤️ by KonexForge · <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+</footer>
+</body>
+</html>

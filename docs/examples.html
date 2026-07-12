@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examples · ForgeSelect</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+<header class="site-header">
+  <a class="site-logo" href="../"><span class="mark">⚒</span> ForgeSelect</a>
+  <nav class="site-nav">
+    <a href="../demo/">Live Demo</a>
+    <a href="./">Docs</a>
+    <a href="../playground/">Playground</a>
+    <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+  </nav>
+</header>
+<div class="docs-shell">
+  <aside class="docs-sidebar">
+    <p class="group">Documentation</p>
+    <ul>
+        <li><a href="./">Introduction</a></li>
+        <li><a href="./api-reference.html">API Reference</a></li>
+        <li><a href="./examples.html" class="active">Examples</a></li>
+        <li><a href="./playground.html">Playground</a></li>
+        <li><a href="./migration-from-select2.html">Migration from Select2</a></li>
+        <li><a href="./benchmarks.html">Benchmarks</a></li>
+        <li><a href="./plugin-development.html">Plugin Development</a></li>
+    </ul>
+  </aside>
+  <article class="docs-article">
+<h1>Examples</h1>
+<blockquote>
+<p><a href="./">Docs home</a></p>
+</blockquote>
+<h2>Single select</h2>
+<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">select</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;country&quot;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">option</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;vn&quot;</span>&gt;</span>Vietnam<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">option</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;jp&quot;</span>&gt;</span>Japan<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">option</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;us&quot;</span>&gt;</span>United States<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">select</span>&gt;</span>
+</code></pre>
+<pre><code class="language-js"><span class="hljs-keyword">import</span> <span class="hljs-title class_">ForgeSelect</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;forge-select&quot;</span>;
+
+<span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#country&quot;</span>, {
+  <span class="hljs-attr">placeholder</span>: <span class="hljs-string">&quot;Select a country&quot;</span>,
+  <span class="hljs-attr">searchable</span>: <span class="hljs-literal">true</span>,
+});
+</code></pre>
+<h2>Multiple select</h2>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#tags&quot;</span>, {
+  <span class="hljs-attr">multiple</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">clearable</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">placeholder</span>: <span class="hljs-string">&quot;Select one or more&quot;</span>,
+});
+</code></pre>
+<h2>Async / AJAX data source</h2>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#users&quot;</span>, {
+  <span class="hljs-attr">ajax</span>: {
+    <span class="hljs-attr">url</span>: <span class="hljs-function">(<span class="hljs-params">query</span>) =&gt;</span> <span class="hljs-string">`/api/users?q=<span class="hljs-subst">${<span class="hljs-built_in">encodeURIComponent</span>(query)}</span>`</span>,
+    <span class="hljs-attr">debounce</span>: <span class="hljs-number">300</span>,
+    <span class="hljs-attr">transform</span>: <span class="hljs-function">(<span class="hljs-params">response</span>) =&gt;</span>
+      response.<span class="hljs-property">items</span>.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">u</span>) =&gt;</span> ({ <span class="hljs-attr">value</span>: u.<span class="hljs-property">id</span>, <span class="hljs-attr">label</span>: u.<span class="hljs-property">name</span> })),
+  },
+});
+</code></pre>
+<h2>Tags mode (allow creating new options)</h2>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#skills&quot;</span>, {
+  <span class="hljs-attr">multiple</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">allowCreate</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">placeholder</span>: <span class="hljs-string">&quot;Add a skill&quot;</span>,
+});
+</code></pre>
+<h2>Custom templates</h2>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#country&quot;</span>, {
+  <span class="hljs-attr">templateResult</span>: <span class="hljs-function">(<span class="hljs-params">option</span>) =&gt;</span> <span class="hljs-string">`&lt;span class=&quot;flag flag-<span class="hljs-subst">${option.value}</span>&quot;&gt;&lt;/span&gt; <span class="hljs-subst">${option.label}</span>`</span>,
+  <span class="hljs-attr">templateSelection</span>: <span class="hljs-function">(<span class="hljs-params">option</span>) =&gt;</span> option.<span class="hljs-property">label</span>,
+});
+</code></pre>
+<h2>Option groups</h2>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#country&quot;</span>, {
+  <span class="hljs-attr">data</span>: [
+    {
+      <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Asia&quot;</span>,
+      <span class="hljs-attr">options</span>: [
+        { <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;vn&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Vietnam&quot;</span> },
+        { <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;jp&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Japan&quot;</span> },
+      ],
+    },
+    {
+      <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Americas&quot;</span>,
+      <span class="hljs-attr">options</span>: [{ <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;us&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;United States&quot;</span> }],
+    },
+  ],
+});
+</code></pre>
+<h2>Rich items (avatar + name + description)</h2>
+<p>Options with <code>avatar</code>/<code>description</code> get a built-in rich layout — no template needed, and the fields are XSS-safe:</p>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#users&quot;</span>, {
+  <span class="hljs-attr">itemHeight</span>: <span class="hljs-number">52</span>, <span class="hljs-comment">// taller rows for the two-line layout</span>
+  <span class="hljs-attr">data</span>: [
+    {
+      <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;1&quot;</span>,
+      <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Ana Trần&quot;</span>,
+      <span class="hljs-attr">description</span>: <span class="hljs-string">&quot;ana@example.com&quot;</span>,
+      <span class="hljs-attr">avatar</span>: <span class="hljs-string">&quot;https://example.com/avatars/ana.png&quot;</span>,
+    },
+    <span class="hljs-comment">// …works great with 1,000+ items: virtualization kicks in automatically</span>
+  ],
+});
+</code></pre>
+<p>The same data can be rendered with a fully custom template instead. Prefer returning a <strong>DOM Node</strong> built with <code>textContent</code> — it stays XSS-safe even when the data comes from users or a remote API (a string return value is injected as raw HTML, so only use it with trusted or pre-sanitized content):</p>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#users&quot;</span>, {
+  <span class="hljs-attr">templateResult</span>: <span class="hljs-function">(<span class="hljs-params">o</span>) =&gt;</span> {
+    <span class="hljs-keyword">const</span> row = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createElement</span>(<span class="hljs-string">&quot;span&quot;</span>);
+    <span class="hljs-keyword">const</span> img = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createElement</span>(<span class="hljs-string">&quot;img&quot;</span>);
+    img.<span class="hljs-property">className</span> = <span class="hljs-string">&quot;my-avatar&quot;</span>;
+    <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^(https:|data:image\/)/</span>.<span class="hljs-title function_">test</span>(o.<span class="hljs-property">avatar</span> ?? <span class="hljs-string">&quot;&quot;</span>)) img.<span class="hljs-property">src</span> = o.<span class="hljs-property">avatar</span>;
+    <span class="hljs-keyword">const</span> name = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createElement</span>(<span class="hljs-string">&quot;strong&quot;</span>);
+    name.<span class="hljs-property">textContent</span> = o.<span class="hljs-property">label</span>;
+    <span class="hljs-keyword">const</span> email = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createElement</span>(<span class="hljs-string">&quot;small&quot;</span>);
+    email.<span class="hljs-property">textContent</span> = o.<span class="hljs-property">description</span> ?? <span class="hljs-string">&quot;&quot;</span>;
+    row.<span class="hljs-title function_">append</span>(img, name, email);
+    <span class="hljs-keyword">return</span> row;
+  },
+  <span class="hljs-attr">templateSelection</span>: <span class="hljs-function">(<span class="hljs-params">o</span>) =&gt;</span> {
+    <span class="hljs-keyword">const</span> span = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createElement</span>(<span class="hljs-string">&quot;span&quot;</span>);
+    span.<span class="hljs-property">textContent</span> = o.<span class="hljs-property">label</span>;
+    <span class="hljs-keyword">return</span> span;
+  },
+});
+</code></pre>
+<h2>Virtual scrolling (large lists)</h2>
+<p>Lists over ~100 rows are virtualized automatically — only the visible window is in the DOM, and row content is cached so templates run once per option. Set <code>virtualScroll: false</code> to opt out, or <code>itemHeight</code> if your rows are taller than the default 36px:</p>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#big-list&quot;</span>, {
+  <span class="hljs-attr">data</span>: largeArrayOfThousandsOfOptions, <span class="hljs-comment">// nothing else to configure</span>
+});
+</code></pre>
+<h2>React</h2>
+<pre><code class="language-jsx"><span class="hljs-keyword">import</span> { useEffect, useRef } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;react&quot;</span>;
+<span class="hljs-keyword">import</span> <span class="hljs-title class_">ForgeSelect</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;forge-select&quot;</span>;
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">CountrySelect</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">const</span> ref = <span class="hljs-title function_">useRef</span>(<span class="hljs-literal">null</span>);
+
+  <span class="hljs-title function_">useEffect</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-keyword">const</span> select = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(ref.<span class="hljs-property">current</span>, { <span class="hljs-attr">searchable</span>: <span class="hljs-literal">true</span> });
+    select.<span class="hljs-title function_">on</span>(<span class="hljs-string">&quot;change&quot;</span>, <span class="hljs-function">(<span class="hljs-params">value</span>) =&gt;</span> <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(value));
+    <span class="hljs-keyword">return</span> <span class="hljs-function">() =&gt;</span> select.<span class="hljs-title function_">destroy</span>();
+  }, []);
+
+  <span class="hljs-keyword">return</span> (
+    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">select</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{ref}</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">option</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;vn&quot;</span>&gt;</span>Vietnam<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">option</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;jp&quot;</span>&gt;</span>Japan<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">select</span>&gt;</span></span>
+  );
+}
+</code></pre>
+<h2>Vue</h2>
+<pre><code class="language-vue">&lt;template&gt;
+  &lt;select ref=&quot;el&quot;&gt;
+    &lt;option value=&quot;vn&quot;&gt;Vietnam&lt;/option&gt;
+    &lt;option value=&quot;jp&quot;&gt;Japan&lt;/option&gt;
+  &lt;/select&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { onMounted, onBeforeUnmount, ref } from &quot;vue&quot;;
+import ForgeSelect from &quot;forge-select&quot;;
+
+const el = ref(null);
+let select;
+
+onMounted(() =&gt; {
+  select = new ForgeSelect(el.value, { searchable: true });
+});
+
+onBeforeUnmount(() =&gt; select?.destroy());
+&lt;/script&gt;
+</code></pre>
+<h2>Svelte</h2>
+<pre><code class="language-svelte">&lt;script&gt;
+  import { onMount, onDestroy } from &quot;svelte&quot;;
+  import ForgeSelect from &quot;forge-select&quot;;
+
+  let el;
+  let select;
+
+  onMount(() =&gt; {
+    select = new ForgeSelect(el, { searchable: true });
+  });
+
+  onDestroy(() =&gt; select?.destroy());
+&lt;/script&gt;
+
+&lt;select bind:this={el}&gt;
+  &lt;option value=&quot;vn&quot;&gt;Vietnam&lt;/option&gt;
+  &lt;option value=&quot;jp&quot;&gt;Japan&lt;/option&gt;
+&lt;/select&gt;
+</code></pre>
+<h2>See also</h2>
+<ul>
+<li><a href="./api-reference.html">API Reference</a></li>
+<li><a href="./playground.html">Playground</a></li>
+</ul>
+
+  </article>
+</div>
+<footer class="site-footer">
+  MIT License · Built with ❤️ by KonexForge · <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+</footer>
+</body>
+</html>
