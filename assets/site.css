@@ -1,7 +1,7 @@
 /* ForgeSelect website — shared styles */
 :root {
-  --accent: #6366f1;
-  --accent-strong: #4f46e5;
+  --accent: #10b981;
+  --accent-strong: #059669;
   --bg: #f8fafc;
   --bg-raised: #ffffff;
   --fg: #0f172a;
@@ -12,14 +12,33 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0b1120;
-    --bg-raised: #101828;
-    --fg: #f1f5f9;
-    --fg-muted: #94a3b8;
-    --border: #26324b;
-    --code-bg: #16203a;
+    --accent: #34d399;
+    --accent-strong: #10b981;
+    --bg: #0b1210;
+    --bg-raised: #101c17;
+    --fg: #f0fdf4;
+    --fg-muted: #94a99e;
+    --border: #24382e;
+    --code-bg: #14241c;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   }
+}
+
+/* ForgeSelect widgets rendered on site pages follow the green accent.
+   The [data-theme] variant matches the specificity of the library's
+   built-in .forge-select[data-theme="dark"] selector so green wins there too. */
+.forge-select,
+.forge-select[data-theme] {
+  --fs-border-focus: var(--accent);
+  --fs-option-hover-bg: color-mix(in srgb, var(--accent) 12%, transparent);
+  --fs-option-selected-bg: color-mix(in srgb, var(--accent) 22%, transparent);
+  --fs-option-selected-fg: var(--accent-strong);
+  --fs-tag-bg: color-mix(in srgb, var(--accent) 18%, transparent);
+  --fs-tag-fg: var(--accent-strong);
+}
+.forge-select[data-theme="dark"] {
+  --fs-option-selected-fg: #6ee7b7;
+  --fs-tag-fg: #6ee7b7;
 }
 
 * { box-sizing: border-box; }
@@ -63,10 +82,11 @@ a:hover { text-decoration: underline; }
   width: 26px;
   height: 26px;
   border-radius: 7px;
-  background: linear-gradient(135deg, var(--accent), #a855f7);
+  background: linear-gradient(135deg, #059669, #34d399);
   color: #fff;
   font-size: 14px;
 }
+.site-logo .mark svg { width: 14px; height: 14px; }
 .site-nav {
   display: flex;
   gap: 4px;
@@ -114,7 +134,7 @@ a:hover { text-decoration: underline; }
   letter-spacing: -0.03em;
 }
 .hero h1 .grad {
-  background: linear-gradient(90deg, var(--accent), #a855f7, #ec4899);
+  background: linear-gradient(90deg, #059669, #22c55e, #a3e635);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
