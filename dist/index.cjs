@@ -283,6 +283,7 @@ var ForgeSelect = class {
       this.searchInput.addEventListener("input", () => {
         this.query = this.searchInput.value;
         this.highlightedIndex = -1;
+        this.list.scrollTop = 0;
         this.emitter.emit("search", this.query);
         if (this.opts.ajax) {
           this.scheduleRemoteLoad(this.query, this.opts.ajax.debounce ?? 250);
@@ -550,13 +551,15 @@ var ForgeSelect = class {
     this.renderRows();
   }
   renderRows() {
+    const scrollTop = this.list.scrollTop;
+    const virtual = this.usesVirtualScroll();
     this.list.textContent = "";
     const rowHeight = this.opts.itemHeight;
     let start = 0;
     let end = this.rows.length;
-    if (this.usesVirtualScroll()) {
+    if (virtual) {
       const viewport = this.list.clientHeight || rowHeight * 8;
-      start = Math.max(0, Math.floor(this.list.scrollTop / rowHeight) - VIRTUAL_BUFFER);
+      start = Math.max(0, Math.floor(scrollTop / rowHeight) - VIRTUAL_BUFFER);
       end = Math.min(this.rows.length, start + Math.ceil(viewport / rowHeight) + VIRTUAL_BUFFER * 2);
       const topSpacer = document.createElement("li");
       topSpacer.className = "forge-select__spacer";
@@ -567,12 +570,15 @@ var ForgeSelect = class {
     for (let i = start; i < end; i++) {
       this.list.append(this.renderRow(this.rows[i]));
     }
-    if (this.usesVirtualScroll()) {
+    if (virtual) {
       const bottomSpacer = document.createElement("li");
       bottomSpacer.className = "forge-select__spacer";
       bottomSpacer.setAttribute("aria-hidden", "true");
       bottomSpacer.style.height = `${(this.rows.length - end) * rowHeight}px`;
       this.list.append(bottomSpacer);
+      if (this.list.scrollTop !== scrollTop) {
+        this.list.scrollTop = scrollTop;
+      }
     }
     this.updateActiveDescendant();
   }
@@ -653,10 +659,10 @@ var ForgeSelect = class {
         const rowHeight = this.opts.itemHeight;
         const top = rowIndex * rowHeight;
         const viewport = this.list.clientHeight || rowHeight * 8;
-        if (top < this.list.scrollTop) this.list.scrollTop = top;
-        else if (top + rowHeight > this.list.scrollTop + viewport) {
-          this.list.scrollTop = top + rowHeight - viewport;
-        }
+        let target = this.list.scrollTop;
+        if (top < target) target = top;
+        else if (top + rowHeight > target + viewport) target = top + rowHeight - viewport;
+        if (target !== this.list.scrollTop) this.list.scrollTop = target;
       }
       this.renderRows();
     } else {
