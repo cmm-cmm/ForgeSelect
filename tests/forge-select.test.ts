@@ -452,6 +452,32 @@ describe("virtual scrolling", () => {
     expect(total).toBeGreaterThan(52 * 900);
   });
 
+  it("advances the window when scrolled, despite browser scrollTop clamping", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: bigData(1000) });
+    select.open();
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    // Emulate real-browser behavior: while the list has no children its
+    // scrollHeight is 0, so scrollTop reads (and clamps to) 0.
+    let stored = 0;
+    Object.defineProperty(list, "scrollTop", {
+      get: () => (list.childElementCount === 0 ? 0 : stored),
+      set: (v: number) => {
+        stored = list.childElementCount === 0 ? 0 : v;
+      },
+    });
+
+    list.scrollTop = 36 * 500; // scroll to the middle
+    list.dispatchEvent(new Event("scroll"));
+
+    const labels = optionEls().map((li) => li.textContent);
+    expect(labels).not.toContain("Item 0");
+    expect(labels).toContain("Item 500");
+    // The offset survives the re-render instead of snapping back to 0.
+    expect(list.scrollTop).toBe(36 * 500);
+  });
+
   it("runs templates once per option, not once per scroll frame", () => {
     mountSelect("");
     const template = vi.fn((o: { label: string }) => `<em>${o.label}</em>`);

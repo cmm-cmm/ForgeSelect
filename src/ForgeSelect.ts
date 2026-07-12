@@ -295,6 +295,7 @@ export default class ForgeSelect {
       this.searchInput.addEventListener("input", () => {
         this.query = this.searchInput!.value;
         this.highlightedIndex = -1;
+        this.list.scrollTop = 0;
         this.emitter.emit("search", this.query);
         if (this.opts.ajax) {
           this.scheduleRemoteLoad(this.query, this.opts.ajax.debounce ?? 250);
@@ -599,14 +600,18 @@ export default class ForgeSelect {
   }
 
   private renderRows(): void {
+    // Capture the scroll offset BEFORE clearing the list: removing the children
+    // collapses scrollHeight, and the browser clamps scrollTop to 0.
+    const scrollTop = this.list.scrollTop;
+    const virtual = this.usesVirtualScroll();
     this.list.textContent = "";
 
     const rowHeight = this.opts.itemHeight;
     let start = 0;
     let end = this.rows.length;
-    if (this.usesVirtualScroll()) {
+    if (virtual) {
       const viewport = this.list.clientHeight || rowHeight * 8;
-      start = Math.max(0, Math.floor(this.list.scrollTop / rowHeight) - VIRTUAL_BUFFER);
+      start = Math.max(0, Math.floor(scrollTop / rowHeight) - VIRTUAL_BUFFER);
       end = Math.min(this.rows.length, start + Math.ceil(viewport / rowHeight) + VIRTUAL_BUFFER * 2);
 
       const topSpacer = document.createElement("li");
@@ -620,12 +625,19 @@ export default class ForgeSelect {
       this.list.append(this.renderRow(this.rows[i]));
     }
 
-    if (this.usesVirtualScroll()) {
+    if (virtual) {
       const bottomSpacer = document.createElement("li");
       bottomSpacer.className = "forge-select__spacer";
       bottomSpacer.setAttribute("aria-hidden", "true");
       bottomSpacer.style.height = `${(this.rows.length - end) * rowHeight}px`;
       this.list.append(bottomSpacer);
+
+      // Restore the offset that clearing clamped away. The net scroll change
+      // within this handler is zero, so this does not re-fire the scroll
+      // listener; even if it did, the re-render is idempotent and settles.
+      if (this.list.scrollTop !== scrollTop) {
+        this.list.scrollTop = scrollTop;
+      }
     }
 
     this.updateActiveDescendant();
@@ -715,10 +727,10 @@ export default class ForgeSelect {
         const rowHeight = this.opts.itemHeight;
         const top = rowIndex * rowHeight;
         const viewport = this.list.clientHeight || rowHeight * 8;
-        if (top < this.list.scrollTop) this.list.scrollTop = top;
-        else if (top + rowHeight > this.list.scrollTop + viewport) {
-          this.list.scrollTop = top + rowHeight - viewport;
-        }
+        let target = this.list.scrollTop;
+        if (top < target) target = top;
+        else if (top + rowHeight > target + viewport) target = top + rowHeight - viewport;
+        if (target !== this.list.scrollTop) this.list.scrollTop = target;
       }
       this.renderRows();
     } else {
