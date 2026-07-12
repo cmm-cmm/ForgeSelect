@@ -1,5 +1,9 @@
 # ForgeSelect
 
+[![npm version](https://img.shields.io/npm/v/forge-select.svg)](https://www.npmjs.com/package/forge-select)
+[![CI](https://github.com/cmm-cmm/ForgeSelect/actions/workflows/ci.yml/badge.svg)](https://github.com/cmm-cmm/ForgeSelect/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 «A modern, lightweight, highly customizable replacement for Select2.»
 
 ForgeSelect is a next-generation JavaScript select component built for modern web applications. It provides a clean API, powerful customization options, excellent performance, and accessibility while remaining framework-agnostic.

@@ -42,6 +42,17 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 4. Update the relevant docs page under `docs/` and add an entry to `CHANGELOG.md` under **Unreleased**.
 5. Keep the zero-dependency promise: no new runtime dependencies. Dev dependencies are fine when justified.
 
+## Releasing (maintainers)
+
+Releases publish to npm automatically via `.github/workflows/release.yml`:
+
+1. Bump `version` in `package.json` (following [SemVer](https://semver.org/)) and add a matching entry to `CHANGELOG.md`.
+2. Merge that change to `main`.
+3. Tag the release commit and push the tag: `git tag v1.2.3 && git push origin v1.2.3` (or create a GitHub Release with that tag).
+4. The workflow verifies the tag matches `package.json`, runs typecheck/test/build, and publishes with npm provenance.
+
+This requires a repository secret named `NPM_TOKEN` (an npm **Automation** access token, so it works without interactive 2FA) — add it under **Settings → Secrets and variables → Actions**.
+
 ## Reporting bugs & requesting features
 
 Open a [GitHub issue](https://github.com/cmm-cmm/ForgeSelect/issues) with a minimal reproduction — a snippet that runs in the [playground](https://cmm-cmm.github.io/ForgeSelect/playground/) is perfect.
