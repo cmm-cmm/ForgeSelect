@@ -13,9 +13,19 @@
   ],
   "license": "MIT",
   "author": "KonexForge",
+  "homepage": "https://cmm-cmm.github.io/ForgeSelect/",
+  "bugs": {
+    "url": "https://github.com/cmm-cmm/ForgeSelect/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cmm-cmm/ForgeSelect.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "type": "module",
   "main": "./dist/index.cjs",
@@ -39,7 +49,8 @@
     "build:site": "npm run build && node scripts/build-site.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
     "highlight.js": "^11.11.1",
