@@ -24,14 +24,21 @@
   }
 }
 
-/* ForgeSelect widgets rendered on site pages follow the green accent. */
-.forge-select {
+/* ForgeSelect widgets rendered on site pages follow the green accent.
+   The [data-theme] variant matches the specificity of the library's
+   built-in .forge-select[data-theme="dark"] selector so green wins there too. */
+.forge-select,
+.forge-select[data-theme] {
   --fs-border-focus: var(--accent);
   --fs-option-hover-bg: color-mix(in srgb, var(--accent) 12%, transparent);
   --fs-option-selected-bg: color-mix(in srgb, var(--accent) 22%, transparent);
   --fs-option-selected-fg: var(--accent-strong);
   --fs-tag-bg: color-mix(in srgb, var(--accent) 18%, transparent);
   --fs-tag-fg: var(--accent-strong);
+}
+.forge-select[data-theme="dark"] {
+  --fs-option-selected-fg: #6ee7b7;
+  --fs-tag-fg: #6ee7b7;
 }
 
 * { box-sizing: border-box; }

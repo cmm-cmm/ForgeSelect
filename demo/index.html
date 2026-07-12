@@ -79,8 +79,15 @@
     --fs-tag-bg: rgba(16, 185, 129, 0.18);
     --fs-tag-fg: #059669;
   }
-  body.dark .forge-select {
+  /* Higher specificity than .forge-select[data-theme="dark"] so the full
+     green palette wins over the library's built-in indigo dark theme. */
+  body.dark .forge-select,
+  body.dark .forge-select[data-theme="dark"] {
+    --fs-border-focus: #34d399;
+    --fs-option-hover-bg: rgba(52, 211, 153, 0.15);
+    --fs-option-selected-bg: rgba(52, 211, 153, 0.25);
     --fs-option-selected-fg: #6ee7b7;
+    --fs-tag-bg: rgba(52, 211, 153, 0.22);
     --fs-tag-fg: #6ee7b7;
   }
 </style>
