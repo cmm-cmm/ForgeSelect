@@ -212,13 +212,11 @@ Source lives in `src/`, styles in `styles/forge-select.css`, and tests in `tests
 
 ## Contributing
 
-Contributions are welcome!
-
-Please feel free to open an issue or submit a pull request.
+Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development setup, project layout, and PR guidelines. Release history lives in [CHANGELOG.md](./CHANGELOG.md), and security reports should follow [SECURITY.md](./SECURITY.md).
 
 ## License
 
-MIT License.
+[MIT License](./LICENSE).
 
 ---
 
