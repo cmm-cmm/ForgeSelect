@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ForgeSelect — Demo</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%2310b981' d='M6 2l12 11h-6.9l3.6 6.9-2.7 1.4-3.6-6.9L6 18z'/></svg>">
 <link rel="stylesheet" href="../styles/forge-select.css">
 <style>
   :root {
@@ -70,11 +70,31 @@
     color: inherit;
     cursor: pointer;
   }
+  /* Match the site's green accent */
+  .forge-select {
+    --fs-border-focus: #10b981;
+    --fs-option-hover-bg: rgba(16, 185, 129, 0.12);
+    --fs-option-selected-bg: rgba(16, 185, 129, 0.22);
+    --fs-option-selected-fg: #059669;
+    --fs-tag-bg: rgba(16, 185, 129, 0.18);
+    --fs-tag-fg: #059669;
+  }
+  /* Higher specificity than .forge-select[data-theme="dark"] so the full
+     green palette wins over the library's built-in indigo dark theme. */
+  body.dark .forge-select,
+  body.dark .forge-select[data-theme="dark"] {
+    --fs-border-focus: #34d399;
+    --fs-option-hover-bg: rgba(52, 211, 153, 0.15);
+    --fs-option-selected-bg: rgba(52, 211, 153, 0.25);
+    --fs-option-selected-fg: #6ee7b7;
+    --fs-tag-bg: rgba(52, 211, 153, 0.22);
+    --fs-tag-fg: #6ee7b7;
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1><a href="../" style="color:inherit;text-decoration:none">⚒ ForgeSelect</a> <small style="font-weight:normal;opacity:.6">demo</small></h1>
+  <h1><a href="../" style="color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="20" height="20" fill="#10b981" aria-hidden="true"><path d="M6 2l12 11h-6.9l3.6 6.9-2.7 1.4-3.6-6.9L6 18z"/></svg>ForgeSelect</a> <small style="font-weight:normal;opacity:.6">demo</small></h1>
   <div>
     <a href="../docs/">Docs</a>
     <a href="../playground/">Playground</a>
