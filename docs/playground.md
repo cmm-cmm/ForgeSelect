@@ -2,9 +2,17 @@
 
 > [Docs home](./README.md)
 
+## Interactive playground
+
+Write and run ForgeSelect code directly in the browser — with presets for every major feature:
+
+**<https://cmm-cmm.github.io/ForgeSelect/playground/>**
+
+Pick a preset (Basic, Multiple + tags, Rich items ×1000, Option groups, Custom template, Dark theme, Events), edit the snippet, and press **Run** (or Ctrl/Cmd + Enter). Your code receives a fresh `el` (`<select>` element) and a `log()` helper that prints into the preview pane.
+
 ## Live demo
 
-The interactive demo on GitHub Pages always reflects the latest `main` commit (deployments run on pushes to `main`; superseded in-progress runs may be canceled):
+A curated showcase of every feature, deployed from the latest `main` commit:
 
 **<https://cmm-cmm.github.io/ForgeSelect/demo/>**
 
@@ -14,6 +22,7 @@ It showcases:
 - Multiple selection with tags and `allowCreate`
 - Option groups
 - Custom `templateResult` / `templateSelection`
+- Rich items (avatar + description) with 1,000 users
 - Virtual scrolling with 10,000 options
 - Vietnamese locale (`language: "vi"`)
 - A live event log of every `change` / `open` / `close` / `search` / `clear` event

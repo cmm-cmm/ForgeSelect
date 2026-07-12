@@ -38,18 +38,7 @@ jobs:
         run: npm run build
 
       - name: Assemble site
-        run: |
-          mkdir -p _site
-          cp -r demo dist styles _site/
-          touch _site/.nojekyll
-          cat > _site/index.html <<'HTML'
-          <!DOCTYPE html>
-          <meta charset="utf-8">
-          <meta http-equiv="refresh" content="0; url=./demo/">
-          <link rel="canonical" href="./demo/">
-          <title>ForgeSelect</title>
-          <a href="./demo/">Redirecting to the ForgeSelect demo…</a>
-          HTML
+        run: node scripts/build-site.mjs
 
       - name: Publish to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
