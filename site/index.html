@@ -77,8 +77,12 @@ select.on("change", (value) =&gt; console.log(value));</code></pre>
 
 <script>
 document.getElementById("copy-install").addEventListener("click", async (e) => {
-  await navigator.clipboard.writeText(document.getElementById("install-cmd").textContent);
-  e.target.textContent = "✓";
+  try {
+    await navigator.clipboard.writeText(document.getElementById("install-cmd").textContent);
+    e.target.textContent = "✓";
+  } catch {
+    e.target.textContent = "✗";
+  }
   setTimeout(() => (e.target.textContent = "⧉"), 1200);
 });
 </script>

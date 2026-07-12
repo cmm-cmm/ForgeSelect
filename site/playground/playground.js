@@ -1,6 +1,13 @@
 /* ForgeSelect playground: edit the snippet on the left, run it, and the
  * preview pane re-mounts a fresh <select> for your code to enhance. */
 (function () {
+  if (typeof ForgeSelectBundle === "undefined") {
+    const errorBar = document.getElementById("pg-error");
+    errorBar.hidden = false;
+    errorBar.textContent =
+      "Failed to load the ForgeSelect bundle (dist/index.global.js). Build the library with `npm run build` and reload.";
+    return;
+  }
   const ForgeSelect = ForgeSelectBundle.default;
 
   const PRESETS = [
