@@ -25,7 +25,7 @@ ForgeSelect is designed to provide:
 
 ## Documentation
 
-Full documentation lives in [`docs/`](./docs/README.md):
+Browse the documentation website at **<https://cmm-cmm.github.io/ForgeSelect/docs/>**, or read the sources in [`docs/`](./docs/README.md):
 
 - [API Reference](./docs/api-reference.md) — constructor, options, methods, events
 - [Examples](./docs/examples.md) — copy-pasteable snippets for every feature and framework
@@ -127,7 +127,7 @@ More copy-pasteable snippets (multi-select, tags, custom templates, virtual scro
 
 ## Playground
 
-Try the live demo at **<https://cmm-cmm.github.io/ForgeSelect/demo/>** — single/multiple selects, tags, option groups, custom templates, virtual scrolling with 10,000 options, Vietnamese locale, an event log, and a dark-mode toggle. See [`docs/playground.md`](./docs/playground.md) for running it locally.
+Write and run ForgeSelect code in the browser at **<https://cmm-cmm.github.io/ForgeSelect/playground/>** — with presets for every major feature. A curated feature showcase also lives at **<https://cmm-cmm.github.io/ForgeSelect/demo/>**. See [`docs/playground.md`](./docs/playground.md) for details and local setup.
 
 ## API Reference
 

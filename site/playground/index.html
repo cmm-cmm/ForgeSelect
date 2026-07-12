@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playground · ForgeSelect</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../styles/forge-select.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="site-logo" href="../"><span class="mark">⚒</span> ForgeSelect</a>
+  <nav class="site-nav">
+    <a href="../demo/">Live Demo</a>
+    <a href="../docs/">Docs</a>
+    <a href="./" class="active">Playground</a>
+    <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+  </nav>
+</header>
+
+<div class="pg-shell">
+  <aside class="pg-presets">
+    <p class="group">Presets</p>
+    <div id="pg-preset-list"></div>
+  </aside>
+
+  <div class="pg-editor-pane">
+    <div class="pg-toolbar">
+      <button class="btn btn-primary" id="pg-run">▶ Run</button>
+      <button class="btn btn-ghost" id="pg-reset">Reset</button>
+      <span class="hint">Ctrl/Cmd + Enter to run</span>
+    </div>
+    <textarea id="pg-editor" spellcheck="false" aria-label="Playground code editor"></textarea>
+  </div>
+
+  <div class="pg-preview-pane">
+    <div class="pg-toolbar"><strong style="font-size:14px">Preview</strong><span class="hint" id="pg-status"></span></div>
+    <div id="pg-error" hidden></div>
+    <div id="pg-preview"></div>
+  </div>
+</div>
+
+<script src="../dist/index.global.js"></script>
+<script src="./playground.js"></script>
+</body>
+</html>
