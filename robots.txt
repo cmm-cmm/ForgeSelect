@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cmm-cmm.github.io/ForgeSelect/sitemap.xml

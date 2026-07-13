@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Playground · ForgeSelect</title>
-<meta name="description" content="Write and run ForgeSelect code live in the browser with ready-made presets for every major feature — no install required.">
-<link rel="canonical" href="https://cmm-cmm.github.io/ForgeSelect/playground/">
+<title>Theme Builder · ForgeSelect</title>
+<meta name="description" content="Customize every ForgeSelect CSS variable live and copy the generated theme CSS — no build step required.">
+<link rel="canonical" href="https://cmm-cmm.github.io/ForgeSelect/theme-builder/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ForgeSelect">
-<meta property="og:title" content="Playground · ForgeSelect">
-<meta property="og:description" content="Write and run ForgeSelect code live in the browser with ready-made presets for every major feature — no install required.">
-<meta property="og:url" content="https://cmm-cmm.github.io/ForgeSelect/playground/">
+<meta property="og:title" content="Theme Builder · ForgeSelect">
+<meta property="og:description" content="Customize every ForgeSelect CSS variable live and copy the generated theme CSS — no build step required.">
+<meta property="og:url" content="https://cmm-cmm.github.io/ForgeSelect/theme-builder/">
 <meta property="og:image" content="https://cmm-cmm.github.io/ForgeSelect/assets/og-banner.svg">
 <meta property="og:image:type" content="image/svg+xml">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Playground · ForgeSelect">
-<meta name="twitter:description" content="Write and run ForgeSelect code live in the browser with ready-made presets for every major feature — no install required.">
+<meta name="twitter:title" content="Theme Builder · ForgeSelect">
+<meta name="twitter:description" content="Customize every ForgeSelect CSS variable live and copy the generated theme CSS — no build step required.">
 <meta name="twitter:image" content="https://cmm-cmm.github.io/ForgeSelect/assets/og-banner.svg">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2384cc16'/><stop offset='0.5' stop-color='%2322c55e'/><stop offset='1' stop-color='%2315803d'/></linearGradient></defs><path d='M4 3L12 9L20 3' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 12L12 18L20 12' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 21L12 27L20 21' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
 <link rel="stylesheet" href="../styles/forge-select.css">
@@ -28,7 +28,7 @@
   "@type": "BreadcrumbList",
   "itemListElement": [
     { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://cmm-cmm.github.io/ForgeSelect/" },
-    { "@type": "ListItem", "position": 2, "name": "Playground", "item": "https://cmm-cmm.github.io/ForgeSelect/playground/" }
+    { "@type": "ListItem", "position": 2, "name": "Theme Builder", "item": "https://cmm-cmm.github.io/ForgeSelect/theme-builder/" }
   ]
 }
 </script>
@@ -40,37 +40,40 @@
   <nav class="site-nav">
     <a href="../demo/">Live Demo</a>
     <a href="../docs/">Docs</a>
-    <a href="./" class="active">Playground</a>
-    <a href="../theme-builder/">Theme Builder</a>
+    <a href="../playground/">Playground</a>
+    <a href="./" class="active">Theme Builder</a>
     <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
   </nav>
 </header>
 
-<p class="pg-intro">The ForgeSelect playground runs the real, built library in your browser — no build step, no server. Pick a preset on the left (Basic, Multiple + tags, Rich items ×1000, Option groups, Custom template, Dark theme, Events), edit the code, then press <strong>Run</strong> (or Ctrl/Cmd + Enter) to see it render live in the preview pane on the right.</p>
+<p class="tb-intro">Tweak every ForgeSelect CSS variable and see the change instantly on real, live components below — no build step. Start from the Light or Dark preset, adjust colors and values, then copy the generated CSS into your own stylesheet.</p>
 
-<div class="pg-shell">
-  <aside class="pg-presets">
+<div class="tb-shell">
+  <aside class="tb-controls">
     <p class="group">Presets</p>
-    <div id="pg-preset-list"></div>
+    <div class="tb-preset-buttons">
+      <button class="btn btn-ghost" id="tb-preset-light">Light</button>
+      <button class="btn btn-ghost" id="tb-preset-dark">Dark</button>
+    </div>
+    <p class="group">Variables</p>
+    <div id="tb-vars"></div>
   </aside>
 
-  <div class="pg-editor-pane">
-    <div class="pg-toolbar">
-      <button class="btn btn-primary" id="pg-run">▶ Run</button>
-      <button class="btn btn-ghost" id="pg-reset">Reset</button>
-      <span class="hint">Ctrl/Cmd + Enter to run</span>
-    </div>
-    <textarea id="pg-editor" spellcheck="false" aria-label="Playground code editor"></textarea>
+  <div class="tb-preview-pane">
+    <div class="pg-toolbar"><strong style="font-size:14px">Live preview</strong></div>
+    <div id="tb-preview"></div>
   </div>
 
-  <div class="pg-preview-pane">
-    <div class="pg-toolbar"><strong style="font-size:14px">Preview</strong><span class="hint" id="pg-status"></span></div>
-    <div id="pg-error" hidden></div>
-    <div id="pg-preview"></div>
+  <div class="tb-output-pane">
+    <div class="pg-toolbar">
+      <strong style="font-size:14px">CSS output</strong>
+      <button class="btn btn-primary" id="tb-copy">Copy CSS</button>
+    </div>
+    <pre><code id="tb-css-output"></code></pre>
   </div>
 </div>
 
 <script src="../dist/index.global.js"></script>
-<script src="./playground.js"></script>
+<script src="./theme-builder.js"></script>
 </body>
 </html>

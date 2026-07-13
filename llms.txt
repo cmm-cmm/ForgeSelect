@@ -1,0 +1,28 @@
+# ForgeSelect
+
+> A modern, lightweight, highly customizable replacement for Select2.
+
+ForgeSelect is a zero-runtime-dependency, framework-agnostic TypeScript select/combobox component — a modern replacement for Select2. It ships ESM/CJS/IIFE bundles with type declarations, automatic virtualization for large option lists, tags, AJAX/remote data loading, rich item templates, i18n, and a small plugin architecture.
+
+## Docs
+
+- [Introduction](https://cmm-cmm.github.io/ForgeSelect/docs/): ForgeSelect docs home: what it is, installation, quick start, and links to every guide.
+- [API Reference](https://cmm-cmm.github.io/ForgeSelect/docs/api-reference.html): Full ForgeSelect constructor, options, instance methods, and event reference.
+- [Examples](https://cmm-cmm.github.io/ForgeSelect/docs/examples.html): Copy-pasteable ForgeSelect code snippets for single/multi select, tags, AJAX, templates, and more.
+- [Playground](https://cmm-cmm.github.io/ForgeSelect/docs/playground.html): How to use the live ForgeSelect playground and demo to try every feature in the browser.
+- [Migration from Select2](https://cmm-cmm.github.io/ForgeSelect/docs/migration-from-select2.html): Option, event, and method mapping plus a step-by-step guide for migrating from Select2 to ForgeSelect.
+- [Benchmarks](https://cmm-cmm.github.io/ForgeSelect/docs/benchmarks.html): Planned performance benchmarking methodology comparing ForgeSelect to Select2.
+- [Plugin Development](https://cmm-cmm.github.io/ForgeSelect/docs/plugin-development.html): How to write and register custom ForgeSelect plugins using lifecycle hooks.
+- [Changelog](https://cmm-cmm.github.io/ForgeSelect/docs/changelog.html): Release history and notable changes for ForgeSelect, following Keep a Changelog and Semantic Versioning.
+
+## Try it
+
+- [Live demo](https://cmm-cmm.github.io/ForgeSelect/demo/): a curated showcase of every feature.
+- [Playground](https://cmm-cmm.github.io/ForgeSelect/playground/): write and run ForgeSelect code live in the browser.
+- [Theme Builder](https://cmm-cmm.github.io/ForgeSelect/theme-builder/): customize every CSS variable live and copy the generated theme CSS.
+
+## Source
+
+- [GitHub repository](https://github.com/cmm-cmm/ForgeSelect)
+- [npm package](https://www.npmjs.com/package/forge-select)
+- License: MIT
