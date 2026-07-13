@@ -104,14 +104,10 @@ a:hover { text-decoration: underline; }
 .site-logo .mark {
   display: grid;
   place-items: center;
-  width: 26px;
+  width: 22px;
   height: 26px;
-  border-radius: 7px;
-  background: linear-gradient(135deg, #059669, #34d399);
-  color: #fff;
-  font-size: 14px;
 }
-.site-logo .mark svg { width: 14px; height: 14px; }
+.site-logo .mark svg { width: 100%; height: 100%; }
 .site-nav {
   display: flex;
   gap: 4px;
