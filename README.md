@@ -216,7 +216,7 @@ Source lives in `src/`, styles in `styles/forge-select.css`, and tests in `tests
 
 ## Contributing
 
-Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development setup, project layout, and PR guidelines. Release history lives in [CHANGELOG.md](./CHANGELOG.md), and security reports should follow [SECURITY.md](./SECURITY.md).
+Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development setup, project layout, and PR guidelines. Release history lives in [CHANGELOG.md](./CHANGELOG.md), and security reports should follow [SECURITY.md](./SECURITY.md). This project follows a [Code of Conduct](./CODE_OF_CONDUCT.md); by participating you agree to abide by its terms.
 
 ## License
 

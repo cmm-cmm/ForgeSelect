@@ -59,6 +59,10 @@ Open a [GitHub issue](https://github.com/cmm-cmm/ForgeSelect/issues) with a mini
 
 For security vulnerabilities, follow [SECURITY.md](./SECURITY.md) instead of opening a public issue.
 
+## Code of Conduct
+
+This project and everyone participating in it is governed by our [Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are expected to uphold it.
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the [MIT License](./LICENSE).
