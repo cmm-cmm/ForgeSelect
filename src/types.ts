@@ -21,10 +21,20 @@ export type DataItem = Option | OptionGroup;
 
 export interface AjaxConfig {
   url: string | ((query: string) => string);
-  params?: (query: string) => Record<string, unknown>;
+  params?: (query: string, page: number) => Record<string, unknown>;
   /** Debounce in milliseconds. Default 250. */
   debounce?: number;
-  transform?: (response: unknown) => Option[];
+  /**
+   * Opt in to loading additional pages as the user scrolls near the bottom
+   * of the dropdown, instead of only reloading on search. Default false.
+   */
+  pagination?: boolean;
+  /**
+   * Return a plain array (page-replace behavior, unchanged from before
+   * `pagination` existed) or `{ options, hasMore }` so ForgeSelect knows
+   * whether to keep requesting further pages when `pagination` is true.
+   */
+  transform?: (response: unknown) => Option[] | { options: Option[]; hasMore: boolean };
 }
 
 export interface ForgeSelectPlugin {

@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - FAQ section on the homepage; introductory copy on the demo and playground pages so a visitor landing directly on either still gets context on what ForgeSelect is.
 - The Changelog is now rendered on the site (`docs/changelog.html`), sourced from this file.
 - **Theme Builder**: a new site page (`/theme-builder/`) for live-editing every `--fs-*` CSS variable against real ForgeSelect instances, starting from Light/Dark presets, with a one-click "Copy CSS" output. Site-only — no library code changes.
+- **Async pagination**: `ajax.pagination` opts in to loading further pages as the user scrolls near the bottom of the dropdown, instead of only reloading on search (`params` now also receives the current `page`; `transform` may return `{ options, hasMore }` to control it). Fully backward compatible — existing `ajax` configs without `pagination` behave exactly as before, and cached row content is preserved across appended pages instead of being cleared.
 
 ### Fixed
 

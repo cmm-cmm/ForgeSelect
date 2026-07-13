@@ -350,6 +350,125 @@ describe("ajax", () => {
   });
 });
 
+describe("ajax pagination", () => {
+  type Item = { id: string; name: string };
+
+  function transform(res: unknown) {
+    const r = res as { items: Item[]; hasMore: boolean };
+    return { options: r.items.map((i) => ({ value: i.id, label: i.name })), hasMore: r.hasMore };
+  }
+
+  function pagedFetchMock() {
+    return vi.fn().mockImplementation((url: string) => {
+      const page = url.includes("page=1") ? 1 : 0;
+      const items: Item[] =
+        page === 0
+          ? [{ id: "a", name: "Alpha" }, { id: "b", name: "Beta" }]
+          : [{ id: "c", name: "Gamma" }, { id: "d", name: "Delta" }];
+      return Promise.resolve({ json: () => Promise.resolve({ items, hasMore: page === 0 }) });
+    });
+  }
+
+  function mockNearBottom(list: HTMLElement): void {
+    Object.defineProperty(list, "scrollHeight", { value: 1000, configurable: true });
+    Object.defineProperty(list, "clientHeight", { value: 260, configurable: true });
+    Object.defineProperty(list, "scrollTop", { value: 800, configurable: true, writable: true });
+  }
+
+  it("appends the next page instead of replacing when scrolled near the bottom", async () => {
+    const fetchMock = pagedFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      ajax: { url: "/api/items", pagination: true, params: (q, page) => ({ q, page }), transform },
+    });
+
+    select.open();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta"]);
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    mockNearBottom(list);
+    list.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toContain("page=1");
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta", "Gamma", "Delta"]);
+
+    vi.unstubAllGlobals();
+  });
+
+  it("does not clear the row content cache when appending a page", async () => {
+    const fetchMock = pagedFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+    const template = vi.fn((o: { label: string }) => o.label);
+
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      templateResult: template,
+      ajax: { url: "/api/items", pagination: true, params: (q, page) => ({ q, page }), transform },
+    });
+
+    select.open();
+    await new Promise((r) => setTimeout(r, 0));
+    const callsAfterFirstPage = template.mock.calls.length;
+    expect(callsAfterFirstPage).toBe(2);
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    mockNearBottom(list);
+    list.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Alpha/Beta must not be re-rendered via the template; only the 2 new options do.
+    expect(template.mock.calls.length).toBe(callsAfterFirstPage + 2);
+
+    vi.unstubAllGlobals();
+  });
+
+  it("resets page state on a new search and ignores a stale next-page response", async () => {
+    let resolvePage1!: (v: unknown) => void;
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("page=1")) {
+        return new Promise((resolve) => {
+          resolvePage1 = resolve;
+        });
+      }
+      return Promise.resolve({
+        json: () => Promise.resolve({ items: [{ id: "a", name: "Alpha" }], hasMore: true }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      ajax: { url: "/api/items", debounce: 0, pagination: true, params: (q, page) => ({ q, page }), transform },
+    });
+
+    select.open();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha"]);
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    mockNearBottom(list);
+    list.dispatchEvent(new Event("scroll")); // triggers the page=1 request, left pending
+
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "x";
+    input.dispatchEvent(new Event("input"));
+    await new Promise((r) => setTimeout(r, 0));
+
+    // The stale page-1 response resolves only now, after a new search replaced the data.
+    resolvePage1({ json: () => Promise.resolve({ items: [{ id: "c", name: "Gamma" }], hasMore: true }) });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(optionEls().map((li) => li.textContent)).not.toContain("Gamma");
+
+    vi.unstubAllGlobals();
+  });
+});
+
 describe("rich items", () => {
   const richData = [
     {

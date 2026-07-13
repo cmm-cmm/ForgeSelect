@@ -17,7 +17,8 @@ type Row =
   | { kind: "option"; option: Option; navIndex: number }
   | { kind: "create"; navIndex: number }
   | { kind: "empty" }
-  | { kind: "loading" };
+  | { kind: "loading" }
+  | { kind: "loading-more" };
 
 type NavItem = { kind: "option"; option: Option } | { kind: "create" };
 
@@ -81,6 +82,9 @@ export default class ForgeSelect {
   private rowContentCache = new Map<string, Node>();
 
   private loading = false;
+  private loadingMore = false;
+  private page = 0;
+  private hasMore = true;
   private ajaxTimer: ReturnType<typeof setTimeout> | null = null;
   private ajaxRequestId = 0;
   private remoteLoaded = false;
@@ -315,6 +319,7 @@ export default class ForgeSelect {
 
     this.list.addEventListener("scroll", () => {
       if (this.usesVirtualScroll()) this.renderRows();
+      this.maybeLoadNextPage();
     });
   }
 
@@ -580,6 +585,7 @@ export default class ForgeSelect {
     }
 
     if (this.rows.length === 0) this.rows.push({ kind: "empty" });
+    else if (this.loadingMore) this.rows.push({ kind: "loading-more" });
   }
 
   private hasExactMatch(lowerQuery: string): boolean {
@@ -661,6 +667,11 @@ export default class ForgeSelect {
       case "loading":
         li.className = "forge-select__loading";
         li.textContent = this.strings.loading;
+        break;
+      case "loading-more":
+        li.className = "forge-select__loading-more";
+        li.setAttribute("aria-hidden", "true");
+        li.textContent = this.strings.loadingMore;
         break;
       case "create":
         li.className = "forge-select__option forge-select__option--create";
@@ -756,6 +767,8 @@ export default class ForgeSelect {
 
   private scheduleRemoteLoad(query: string, delay: number): void {
     if (this.ajaxTimer) clearTimeout(this.ajaxTimer);
+    this.page = 0;
+    this.hasMore = true;
     this.loading = true;
     this.renderList();
     this.ajaxTimer = setTimeout(() => {
@@ -763,24 +776,56 @@ export default class ForgeSelect {
     }, delay);
   }
 
-  private async loadRemote(query: string): Promise<void> {
+  /**
+   * Fires on every list scroll. Only acts when pagination is opted into via
+   * `ajax.pagination`; reads real scroll geometry rather than row counts so
+   * it works whether or not virtual scrolling is active for this list.
+   */
+  private maybeLoadNextPage(): void {
+    const ajax = this.opts.ajax;
+    if (!ajax?.pagination || !this.hasMore || this.loading || this.loadingMore) return;
+    const { scrollHeight, scrollTop, clientHeight } = this.list;
+    const threshold = this.opts.itemHeight * 2;
+    if (scrollHeight - scrollTop - clientHeight >= threshold) return;
+    this.loadingMore = true;
+    this.renderList();
+    void this.loadRemote(this.query, { append: true });
+  }
+
+  private async loadRemote(query: string, { append = false }: { append?: boolean } = {}): Promise<void> {
     const ajax = this.opts.ajax!;
     const requestId = ++this.ajaxRequestId;
+    const page = append ? this.page + 1 : 0;
     try {
-      const url = buildUrl(ajax, query);
+      const url = buildUrl(ajax, query, page);
       const response = await fetch(url);
       const json: unknown = await response.json();
       if (requestId !== this.ajaxRequestId || this.destroyed) return;
-      this.data = ajax.transform ? ajax.transform(json) : (json as Option[]);
-      this.rowContentCache.clear();
+      const result = ajax.transform ? ajax.transform(json) : (json as Option[]);
+      const options = Array.isArray(result) ? result : result.options;
+      const hasMore = ajax.pagination ? (Array.isArray(result) ? false : result.hasMore) : false;
+
+      if (append) {
+        const existing = collectValues(this.data);
+        this.data = [...this.data, ...options.filter((o) => !existing.has(o.value))];
+      } else {
+        this.data = options;
+        this.rowContentCache.clear();
+      }
+      this.page = page;
+      this.hasMore = hasMore;
       this.remoteLoaded = true;
     } catch {
       if (requestId !== this.ajaxRequestId || this.destroyed) return;
-      this.data = [];
-      this.rowContentCache.clear();
+      if (!append) {
+        this.data = [];
+        this.rowContentCache.clear();
+      }
+      this.hasMore = false;
     } finally {
       if (requestId === this.ajaxRequestId && !this.destroyed) {
         this.loading = false;
+        this.loadingMore = false;
         if (this.isOpen) this.renderList();
       }
     }
@@ -810,15 +855,27 @@ function parseOption(option: HTMLOptionElement): Option {
   };
 }
 
-function buildUrl(ajax: AjaxConfig, query: string): string {
+function buildUrl(ajax: AjaxConfig, query: string, page: number): string {
   if (typeof ajax.url === "function") return ajax.url(query);
   if (!ajax.params) return ajax.url;
   const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(ajax.params(query))) {
+  for (const [key, value] of Object.entries(ajax.params(query, page))) {
     params.set(key, String(value));
   }
   const separator = ajax.url.includes("?") ? "&" : "?";
   return `${ajax.url}${separator}${params.toString()}`;
+}
+
+function collectValues(items: DataItem[]): Set<string> {
+  const values = new Set<string>();
+  for (const item of items) {
+    if (isGroup(item)) {
+      for (const option of item.options) values.add(option.value);
+    } else {
+      values.add(item.value);
+    }
+  }
+  return values;
 }
 
 function arraysEqual(a: string[], b: string[]): boolean {

@@ -241,7 +241,8 @@
 }
 
 .forge-select__empty,
-.forge-select__loading {
+.forge-select__loading,
+.forge-select__loading-more {
   padding: 10px 12px;
   color: var(--fs-muted);
   text-align: center;

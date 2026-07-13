@@ -44,6 +44,24 @@ new ForgeSelect("#users", {
 });
 ```
 
+## Async pagination (load more on scroll)
+
+```js
+new ForgeSelect("#users", {
+  ajax: {
+    url: "/api/users",
+    pagination: true,
+    params: (query, page) => ({ q: query, page }),
+    transform: (response) => ({
+      options: response.items.map((u) => ({ value: u.id, label: u.name })),
+      hasMore: response.hasMore,
+    }),
+  },
+});
+```
+
+Scrolling near the bottom of the dropdown fetches the next page and appends it to the list instead of replacing it; typing a new search query still resets back to page 0 as usual.
+
 ## Tags mode (allow creating new options)
 
 ```js
