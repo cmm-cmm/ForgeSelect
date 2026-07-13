@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Playground stylesheet order so site accent overrides apply to ForgeSelect widgets.
+- Virtual scroll rendering a mostly-blank window after scrolling: the viewport height was read from `list.clientHeight` *after* the list's children were cleared, at which point the list (no explicit `height`, only `max-height`) collapses to its padding (~8px) instead of the real box height. This under-provisioned the rendered row window on every scroll-triggered re-render, leaving a visible blank gap at the bottom of the dropdown for any scroll position other than the very top.
 
 ## [0.1.0] - 2026-07-12
 

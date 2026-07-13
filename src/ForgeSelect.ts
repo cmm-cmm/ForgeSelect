@@ -600,9 +600,12 @@ export default class ForgeSelect {
   }
 
   private renderRows(): void {
-    // Capture the scroll offset BEFORE clearing the list: removing the children
-    // collapses scrollHeight, and the browser clamps scrollTop to 0.
+    // Capture the scroll offset and viewport height BEFORE clearing the list:
+    // removing the children collapses both scrollHeight (clamping scrollTop to 0)
+    // and clientHeight (the list has no explicit height, only max-height, so an
+    // empty list reports just its padding instead of the real box height).
     const scrollTop = this.list.scrollTop;
+    const clientHeight = this.list.clientHeight;
     const virtual = this.usesVirtualScroll();
     this.list.textContent = "";
 
@@ -610,7 +613,7 @@ export default class ForgeSelect {
     let start = 0;
     let end = this.rows.length;
     if (virtual) {
-      const viewport = this.list.clientHeight || rowHeight * 8;
+      const viewport = clientHeight || rowHeight * 8;
       start = Math.max(0, Math.floor(scrollTop / rowHeight) - VIRTUAL_BUFFER);
       end = Math.min(this.rows.length, start + Math.ceil(viewport / rowHeight) + VIRTUAL_BUFFER * 2);
 

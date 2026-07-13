@@ -478,6 +478,28 @@ describe("virtual scrolling", () => {
     expect(list.scrollTop).toBe(36 * 500);
   });
 
+  it("uses the real viewport height, not the collapsed height while the list is cleared", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: bigData(1000) });
+    select.open();
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    // Emulate a real browser: `.forge-select__list` has `max-height` but no
+    // explicit `height`, so once its children are removed (`textContent = ""`)
+    // it collapses to just its padding instead of the real box height.
+    Object.defineProperty(list, "clientHeight", {
+      get: () => (list.childElementCount === 0 ? 8 : 260),
+    });
+
+    list.scrollTop = 36 * 500;
+    list.dispatchEvent(new Event("scroll"));
+
+    // A 260px viewport at 36px rows needs ~8 visible rows plus buffers on both
+    // sides (18 total); reading the collapsed 8px value instead would render
+    // far fewer rows and leave the rest of the dropdown visibly blank.
+    expect(optionEls().length).toBeGreaterThan(15);
+  });
+
   it("runs templates once per option, not once per scroll frame", () => {
     mountSelect("");
     const template = vi.fn((o: { label: string }) => `<em>${o.label}</em>`);
