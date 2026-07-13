@@ -51,6 +51,9 @@ const STATIC_PAGES = [
   { path: "playground/", title: "Playground · ForgeSelect",
     description: "Write and run ForgeSelect code live in the browser with ready-made presets for every major feature — no install required.",
     changefreq: "monthly", priority: "0.7" },
+  { path: "theme-builder/", title: "Theme Builder · ForgeSelect",
+    description: "Customize every ForgeSelect CSS variable live and copy the generated theme CSS — no build step required.",
+    changefreq: "monthly", priority: "0.6" },
 ];
 
 const md = new MarkdownIt({
@@ -108,6 +111,7 @@ ${docsLinks}
 
 - [Live demo](${SITE_URL}demo/): a curated showcase of every feature.
 - [Playground](${SITE_URL}playground/): write and run ForgeSelect code live in the browser.
+- [Theme Builder](${SITE_URL}theme-builder/): customize every CSS variable live and copy the generated theme CSS.
 
 ## Source
 
@@ -130,7 +134,18 @@ function breadcrumbJsonLd(items) {
   });
 }
 
-function layout({ title, description, canonicalPath, jsonLd, active, content }) {
+function techArticleJsonLd({ title, description, canonicalPath }) {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    headline: title,
+    description,
+    url: `${SITE_URL}${canonicalPath}`,
+    mainEntityOfPage: `${SITE_URL}${canonicalPath}`,
+  });
+}
+
+function layout({ title, description, canonicalPath, jsonLdBlocks, active, content }) {
   const nav = (href, label, key) =>
     `<a href="${href}"${active === key ? ' class="active"' : ""}>${label}</a>`;
   const side = DOCS.map(
@@ -164,7 +179,7 @@ function layout({ title, description, canonicalPath, jsonLd, active, content }) 
 <link rel="stylesheet" href="../assets/site.css">
 <link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
 <link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
-<script type="application/ld+json">${jsonLd}</script>
+${jsonLdBlocks.map((j) => `<script type="application/ld+json">${j}</script>`).join("\n")}
 </head>
 <body>
 <header class="site-header">
@@ -173,6 +188,7 @@ function layout({ title, description, canonicalPath, jsonLd, active, content }) 
     ${nav("../demo/", "Live Demo", "demo")}
     ${nav("./", "Docs", "docs")}
     ${nav("../playground/", "Playground", "playground")}
+    ${nav("../theme-builder/", "Theme Builder", "theme-builder")}
     <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
   </nav>
 </header>
@@ -212,6 +228,7 @@ async function main() {
   await cp(path.join(root, "site/index.html"), path.join(out, "index.html"));
   await cp(path.join(root, "site/assets"), path.join(out, "assets"), { recursive: true });
   await cp(path.join(root, "site/playground"), path.join(out, "playground"), { recursive: true });
+  await cp(path.join(root, "site/theme-builder"), path.join(out, "theme-builder"), { recursive: true });
   await cp(path.join(root, "demo"), path.join(out, "demo"), { recursive: true });
   await cp(path.join(root, "dist"), path.join(out, "dist"), { recursive: true });
   await cp(path.join(root, "styles"), path.join(out, "styles"), { recursive: true });
@@ -251,7 +268,7 @@ async function main() {
       title: doc.title,
       description: doc.description,
       canonicalPath,
-      jsonLd: breadcrumb,
+      jsonLdBlocks: [breadcrumb, techArticleJsonLd({ title: doc.title, description: doc.description, canonicalPath })],
       active: `docs:${doc.slug}`,
       content,
     });

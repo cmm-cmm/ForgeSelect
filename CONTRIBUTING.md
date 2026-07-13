@@ -46,7 +46,7 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 
 Releases publish to npm automatically via `.github/workflows/release.yml`:
 
-1. Bump `version` in `package.json` (following [SemVer](https://semver.org/)) and add a matching entry to `CHANGELOG.md`.
+1. Bump `version` in `package.json` (following [SemVer](https://semver.org/)) and add a matching entry to `CHANGELOG.md`. Also update the hardcoded `softwareVersion` in the `SoftwareApplication` JSON-LD block in `site/index.html` — that page is copied verbatim (not templated), so it doesn't pick up the new version automatically.
 2. Merge that change to `main`.
 3. Tag the release commit and push the tag: `git tag v1.2.3 && git push origin v1.2.3` (or create a GitHub Release with that tag).
 4. The workflow verifies the tag matches `package.json`, runs typecheck/test/build, and publishes with npm provenance.

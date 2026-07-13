@@ -59,7 +59,7 @@ Browse the documentation website at **<https://cmm-cmm.github.io/ForgeSelect/doc
 - Internationalization (en/vi built in, custom string tables)
 - TypeScript Support (written in strict TypeScript, ships `.d.ts`)
 
-> Planned/in-progress capabilities — Tree Select, Async Pagination, Drag & Drop Ordering, Theme Builder, and React/Vue/Angular/Svelte wrappers — are tracked in the [Roadmap](#roadmap) below and intentionally not listed above as shipped features.
+> Planned/in-progress capabilities — Tree Select, Async Pagination, Drag & Drop Ordering, and React/Vue/Angular/Svelte wrappers — are tracked in the [Roadmap](#roadmap) below and intentionally not listed above as shipped features.
 
 ## Installation
 
@@ -192,7 +192,7 @@ Performance benchmarking (bundle size, init time, search latency, virtual scroll
 - [x] Virtualized List
 - [ ] Async Pagination
 - [ ] Drag & Drop Ordering
-- [ ] Theme Builder
+- [x] Theme Builder
 - [x] CSS Variables
 - [ ] React Component
 - [ ] Vue Component

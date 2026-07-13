@@ -415,3 +415,41 @@ a:hover { text-decoration: underline; }
 }
 #pg-preview { flex: 1; padding: 28px; overflow-y: auto; }
 #pg-preview .forge-select { width: 100%; max-width: 380px; }
+
+/* ---------- theme builder ---------- */
+.tb-intro { color: var(--fg-muted); max-width: 900px; margin: 12px 24px 0; line-height: 1.6; }
+.tb-shell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0;
+  height: calc(100vh - 60px);
+}
+@media (max-width: 960px) {
+  .tb-shell { grid-template-columns: 1fr; height: auto; }
+}
+.tb-controls {
+  border-right: 1px solid var(--border);
+  padding: 18px 12px;
+  overflow-y: auto;
+}
+.tb-controls .group {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+  margin: 16px 10px 8px;
+}
+.tb-controls .group:first-child { margin-top: 0; }
+.tb-preset-buttons { display: flex; gap: 8px; padding: 0 10px; }
+.tb-preset-buttons .btn { padding: 6px 14px; font-size: 13px; }
+.tb-var-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 10px; font-size: 13px; }
+.tb-var-row span { color: var(--fg-muted); }
+.tb-var-row input[type="color"] { width: 32px; height: 26px; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: none; cursor: pointer; }
+.tb-var-row input[type="text"] { width: 110px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-raised); color: var(--fg); font-size: 12px; }
+.tb-preview-pane { display: flex; flex-direction: column; border-right: 1px solid var(--border); min-height: 340px; }
+#tb-preview { flex: 1; padding: 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+#tb-preview .forge-select { width: 100%; max-width: 380px; }
+.tb-output-pane { display: flex; flex-direction: column; min-height: 340px; }
+.tb-output-pane pre { flex: 1; margin: 0; padding: 16px; overflow: auto; background: var(--bg); }
+.tb-output-pane code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; line-height: 1.6; color: var(--fg); }
