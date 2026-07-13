@@ -3,161 +3,86 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ForgeSelect — Demo</title>
+<title>Live Demo · ForgeSelect</title>
+<meta name="description" content="Interactive showcase of every ForgeSelect feature: single/multi select, tags, option groups, custom templates, rich items, virtual scrolling, i18n, and events.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%2310b981' d='M6 2l12 11h-6.9l3.6 6.9-2.7 1.4-3.6-6.9L6 18z'/></svg>">
 <link rel="stylesheet" href="../styles/forge-select.css">
-<style>
-  :root {
-    --page-bg: #f8fafc;
-    --page-fg: #0f172a;
-    --card-bg: #ffffff;
-    --card-border: #e2e8f0;
-  }
-  body.dark {
-    --page-bg: #0f172a;
-    --page-fg: #f1f5f9;
-    --card-bg: #1e293b;
-    --card-border: #334155;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: var(--page-bg);
-    color: var(--page-fg);
-    transition: background 0.2s, color 0.2s;
-  }
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 32px;
-    border-bottom: 1px solid var(--card-border);
-  }
-  header h1 { margin: 0; font-size: 22px; }
-  header a { color: inherit; opacity: 0.7; margin-right: 16px; }
-  main {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 28px 24px;
-  }
-  .card {
-    padding: 20px;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
-  }
-  .card h2 { margin: 0 0 4px; font-size: 15px; }
-  .card p { margin: 0 0 14px; font-size: 13px; opacity: 0.65; }
-  .forge-select { width: 100%; }
-  #event-log {
-    grid-column: 1 / -1;
-    max-height: 180px;
-    overflow-y: auto;
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-  }
-  #event-log div { border-bottom: 1px dashed var(--card-border); }
-  button.toggle {
-    padding: 8px 14px;
-    border: 1px solid var(--card-border);
-    border-radius: 8px;
-    background: var(--card-bg);
-    color: inherit;
-    cursor: pointer;
-  }
-  /* Match the site's green accent */
-  .forge-select {
-    --fs-border-focus: #10b981;
-    --fs-option-hover-bg: rgba(16, 185, 129, 0.12);
-    --fs-option-selected-bg: rgba(16, 185, 129, 0.22);
-    --fs-option-selected-fg: #059669;
-    --fs-tag-bg: rgba(16, 185, 129, 0.18);
-    --fs-tag-fg: #059669;
-  }
-  /* Higher specificity than .forge-select[data-theme="dark"] so the full
-     green palette wins over the library's built-in indigo dark theme. */
-  body.dark .forge-select,
-  body.dark .forge-select[data-theme="dark"] {
-    --fs-border-focus: #34d399;
-    --fs-option-hover-bg: rgba(52, 211, 153, 0.15);
-    --fs-option-selected-bg: rgba(52, 211, 153, 0.25);
-    --fs-option-selected-fg: #6ee7b7;
-    --fs-tag-bg: rgba(52, 211, 153, 0.22);
-    --fs-tag-fg: #6ee7b7;
-  }
-</style>
+<link rel="stylesheet" href="../assets/site.css">
 </head>
 <body>
-<header>
-  <h1><a href="../" style="color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="20" height="20" fill="#10b981" aria-hidden="true"><path d="M6 2l12 11h-6.9l3.6 6.9-2.7 1.4-3.6-6.9L6 18z"/></svg>ForgeSelect</a> <small style="font-weight:normal;opacity:.6">demo</small></h1>
-  <div>
+
+<header class="site-header">
+  <a class="site-logo" href="../"><span class="mark"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 2l12 11h-6.9l3.6 6.9-2.7 1.4-3.6-6.9L6 18z"/></svg></span> ForgeSelect</a>
+  <nav class="site-nav">
+    <a href="./" class="active">Live Demo</a>
     <a href="../docs/">Docs</a>
     <a href="../playground/">Playground</a>
     <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
-    <button class="toggle" id="theme-toggle">🌙 Dark mode</button>
-  </div>
+  </nav>
+  <button class="theme-toggle" id="theme-toggle" type="button">🌙 Dark mode</button>
 </header>
 
-<main>
-  <div class="card">
-    <h2>Single select</h2>
-    <p>Searchable, clearable, with placeholder.</p>
-    <select id="demo-single"></select>
-  </div>
+<main class="demo-main">
+  <div class="demo-grid">
+    <div class="demo-card">
+      <h2>Single select</h2>
+      <p>Searchable, clearable, with placeholder.</p>
+      <select id="demo-single"></select>
+    </div>
 
-  <div class="card">
-    <h2>Multiple + tags</h2>
-    <p><code>multiple</code> with <code>allowCreate</code> — type to add your own.</p>
-    <select id="demo-multi"></select>
-  </div>
+    <div class="demo-card">
+      <h2>Multiple + tags</h2>
+      <p><code>multiple</code> with <code>allowCreate</code> — type to add your own.</p>
+      <select id="demo-multi"></select>
+    </div>
 
-  <div class="card">
-    <h2>Option groups</h2>
-    <p>Nested groups from a <code>data</code> array.</p>
-    <select id="demo-groups"></select>
-  </div>
+    <div class="demo-card">
+      <h2>Option groups</h2>
+      <p>Nested groups from a <code>data</code> array.</p>
+      <select id="demo-groups"></select>
+    </div>
 
-  <div class="card">
-    <h2>Custom templates</h2>
-    <p><code>templateResult</code> and <code>templateSelection</code>.</p>
-    <select id="demo-template"></select>
-  </div>
+    <div class="demo-card">
+      <h2>Custom templates</h2>
+      <p><code>templateResult</code> and <code>templateSelection</code>.</p>
+      <select id="demo-template"></select>
+    </div>
 
-  <div class="card">
-    <h2>Virtual scroll</h2>
-    <p>10,000 options with windowed rendering.</p>
-    <select id="demo-virtual"></select>
-  </div>
+    <div class="demo-card">
+      <h2>Virtual scroll</h2>
+      <p>10,000 options with windowed rendering.</p>
+      <select id="demo-virtual"></select>
+    </div>
 
-  <div class="card">
-    <h2>Vietnamese locale</h2>
-    <p><code>language: "vi"</code> — search for something missing.</p>
-    <select id="demo-i18n"></select>
-  </div>
+    <div class="demo-card">
+      <h2>Vietnamese locale</h2>
+      <p><code>language: "vi"</code> — search for something missing.</p>
+      <select id="demo-i18n"></select>
+    </div>
 
-  <div class="card">
-    <h2>Rich items — 1,000 users</h2>
-    <p>Built-in <code>avatar</code> + <code>description</code> fields. Virtualization kicks in automatically; search also matches the email.</p>
-    <select id="demo-rich"></select>
-  </div>
+    <div class="demo-card">
+      <h2>Rich items — 1,000 users</h2>
+      <p>Built-in <code>avatar</code> + <code>description</code> fields. Virtualization kicks in automatically; search also matches the email.</p>
+      <select id="demo-rich"></select>
+    </div>
 
-  <div class="card">
-    <h2>Custom HTML template</h2>
-    <p><code>templateResult</code> returning an HTML string, with a status dot from <code>meta</code>.</p>
-    <select id="demo-html"></select>
-  </div>
+    <div class="demo-card">
+      <h2>Custom HTML template</h2>
+      <p><code>templateResult</code> returning an HTML string, with a status dot from <code>meta</code>.</p>
+      <select id="demo-html"></select>
+    </div>
 
-  <div class="card" id="event-log-card">
-    <h2>Event log</h2>
-    <p>Every event from every instance above.</p>
-    <div id="event-log"></div>
+    <div class="demo-card demo-card--log">
+      <h2>Event log</h2>
+      <p>Every event from every instance above.</p>
+      <div id="event-log"></div>
+    </div>
   </div>
 </main>
+
+<footer class="site-footer">
+  MIT License · Built with ❤️ by KonexForge · <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+</footer>
 
 <script src="../dist/index.global.js"></script>
 <script>
@@ -247,14 +172,33 @@
     });
   }
 
-  const toggle = document.getElementById("theme-toggle");
-  toggle.addEventListener("click", () => {
-    const dark = document.body.classList.toggle("dark");
-    toggle.textContent = dark ? "☀️ Light mode" : "🌙 Dark mode";
+  // Page chrome follows the OS theme by default (same as every other page);
+  // the toggle sets an explicit override that wins in both directions
+  // (see :root[data-theme] in site.css) and keeps each widget's own
+  // dark/default theme in sync with it.
+  const prefersDark = matchMedia("(prefers-color-scheme: dark)");
+  const toggleBtn = document.getElementById("theme-toggle");
+  let manualTheme = null;
+
+  function isDark() {
+    return manualTheme ? manualTheme === "dark" : prefersDark.matches;
+  }
+  function syncTheme() {
+    const dark = isDark();
+    toggleBtn.textContent = dark ? "☀️ Light mode" : "🌙 Dark mode";
     for (const root of document.querySelectorAll(".forge-select")) {
       root.dataset.theme = dark ? "dark" : "default";
     }
+  }
+  toggleBtn.addEventListener("click", () => {
+    manualTheme = isDark() ? "light" : "dark";
+    document.documentElement.dataset.theme = manualTheme;
+    syncTheme();
   });
+  prefersDark.addEventListener("change", () => {
+    if (!manualTheme) syncTheme();
+  });
+  syncTheme();
 </script>
 </body>
 </html>
