@@ -23,6 +23,31 @@
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   }
 }
+/* Manual theme toggle (used by the demo page) overrides the OS preference
+   in both directions — an attribute selector on :root outranks a
+   prefers-color-scheme-scoped :root rule regardless of source order. */
+:root[data-theme="light"] {
+  --accent: #10b981;
+  --accent-strong: #059669;
+  --bg: #f8fafc;
+  --bg-raised: #ffffff;
+  --fg: #0f172a;
+  --fg-muted: #64748b;
+  --border: #e2e8f0;
+  --code-bg: #f1f5f9;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+:root[data-theme="dark"] {
+  --accent: #34d399;
+  --accent-strong: #10b981;
+  --bg: #0b1210;
+  --bg-raised: #101c17;
+  --fg: #f0fdf4;
+  --fg-muted: #94a99e;
+  --border: #24382e;
+  --code-bg: #14241c;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
 
 /* ForgeSelect widgets rendered on site pages follow the green accent.
    The [data-theme] variant matches the specificity of the library's
@@ -101,6 +126,16 @@ a:hover { text-decoration: underline; }
 }
 .site-nav a:hover { color: var(--fg); background: var(--code-bg); text-decoration: none; }
 .site-nav a.active { color: var(--accent); }
+.theme-toggle {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+}
+.theme-toggle:hover { border-color: var(--accent); }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -275,6 +310,36 @@ a:hover { text-decoration: underline; }
 .docs-article th, .docs-article td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
 .docs-article th { background: var(--code-bg); }
 .docs-article img { max-width: 100%; }
+
+/* ---------- demo ---------- */
+.demo-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+.demo-card {
+  padding: 20px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.demo-card h2 { margin: 0 0 4px; font-size: 15px; }
+.demo-card p { margin: 0 0 14px; font-size: 13px; color: var(--fg-muted); }
+.demo-card .forge-select { width: 100%; }
+.demo-card--log { grid-column: 1 / -1; }
+#event-log {
+  max-height: 180px;
+  overflow-y: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+}
+#event-log div { padding: 2px 0; border-bottom: 1px dashed var(--border); }
 
 /* ---------- playground ---------- */
 .pg-shell {
