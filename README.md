@@ -58,8 +58,8 @@ Browse the documentation website at **<https://cmm-cmm.github.io/ForgeSelect/doc
 - Plugin Architecture
 - Internationalization (en/vi built in, custom string tables)
 - TypeScript Support (written in strict TypeScript, ships `.d.ts`)
-- Tree Select (planned)
-- Infinite Scroll (planned)
+
+> Planned/in-progress capabilities — Tree Select, Async Pagination, Drag & Drop Ordering, Theme Builder, and React/Vue/Angular/Svelte wrappers — are tracked in the [Roadmap](#roadmap) below and intentionally not listed above as shipped features.
 
 ## Installation
 

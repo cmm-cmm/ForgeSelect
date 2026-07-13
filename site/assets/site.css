@@ -217,6 +217,11 @@ a:hover { text-decoration: underline; }
 .feature h3 { margin: 10px 0 6px; font-size: 16px; }
 .feature p { margin: 0; font-size: 14px; color: var(--fg-muted); }
 
+.faq-list { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.faq-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; background: var(--bg-raised); }
+.faq-item summary { cursor: pointer; font-weight: 600; }
+.faq-item p { margin: 10px 0 0; color: var(--fg-muted); }
+
 .code-card {
   max-width: 720px;
   margin: 0 auto;
@@ -313,6 +318,7 @@ a:hover { text-decoration: underline; }
   margin: 0 auto;
   padding: 28px 24px 64px;
 }
+.demo-intro { color: var(--fg-muted); max-width: 760px; margin: 0 0 28px; line-height: 1.6; }
 .demo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -338,6 +344,7 @@ a:hover { text-decoration: underline; }
 #event-log div { padding: 2px 0; border-bottom: 1px dashed var(--border); }
 
 /* ---------- playground ---------- */
+.pg-intro { color: var(--fg-muted); max-width: 900px; margin: 12px 24px 0; line-height: 1.6; }
 .pg-shell {
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr) minmax(0, 1fr);

@@ -5,8 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ForgeSelect — A modern, lightweight replacement for Select2</title>
 <meta name="description" content="ForgeSelect is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, and a plugin architecture.">
+<link rel="canonical" href="https://cmm-cmm.github.io/ForgeSelect/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ForgeSelect">
+<meta property="og:title" content="ForgeSelect — A modern, lightweight replacement for Select2">
+<meta property="og:description" content="ForgeSelect is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, and a plugin architecture.">
+<meta property="og:url" content="https://cmm-cmm.github.io/ForgeSelect/">
+<meta property="og:image" content="https://cmm-cmm.github.io/ForgeSelect/assets/og-banner.svg">
+<meta property="og:image:type" content="image/svg+xml">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ForgeSelect — A modern, lightweight replacement for Select2">
+<meta name="twitter:description" content="ForgeSelect is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, and a plugin architecture.">
+<meta name="twitter:image" content="https://cmm-cmm.github.io/ForgeSelect/assets/og-banner.svg">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2384cc16'/><stop offset='0.5' stop-color='%2322c55e'/><stop offset='1' stop-color='%2315803d'/></linearGradient></defs><path d='M4 3L12 9L20 3' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 12L12 18L20 12' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 21L12 27L20 21' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
 <link rel="stylesheet" href="./assets/site.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": ["SoftwareApplication", "SoftwareSourceCode"],
+  "name": "ForgeSelect",
+  "description": "A modern, lightweight, highly customizable replacement for Select2.",
+  "url": "https://cmm-cmm.github.io/ForgeSelect/",
+  "codeRepository": "https://github.com/cmm-cmm/ForgeSelect",
+  "downloadUrl": "https://www.npmjs.com/package/forge-select",
+  "softwareVersion": "0.1.0",
+  "programmingLanguage": "TypeScript",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Any",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": { "@type": "Organization", "name": "KonexForge" },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Is ForgeSelect a drop-in replacement for Select2?",
+      "acceptedAnswer": { "@type": "Answer", "text": "ForgeSelect is a drop-in-concept replacement, not a byte-for-byte API clone: it covers Select2's core ideas (searchable dropdowns, tags, AJAX, templates) with a smaller, framework-agnostic API. See the Migration from Select2 guide for the full option/event/method mapping." } },
+    { "@type": "Question", "name": "Does ForgeSelect have any dependencies?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. ForgeSelect has zero runtime dependencies — it's written in strict TypeScript and ships ESM, CJS, and IIFE bundles with type declarations, so it works with any framework or none." } },
+    { "@type": "Question", "name": "Can ForgeSelect handle large option lists?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. Lists over 100 rows virtualize automatically — rendering only the visible rows plus a small buffer — and rendered row content is cached per option, so lists with thousands of items stay fast." } },
+    { "@type": "Question", "name": "Is ForgeSelect accessible?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. ForgeSelect implements ARIA combobox/listbox semantics, aria-activedescendant, and full keyboard navigation out of the box." } },
+    { "@type": "Question", "name": "Does ForgeSelect work with React, Vue, Angular, or Svelte?",
+      "acceptedAnswer": { "@type": "Answer", "text": "ForgeSelect is framework-agnostic vanilla JavaScript/TypeScript, so it can be mounted inside any framework today. Dedicated React/Vue/Angular/Svelte wrapper components are on the roadmap but not yet available." } },
+    { "@type": "Question", "name": "Is ForgeSelect production-ready?",
+      "acceptedAnswer": { "@type": "Answer", "text": "ForgeSelect is pre-1.0 (currently 0.1.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release." } }
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -69,6 +121,36 @@ select.on("change", (value) =&gt; console.log(value));</code></pre>
   <h2>Migrating from Select2?</h2>
   <p class="sub">There's a full option/event/method mapping table and a step-by-step checklist.</p>
   <a class="btn btn-primary" href="./docs/migration-from-select2.html">Read the migration guide</a>
+</section>
+
+<section class="section" id="faq">
+  <h2 style="text-align:center">Frequently asked questions</h2>
+  <div class="faq-list">
+    <details class="faq-item">
+      <summary>Is ForgeSelect a drop-in replacement for Select2?</summary>
+      <p>ForgeSelect is a drop-in-<em>concept</em> replacement, not a byte-for-byte API clone: it covers Select2's core ideas (searchable dropdowns, tags, AJAX, templates) with a smaller, framework-agnostic API. See the <a href="./docs/migration-from-select2.html">Migration from Select2</a> guide for the full option/event/method mapping.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Does ForgeSelect have any dependencies?</summary>
+      <p>No. ForgeSelect has zero runtime dependencies — it's written in strict TypeScript and ships ESM, CJS, and IIFE bundles with type declarations, so it works with any framework or none.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Can ForgeSelect handle large option lists?</summary>
+      <p>Yes. Lists over 100 rows virtualize automatically — rendering only the visible rows plus a small buffer — and rendered row content is cached per option, so lists with thousands of items stay fast.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Is ForgeSelect accessible?</summary>
+      <p>Yes. ForgeSelect implements ARIA combobox/listbox semantics, <code>aria-activedescendant</code>, and full keyboard navigation out of the box.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Does ForgeSelect work with React, Vue, Angular, or Svelte?</summary>
+      <p>ForgeSelect is framework-agnostic vanilla JavaScript/TypeScript, so it can be mounted inside any framework today. Dedicated React/Vue/Angular/Svelte wrapper components are on the roadmap but not yet available.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Is ForgeSelect production-ready?</summary>
+      <p>ForgeSelect is pre-1.0 (currently 0.1.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release.</p>
+    </details>
+  </div>
 </section>
 
 <footer class="site-footer">
