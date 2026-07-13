@@ -15,14 +15,45 @@ import hljs from "highlight.js";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "_site");
 
+const pkg = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
+const SITE_URL = pkg.homepage.endsWith("/") ? pkg.homepage : `${pkg.homepage}/`;
+
 const DOCS = [
-  { file: "README.md", slug: "index", title: "Introduction" },
-  { file: "api-reference.md", slug: "api-reference", title: "API Reference" },
-  { file: "examples.md", slug: "examples", title: "Examples" },
-  { file: "playground.md", slug: "playground", title: "Playground" },
-  { file: "migration-from-select2.md", slug: "migration-from-select2", title: "Migration from Select2" },
-  { file: "benchmarks.md", slug: "benchmarks", title: "Benchmarks" },
-  { file: "plugin-development.md", slug: "plugin-development", title: "Plugin Development" },
+  { file: "docs/README.md", slug: "index", title: "Introduction",
+    description: "ForgeSelect docs home: what it is, installation, quick start, and links to every guide." },
+  { file: "docs/api-reference.md", slug: "api-reference", title: "API Reference",
+    description: "Full ForgeSelect constructor, options, instance methods, and event reference." },
+  { file: "docs/examples.md", slug: "examples", title: "Examples",
+    description: "Copy-pasteable ForgeSelect code snippets for single/multi select, tags, AJAX, templates, and more." },
+  { file: "docs/playground.md", slug: "playground", title: "Playground",
+    description: "How to use the live ForgeSelect playground and demo to try every feature in the browser." },
+  { file: "docs/migration-from-select2.md", slug: "migration-from-select2", title: "Migration from Select2",
+    description: "Option, event, and method mapping plus a step-by-step guide for migrating from Select2 to ForgeSelect." },
+  { file: "docs/benchmarks.md", slug: "benchmarks", title: "Benchmarks",
+    description: "Planned performance benchmarking methodology comparing ForgeSelect to Select2." },
+  { file: "docs/plugin-development.md", slug: "plugin-development", title: "Plugin Development",
+    description: "How to write and register custom ForgeSelect plugins using lifecycle hooks." },
+  { file: "CHANGELOG.md", slug: "changelog", title: "Changelog",
+    description: "Release history and notable changes for ForgeSelect, following Keep a Changelog and Semantic Versioning." },
+];
+
+// site/index.html, demo/index.html, and site/playground/index.html are copied
+// verbatim (not rendered through layout()), so their <head> metadata lives by
+// hand in each file. This array is only the sitemap/robots/llms.txt source of
+// truth for those 3 pages; keep it in sync with the hand-written meta tags.
+const STATIC_PAGES = [
+  { path: "", title: "ForgeSelect — A modern, lightweight replacement for Select2",
+    description: "ForgeSelect is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, and a plugin architecture.",
+    changefreq: "weekly", priority: "1.0" },
+  { path: "demo/", title: "Live Demo · ForgeSelect",
+    description: "Interactive showcase of every ForgeSelect feature: single/multi select, tags, option groups, custom templates, rich items, virtual scrolling, i18n, and events.",
+    changefreq: "monthly", priority: "0.8" },
+  { path: "playground/", title: "Playground · ForgeSelect",
+    description: "Write and run ForgeSelect code live in the browser with ready-made presets for every major feature — no install required.",
+    changefreq: "monthly", priority: "0.7" },
+  { path: "theme-builder/", title: "Theme Builder · ForgeSelect",
+    description: "Customize every ForgeSelect CSS variable live and copy the generated theme CSS — no build step required.",
+    changefreq: "monthly", priority: "0.6" },
 ];
 
 const md = new MarkdownIt({
@@ -36,7 +67,85 @@ const md = new MarkdownIt({
   },
 });
 
-function layout({ title, active, content }) {
+function sitemapEntries() {
+  const docsEntries = DOCS.map((d) => ({
+    path: d.slug === "index" ? "docs/" : `docs/${d.slug}.html`,
+    changefreq: "monthly",
+    priority: d.slug === "index" ? "0.6" : "0.5",
+  }));
+  return [...STATIC_PAGES, ...docsEntries];
+}
+
+function generateSitemap() {
+  const urls = sitemapEntries()
+    .map(
+      (p) => `  <url>
+    <loc>${SITE_URL}${p.path}</loc>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`,
+    )
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+}
+
+function generateRobotsTxt() {
+  return `User-agent: *\nAllow: /\n\nSitemap: ${SITE_URL}sitemap.xml\n`;
+}
+
+function generateLlmsTxt() {
+  const docsLinks = DOCS.map(
+    (d) => `- [${d.title}](${SITE_URL}${d.slug === "index" ? "docs/" : `docs/${d.slug}.html`}): ${d.description}`,
+  ).join("\n");
+  return `# ForgeSelect
+
+> ${pkg.description}
+
+ForgeSelect is a zero-runtime-dependency, framework-agnostic TypeScript select/combobox component — a modern replacement for Select2. It ships ESM/CJS/IIFE bundles with type declarations, automatic virtualization for large option lists, tags, AJAX/remote data loading, rich item templates, i18n, and a small plugin architecture.
+
+## Docs
+
+${docsLinks}
+
+## Try it
+
+- [Live demo](${SITE_URL}demo/): a curated showcase of every feature.
+- [Playground](${SITE_URL}playground/): write and run ForgeSelect code live in the browser.
+- [Theme Builder](${SITE_URL}theme-builder/): customize every CSS variable live and copy the generated theme CSS.
+
+## Source
+
+- [GitHub repository](https://github.com/cmm-cmm/ForgeSelect)
+- [npm package](https://www.npmjs.com/package/${pkg.name})
+- License: ${pkg.license}
+`;
+}
+
+function breadcrumbJsonLd(items) {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      item: it.url,
+    })),
+  });
+}
+
+function techArticleJsonLd({ title, description, canonicalPath }) {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    headline: title,
+    description,
+    url: `${SITE_URL}${canonicalPath}`,
+    mainEntityOfPage: `${SITE_URL}${canonicalPath}`,
+  });
+}
+
+function layout({ title, description, canonicalPath, jsonLdBlocks, active, content }) {
   const nav = (href, label, key) =>
     `<a href="${href}"${active === key ? ' class="active"' : ""}>${label}</a>`;
   const side = DOCS.map(
@@ -51,10 +160,26 @@ function layout({ title, active, content }) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${title} · ForgeSelect</title>
+<meta name="description" content="${description}">
+<link rel="canonical" href="${SITE_URL}${canonicalPath}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ForgeSelect">
+<meta property="og:title" content="${title} · ForgeSelect">
+<meta property="og:description" content="${description}">
+<meta property="og:url" content="${SITE_URL}${canonicalPath}">
+<meta property="og:image" content="${SITE_URL}assets/og-banner.svg">
+<meta property="og:image:type" content="image/svg+xml">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="${title} · ForgeSelect">
+<meta name="twitter:description" content="${description}">
+<meta name="twitter:image" content="${SITE_URL}assets/og-banner.svg">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2384cc16'/><stop offset='0.5' stop-color='%2322c55e'/><stop offset='1' stop-color='%2315803d'/></linearGradient></defs><path d='M4 3L12 9L20 3' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 12L12 18L20 12' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 21L12 27L20 21' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
 <link rel="stylesheet" href="../assets/site.css">
 <link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
 <link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
+${jsonLdBlocks.map((j) => `<script type="application/ld+json">${j}</script>`).join("\n")}
 </head>
 <body>
 <header class="site-header">
@@ -63,6 +188,7 @@ function layout({ title, active, content }) {
     ${nav("../demo/", "Live Demo", "demo")}
     ${nav("./", "Docs", "docs")}
     ${nav("../playground/", "Playground", "playground")}
+    ${nav("../theme-builder/", "Theme Builder", "theme-builder")}
     <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
   </nav>
 </header>
@@ -102,10 +228,14 @@ async function main() {
   await cp(path.join(root, "site/index.html"), path.join(out, "index.html"));
   await cp(path.join(root, "site/assets"), path.join(out, "assets"), { recursive: true });
   await cp(path.join(root, "site/playground"), path.join(out, "playground"), { recursive: true });
+  await cp(path.join(root, "site/theme-builder"), path.join(out, "theme-builder"), { recursive: true });
   await cp(path.join(root, "demo"), path.join(out, "demo"), { recursive: true });
   await cp(path.join(root, "dist"), path.join(out, "dist"), { recursive: true });
   await cp(path.join(root, "styles"), path.join(out, "styles"), { recursive: true });
   await writeFile(path.join(out, ".nojekyll"), "");
+  await writeFile(path.join(out, "sitemap.xml"), generateSitemap());
+  await writeFile(path.join(out, "robots.txt"), generateRobotsTxt());
+  await writeFile(path.join(out, "llms.txt"), generateLlmsTxt());
 
   // Syntax-highlighting themes, toggled via media queries in the layout
   await cp(
@@ -119,9 +249,29 @@ async function main() {
 
   // Docs pages
   for (const doc of DOCS) {
-    const source = await readFile(path.join(root, "docs", doc.file), "utf8");
+    const source = await readFile(path.join(root, doc.file), "utf8");
     const content = rewriteLinks(md.render(source));
-    const html = layout({ title: doc.title, active: `docs:${doc.slug}`, content });
+    const canonicalPath = doc.slug === "index" ? "docs/" : `docs/${doc.slug}.html`;
+    const breadcrumb = breadcrumbJsonLd(
+      doc.slug === "index"
+        ? [
+            { name: "Home", url: SITE_URL },
+            { name: "Docs", url: `${SITE_URL}docs/` },
+          ]
+        : [
+            { name: "Home", url: SITE_URL },
+            { name: "Docs", url: `${SITE_URL}docs/` },
+            { name: doc.title, url: `${SITE_URL}${canonicalPath}` },
+          ],
+    );
+    const html = layout({
+      title: doc.title,
+      description: doc.description,
+      canonicalPath,
+      jsonLdBlocks: [breadcrumb, techArticleJsonLd({ title: doc.title, description: doc.description, canonicalPath })],
+      active: `docs:${doc.slug}`,
+      content,
+    });
     await writeFile(path.join(out, "docs", `${doc.slug}.html`), html);
   }
 
