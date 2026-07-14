@@ -35,6 +35,7 @@
     <a href="../playground/">Playground</a>
     <a href="../theme-builder/">Theme Builder</a>
     <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+    <a href="https://www.npmjs.com/package/forge-select">npm</a>
   </nav>
 </header>
 <div class="docs-shell">
@@ -87,6 +88,20 @@
   },
 });
 </code></pre>
+<h2>Async pagination (load more on scroll)</h2>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#users&quot;</span>, {
+  <span class="hljs-attr">ajax</span>: {
+    <span class="hljs-attr">url</span>: <span class="hljs-string">&quot;/api/users&quot;</span>,
+    <span class="hljs-attr">pagination</span>: <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">params</span>: <span class="hljs-function">(<span class="hljs-params">query, page</span>) =&gt;</span> ({ <span class="hljs-attr">q</span>: query, page }),
+    <span class="hljs-attr">transform</span>: <span class="hljs-function">(<span class="hljs-params">response</span>) =&gt;</span> ({
+      <span class="hljs-attr">options</span>: response.<span class="hljs-property">items</span>.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">u</span>) =&gt;</span> ({ <span class="hljs-attr">value</span>: u.<span class="hljs-property">id</span>, <span class="hljs-attr">label</span>: u.<span class="hljs-property">name</span> })),
+      <span class="hljs-attr">hasMore</span>: response.<span class="hljs-property">hasMore</span>,
+    }),
+  },
+});
+</code></pre>
+<p>Scrolling near the bottom of the dropdown fetches the next page and appends it to the list instead of replacing it; typing a new search query still resets back to page 0 as usual.</p>
 <h2>Tags mode (allow creating new options)</h2>
 <pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#skills&quot;</span>, {
   <span class="hljs-attr">multiple</span>: <span class="hljs-literal">true</span>,
@@ -117,6 +132,28 @@
   ],
 });
 </code></pre>
+<h2>Tree select (nested options)</h2>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#categories&quot;</span>, {
+  <span class="hljs-attr">multiple</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">data</span>: [
+    {
+      <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;electronics&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Electronics&quot;</span>,
+      <span class="hljs-attr">children</span>: [
+        { <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;phones&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Phones&quot;</span> },
+        { <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;laptops&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Laptops&quot;</span> },
+      ],
+    },
+    {
+      <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;clothing&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Clothing&quot;</span>,
+      <span class="hljs-attr">children</span>: [
+        { <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;shirts&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Shirts&quot;</span> },
+        { <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;shoes&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Shoes&quot;</span> },
+      ],
+    },
+  ],
+});
+</code></pre>
+<p>Nodes with <code>children</code> start collapsed; click the twisty (▶/▼) to expand. In <code>multiple</code> mode, selecting &quot;Electronics&quot; also selects &quot;Phones&quot; and &quot;Laptops&quot;; selecting only some of a parent's descendants shows it as indeterminate.</p>
 <h2>Rich items (avatar + name + description)</h2>
 <p>Options with <code>avatar</code>/<code>description</code> get a built-in rich layout — no template needed, and the fields are XSS-safe:</p>
 <pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#users&quot;</span>, {

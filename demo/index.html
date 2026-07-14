@@ -43,6 +43,7 @@
     <a href="../playground/">Playground</a>
     <a href="../theme-builder/">Theme Builder</a>
     <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+    <a href="https://www.npmjs.com/package/forge-select">npm</a>
   </nav>
   <button class="theme-toggle" id="theme-toggle" type="button">🌙 Dark mode</button>
 </header>
@@ -69,6 +70,12 @@
     </div>
 
     <div class="demo-card">
+      <h2>Tree select</h2>
+      <p>Nested <code>children</code>, expand/collapse, cascading multi-select.</p>
+      <select id="demo-tree"></select>
+    </div>
+
+    <div class="demo-card">
       <h2>Custom templates</h2>
       <p><code>templateResult</code> and <code>templateSelection</code>.</p>
       <select id="demo-template"></select>
@@ -78,6 +85,12 @@
       <h2>Virtual scroll</h2>
       <p>10,000 options with windowed rendering.</p>
       <select id="demo-virtual"></select>
+    </div>
+
+    <div class="demo-card">
+      <h2>Async pagination</h2>
+      <p><code>ajax.pagination</code> — scroll to the bottom to load the next page.</p>
+      <select id="demo-pagination"></select>
     </div>
 
     <div class="demo-card">
@@ -122,6 +135,27 @@
   ];
   const flags = { vn: "🇻🇳", jp: "🇯🇵", us: "🇺🇸", fr: "🇫🇷", de: "🇩🇪", br: "🇧🇷", in: "🇮🇳", kr: "🇰🇷" };
 
+  // Mocked backend for the async-pagination demo (this is a static site with
+  // no real API, so `fake://results` requests are intercepted and answered
+  // locally, with an artificial delay to make the loading-more state visible).
+  const paginatedItems = Array.from({ length: 120 }, (_, i) => ({ value: String(i), label: `Result ${i + 1}` }));
+  const realFetch = window.fetch.bind(window);
+  window.fetch = (url, ...rest) => {
+    if (typeof url === "string" && url.startsWith("fake://results")) {
+      const params = new URL(url.replace("fake://", "https://fake.local/")).searchParams;
+      const query = (params.get("query") || "").toLowerCase();
+      const page = Number(params.get("page") || 0);
+      const perPage = 10;
+      const matches = paginatedItems.filter((it) => it.label.toLowerCase().includes(query));
+      const items = matches.slice(page * perPage, page * perPage + perPage);
+      const hasMore = (page + 1) * perPage < matches.length;
+      return new Promise((resolve) =>
+        setTimeout(() => resolve({ json: () => Promise.resolve({ items, hasMore }) }), 400),
+      );
+    }
+    return realFetch(url, ...rest);
+  };
+
   const log = document.getElementById("event-log");
   function watch(name, select) {
     for (const event of ["change", "open", "close", "search", "clear"]) {
@@ -149,6 +183,23 @@
         { label: "Europe", options: [{ value: "fr", label: "France" }, { value: "de", label: "Germany" }] },
       ],
     })),
+    watch("tree", new ForgeSelect("#demo-tree", {
+      placeholder: "Pick categories", multiple: true, clearable: true,
+      data: [
+        { value: "fruits", label: "Fruits", children: [
+          { value: "apple", label: "Apple" },
+          { value: "banana", label: "Banana" },
+          { value: "citrus", label: "Citrus", children: [
+            { value: "orange", label: "Orange" },
+            { value: "lemon", label: "Lemon" },
+          ] },
+        ] },
+        { value: "veggies", label: "Vegetables", children: [
+          { value: "carrot", label: "Carrot" },
+          { value: "potato", label: "Potato" },
+        ] },
+      ],
+    })),
     watch("template", new ForgeSelect("#demo-template", {
       placeholder: "With flags", data: countries,
       templateResult: (o) => `${flags[o.value] ?? ""} ${o.label}`,
@@ -157,6 +208,16 @@
     watch("virtual", new ForgeSelect("#demo-virtual", {
       placeholder: "10,000 options", virtualScroll: true,
       data: Array.from({ length: 10000 }, (_, i) => ({ value: String(i), label: `Item ${i + 1}` })),
+    })),
+    watch("pagination", new ForgeSelect("#demo-pagination", {
+      placeholder: "Scroll to load more…", clearable: true,
+      ajax: {
+        url: "fake://results",
+        pagination: true,
+        debounce: 200,
+        params: (query, page) => ({ query, page }),
+        transform: (res) => ({ options: res.items, hasMore: res.hasMore }),
+      },
     })),
     watch("i18n", new ForgeSelect("#demo-i18n", {
       placeholder: "Chọn một quốc gia", language: "vi", clearable: true, data: countries,

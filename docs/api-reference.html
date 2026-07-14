@@ -35,6 +35,7 @@
     <a href="../playground/">Playground</a>
     <a href="../theme-builder/">Theme Builder</a>
     <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+    <a href="https://www.npmjs.com/package/forge-select">npm</a>
   </nav>
 </header>
 <div class="docs-shell">
@@ -128,7 +129,7 @@
 <td><code>ajax</code></td>
 <td><code>AjaxConfig</code></td>
 <td><code>undefined</code></td>
-<td>Remote data source config (<code>url</code>, <code>params</code>, <code>debounce</code>, <code>transform</code>).</td>
+<td>Remote data source config (<code>url</code>, <code>params</code>, <code>debounce</code>, <code>pagination</code>, <code>transform</code>).</td>
 </tr>
 <tr>
 <td><code>templateResult</code></td>
@@ -176,6 +177,7 @@
   <span class="hljs-attr">avatar</span>?: <span class="hljs-built_in">string</span>;                 <span class="hljs-comment">// image URL/data URI, shown as a round avatar</span>
   <span class="hljs-attr">description</span>?: <span class="hljs-built_in">string</span>;            <span class="hljs-comment">// secondary line under the label</span>
   <span class="hljs-attr">meta</span>?: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-built_in">unknown</span>&gt;;  <span class="hljs-comment">// arbitrary payload for custom templates</span>
+  <span class="hljs-attr">children</span>?: <span class="hljs-title class_">Option</span>[];             <span class="hljs-comment">// nested options — makes this a tree node</span>
 }
 
 <span class="hljs-keyword">interface</span> <span class="hljs-title class_">OptionGroup</span> {
@@ -183,17 +185,34 @@
   <span class="hljs-attr">options</span>: <span class="hljs-title class_">Option</span>[];
 }
 </code></pre>
+<h3>Tree select (nested options)</h3>
+<p>Add <code>children</code> to any <code>Option</code> to turn it into an expandable/collapsible tree node — purely additive, so a list where no option has <code>children</code> renders and behaves exactly like a flat list:</p>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#categories&quot;</span>, {
+  <span class="hljs-attr">data</span>: [
+    {
+      <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;fruits&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Fruits&quot;</span>,
+      <span class="hljs-attr">children</span>: [
+        { <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;apple&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Apple&quot;</span> },
+        { <span class="hljs-attr">value</span>: <span class="hljs-string">&quot;banana&quot;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&quot;Banana&quot;</span> },
+      ],
+    },
+  ],
+});
+</code></pre>
+<p>Nodes with children start collapsed and show a twisty (▶/▼) to expand/collapse; searching shows a node if it or any descendant matches, temporarily auto-expanding matching branches without disturbing manually-expanded state. In <code>multiple: true</code> mode, selecting a parent selects/deselects all of its descendants, and a parent whose descendants are only partially selected gets the <code>forge-select__option--indeterminate</code> class.</p>
 <h3>Rich items</h3>
 <p>When an option has <code>avatar</code> and/or <code>description</code> and no custom template is set, ForgeSelect renders them with a built-in layout (avatar + label + description in the dropdown; small avatar + label in the selected value/tags). All built-in fields are inserted via <code>textContent</code>, so they are <strong>XSS-safe</strong> — no escaping needed on your side. <code>description</code> is also matched by the search filter.</p>
 <p>Custom templates (<code>templateResult</code>/<code>templateSelection</code>) receive the full option including <code>meta</code>. A <strong>string</strong> return value is injected as raw HTML — sanitize any user-provided data yourself. Rendered row content is cached per option value and cloned on scroll, so templates run once per option regardless of scrolling; if your template returns a DOM <strong>Node</strong>, don't rely on event listeners attached inside it (clones don't carry listeners — use event delegation on the document instead).</p>
 <h3><code>AjaxConfig</code> shape</h3>
 <pre><code class="language-ts"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">AjaxConfig</span> {
   <span class="hljs-attr">url</span>: <span class="hljs-built_in">string</span> | (<span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span></span>) =&gt;</span> <span class="hljs-built_in">string</span>);
-  <span class="hljs-attr">params</span>?: <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span></span>) =&gt;</span> <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-built_in">unknown</span>&gt;;
+  <span class="hljs-attr">params</span>?: <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">query</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">page</span>: <span class="hljs-built_in">number</span></span>) =&gt;</span> <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-built_in">unknown</span>&gt;;
   <span class="hljs-attr">debounce</span>?: <span class="hljs-built_in">number</span>; <span class="hljs-comment">// ms, default 250</span>
-  <span class="hljs-attr">transform</span>?: <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">response</span>: <span class="hljs-built_in">unknown</span></span>) =&gt;</span> <span class="hljs-title class_">Option</span>[];
+  <span class="hljs-attr">pagination</span>?: <span class="hljs-built_in">boolean</span>; <span class="hljs-comment">// opt in to loading further pages on scroll; default false</span>
+  <span class="hljs-attr">transform</span>?: <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">response</span>: <span class="hljs-built_in">unknown</span></span>) =&gt;</span> <span class="hljs-title class_">Option</span>[] | { <span class="hljs-attr">options</span>: <span class="hljs-title class_">Option</span>[]; <span class="hljs-attr">hasMore</span>: <span class="hljs-built_in">boolean</span> };
 }
 </code></pre>
+<p>By default <code>ajax</code> replaces the whole list on every search (<code>transform</code> returns a plain <code>Option[]</code>, as above). Set <code>pagination: true</code> to additionally load more pages as the user scrolls near the bottom of the dropdown: <code>params</code> now also receives the current <code>page</code> (starting at <code>0</code>), and <code>transform</code> should return <code>{ options, hasMore }</code> so ForgeSelect knows whether to keep requesting further pages. A search query change always resets back to page <code>0</code> and replaces the list, regardless of <code>pagination</code>. See <a href="./examples.html">Examples</a> for a full snippet.</p>
 <h2>Instance methods</h2>
 <table>
 <thead>

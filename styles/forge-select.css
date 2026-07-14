@@ -15,6 +15,7 @@
   --fs-tag-bg: #e0e7ff;
   --fs-tag-fg: #3730a3;
   --fs-font-size: 14px;
+  --fs-tree-indent: 18px;
 
   position: relative;
   display: inline-block;
@@ -226,6 +227,20 @@
   font-style: italic;
 }
 
+.forge-select__option--indeterminate {
+  background: color-mix(in srgb, var(--fs-option-selected-bg) 50%, transparent);
+}
+
+.forge-select__twisty {
+  display: inline-block;
+  width: 14px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 0.75em;
+  color: var(--fs-muted);
+  cursor: pointer;
+}
+
 /* All row types share --fs-item-height so virtual-scroll spacer math stays exact. */
 .forge-select__group-label {
   display: flex;
@@ -241,7 +256,8 @@
 }
 
 .forge-select__empty,
-.forge-select__loading {
+.forge-select__loading,
+.forge-select__loading-more {
   padding: 10px 12px;
   color: var(--fs-muted);
   text-align: center;

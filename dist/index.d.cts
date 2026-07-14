@@ -10,6 +10,11 @@ interface Option {
     description?: string;
     /** Arbitrary payload for custom templates; ForgeSelect never reads it. */
     meta?: Record<string, unknown>;
+    /**
+     * Nested options, making this a tree node. Purely additive: lists where
+     * no option has `children` render and behave exactly as a flat list.
+     */
+    children?: Option[];
 }
 interface OptionGroup {
     label: string;
@@ -18,10 +23,23 @@ interface OptionGroup {
 type DataItem = Option | OptionGroup;
 interface AjaxConfig {
     url: string | ((query: string) => string);
-    params?: (query: string) => Record<string, unknown>;
+    params?: (query: string, page: number) => Record<string, unknown>;
     /** Debounce in milliseconds. Default 250. */
     debounce?: number;
-    transform?: (response: unknown) => Option[];
+    /**
+     * Opt in to loading additional pages as the user scrolls near the bottom
+     * of the dropdown, instead of only reloading on search. Default false.
+     */
+    pagination?: boolean;
+    /**
+     * Return a plain array (page-replace behavior, unchanged from before
+     * `pagination` existed) or `{ options, hasMore }` so ForgeSelect knows
+     * whether to keep requesting further pages when `pagination` is true.
+     */
+    transform?: (response: unknown) => Option[] | {
+        options: Option[];
+        hasMore: boolean;
+    };
 }
 interface ForgeSelectPlugin {
     name: string;
@@ -82,7 +100,11 @@ declare class ForgeSelect {
     private navItems;
     private highlightedIndex;
     private rowContentCache;
+    private expandedValues;
     private loading;
+    private loadingMore;
+    private page;
+    private hasMore;
     private ajaxTimer;
     private ajaxRequestId;
     private remoteLoaded;
@@ -102,6 +124,13 @@ declare class ForgeSelect {
     private handleKeydown;
     private selectValue;
     private deselectValue;
+    /**
+     * Keeps every tree parent's own membership in `selected` consistent with
+     * its descendants (post-order, so parents see already-corrected children):
+     * a parent counts as selected only when `computeCheckState` says "all".
+     * No-op for data with no `children` anywhere.
+     */
+    private syncTreeAncestors;
     private clearSelection;
     private afterSelectionChange;
     private syncNativeSelect;
@@ -126,6 +155,12 @@ declare class ForgeSelect {
     private moveHighlight;
     private updateActiveDescendant;
     private scheduleRemoteLoad;
+    /**
+     * Fires on every list scroll. Only acts when pagination is opted into via
+     * `ajax.pagination`; reads real scroll geometry rather than row counts so
+     * it works whether or not virtual scrolling is active for this list.
+     */
+    private maybeLoadNextPage;
     private loadRemote;
 }
 
