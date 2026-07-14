@@ -6,7 +6,7 @@
 
 Write and run ForgeSelect code directly in the browser — with presets for every major feature:
 
-**<https://cmm-cmm.github.io/ForgeSelect/playground/>**
+**<https://forgeselect.konexforge.com/playground/>**
 
 Pick a preset (Basic, Multiple + tags, Rich items ×1000, Option groups, Custom template, Dark theme, Events), edit the snippet, and press **Run** (or Ctrl/Cmd + Enter). Your code receives a fresh `el` (`<select>` element) and a `log()` helper that prints into the preview pane.
 
@@ -14,7 +14,7 @@ Pick a preset (Basic, Multiple + tags, Rich items ×1000, Option groups, Custom 
 
 A curated showcase of every feature, deployed from the latest `main` commit:
 
-**<https://cmm-cmm.github.io/ForgeSelect/demo/>**
+**<https://forgeselect.konexforge.com/demo/>**
 
 It showcases:
 

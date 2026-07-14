@@ -40,7 +40,7 @@ Key internal concepts to know before touching `ForgeSelect.ts`:
 
 ## Site / docs build
 
-`scripts/build-site.mjs` assembles `_site/` for GitHub Pages: it copies `site/` (landing + playground) and `demo/` as-is, copies the built `dist/` and `styles/`, and renders each file listed in `docs/*.md` through a shared HTML layout (via `markdown-it` + `highlight.js`) into `_site/docs/`. If you add a new doc page under `docs/`, add a matching entry to the `DOCS` array in that script or it won't be published. Preview with `npm run build:site && cd _site && npx serve -l 8080`.
+`scripts/build-site.mjs` assembles `_site/`, deployed to Cloudflare Workers (see `CONTRIBUTING.md` → "Deploying the site"): it copies `site/` (landing + playground) and `demo/` as-is, copies the built `dist/` and `styles/`, and renders each file listed in `docs/*.md` through a shared HTML layout (via `markdown-it` + `highlight.js`) into `_site/docs/`. If you add a new doc page under `docs/`, add a matching entry to the `DOCS` array in that script or it won't be published. Preview with `npm run build:site && cd _site && npx serve -l 8080`.
 
 ## Conventions
 

@@ -33,7 +33,7 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 - `docs/` — markdown documentation, rendered to the website by `scripts/build-site.mjs`
 - `demo/`, `site/` — feature demo, landing page, and playground
 - `packages/` — npm workspaces for framework wrapper packages (`packages/react` → `forge-select-react`, `packages/vue` → `forge-select-vue`), each with its own `package.json`/tests/build, independent of the core library's zero-dependency promise
-- `.github/workflows/` — CI (typecheck/test/build, plus `--workspaces` for the wrapper packages), npm publishing, and GitHub Pages deployment (Cloudflare Pages deploys separately, via a Cloudflare Dashboard Git connection — see "Deploying the site" below)
+- `.github/workflows/` — CI (typecheck/test/build, plus `--workspaces` for the wrapper packages) and npm publishing. Site deployment is not a workflow here — see "Deploying the site" below.
 
 ## Pull request guidelines
 
@@ -67,10 +67,11 @@ This requires a repository secret named `NPM_TOKEN` (an npm **Automation** acces
 
 ## Deploying the site
 
-Every push to `main` deploys the assembled site (`npm run build:site` → `_site/`) to two places:
+Every push to `main` deploys the assembled site (`npm run build:site` → `_site/`) to **Cloudflare Workers (static assets)**, via a Workers Builds project named `forge-select` connected directly to this GitHub repo through the Cloudflare Dashboard (Git integration) — **not** a GitHub Actions workflow. This account has Cloudflare Pages unified into Workers, so the project is a genuine Worker serving static assets, not a classic "Pages project"; see `wrangler.jsonc` at the repo root for its config (`assets.directory` pointing at `_site/`).
 
-- **GitHub Pages**, via `.github/workflows/pages.yml` — force-pushes `_site/` to the `gh-pages` branch (`peaceiris/actions-gh-pages`). This is the canonical, public live site.
-- **Cloudflare Workers (static assets)**, via a Workers Builds project named `forge-select` connected directly to this GitHub repo through the Cloudflare Dashboard (Git integration) — **not** a GitHub Actions workflow. This account has Cloudflare Pages unified into Workers, so the project is a genuine Worker serving static assets, not a classic "Pages project"; see `wrangler.jsonc` at the repo root for its config (`assets.directory` pointing at `_site/`). Live at `https://forge-select.cmmphamcongminh.workers.dev` — currently a staging mirror running alongside GitHub Pages, not yet the canonical URL, so `homepage` in `package.json` and hardcoded canonical/OG URLs still point at GitHub Pages.
+The canonical live site is **<https://forgeselect.konexforge.com/>** (a custom domain routed to the `forge-select` Worker in the Cloudflare Dashboard; the raw `*.workers.dev` URL still works too). `homepage` in `package.json` and all hardcoded canonical/OG/JSON-LD URLs point at this domain.
+
+This project previously also deployed to GitHub Pages (`.github/workflows/pages.yml`, force-pushing `_site/` to the `gh-pages` branch). That workflow has been removed now that Cloudflare is canonical — if a `gh-pages` branch still exists and GitHub Pages is still enabled in **Settings → Pages**, delete the branch and set the Pages source to "None" to fully retire it.
 
 The Cloudflare Workers Builds project is configured with:
 
@@ -87,7 +88,7 @@ Cloudflare's build environment requires a Deploy command, so it needs `CLOUDFLAR
 
 ## Reporting bugs & requesting features
 
-Open a [GitHub issue](https://github.com/cmm-cmm/ForgeSelect/issues) with a minimal reproduction — a snippet that runs in the [playground](https://cmm-cmm.github.io/ForgeSelect/playground/) is perfect.
+Open a [GitHub issue](https://github.com/cmm-cmm/ForgeSelect/issues) with a minimal reproduction — a snippet that runs in the [playground](https://forgeselect.konexforge.com/playground/) is perfect.
 
 For security vulnerabilities, follow [SECURITY.md](./SECURITY.md) instead of opening a public issue.
 
