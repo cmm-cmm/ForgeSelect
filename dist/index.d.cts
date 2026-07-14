@@ -55,6 +55,13 @@ interface ForgeSelectOptions {
     multiple?: boolean;
     clearable?: boolean;
     allowCreate?: boolean;
+    /**
+     * Let the user reorder selected tags by dragging them (mouse/touch/pen via
+     * Pointer Events), or via Alt+Left/Alt+Right when a tag has focus. Only
+     * meaningful when `multiple` is true. Default false — existing multi-select
+     * behavior and tag markup are unchanged when this is left off.
+     */
+    sortable?: boolean;
     theme?: string;
     disabled?: boolean;
     data?: DataItem[];
@@ -82,6 +89,7 @@ declare class ForgeSelect {
     private data;
     private selected;
     private selectedOptions;
+    private suppressNextTagClick;
     private emitter;
     private plugins;
     private uid;
@@ -138,6 +146,20 @@ declare class ForgeSelect {
     private createFromQuery;
     private activateNavItem;
     private renderValue;
+    /**
+     * Pointer-based (mouse/touch/pen) reorder for a single tag. Only the real
+     * dragged DOM node is moved during the gesture — a full renderValue()
+     * mid-drag would destroy it — so the reordered `this.selected` is only
+     * committed on release. The move/up listeners and pointer capture live on
+     * the stable `this.valueEl` container rather than the tag itself: `tag`
+     * gets repositioned via `insertBefore` during the drag, and browsers treat
+     * that reparenting as detaching the node, which silently drops pointer
+     * capture (and further move events) if it were captured on `tag`.
+     */
+    private bindTagDrag;
+    /** Alt+Left/Alt+Right on a focused tag: the keyboard-operable equivalent of dragging. */
+    private handleTagKeydown;
+    private focusTagByValue;
     private renderTemplate;
     private buildRows;
     private hasExactMatch;

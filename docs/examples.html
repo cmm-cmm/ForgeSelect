@@ -78,6 +78,14 @@
   <span class="hljs-attr">placeholder</span>: <span class="hljs-string">&quot;Select one or more&quot;</span>,
 });
 </code></pre>
+<h2>Reorderable tags (drag &amp; drop)</h2>
+<pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#skills&quot;</span>, {
+  <span class="hljs-attr">multiple</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">sortable</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">placeholder</span>: <span class="hljs-string">&quot;Select skills, then drag to reorder&quot;</span>,
+});
+</code></pre>
+<p>Drag a tag with the mouse, touch, or a pen to reorder it; with a tag focused, <code>Alt+Left</code>/<code>Alt+Right</code> does the same via keyboard. <code>getValue()</code> (and the <code>change</code> event) always reflect the current tag order — on a native <code>&lt;select multiple&gt;</code>, the underlying <code>&lt;option&gt;</code> elements are reordered to match too, so a plain <code>&lt;form&gt;</code> submission serializes values in the dragged order.</p>
 <h2>Async / AJAX data source</h2>
 <pre><code class="language-js"><span class="hljs-keyword">new</span> <span class="hljs-title class_">ForgeSelect</span>(<span class="hljs-string">&quot;#users&quot;</span>, {
   <span class="hljs-attr">ajax</span>: {

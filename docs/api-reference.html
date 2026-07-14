@@ -108,6 +108,12 @@
 <td>Let the user create a new option from free text (tags mode).</td>
 </tr>
 <tr>
+<td><code>sortable</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Multi-select only: let the user reorder selected tags by dragging (mouse/touch/pen), or with <code>Alt+Left</code>/<code>Alt+Right</code> when a tag has focus.</td>
+</tr>
+<tr>
 <td><code>theme</code></td>
 <td><code>string</code></td>
 <td><code>&quot;default&quot;</code></td>
@@ -200,6 +206,8 @@
 });
 </code></pre>
 <p>Nodes with children start collapsed and show a twisty (▶/▼) to expand/collapse; searching shows a node if it or any descendant matches, temporarily auto-expanding matching branches without disturbing manually-expanded state. In <code>multiple: true</code> mode, selecting a parent selects/deselects all of its descendants, and a parent whose descendants are only partially selected gets the <code>forge-select__option--indeterminate</code> class.</p>
+<h3>Sortable tags (drag &amp; drop ordering)</h3>
+<p>With <code>multiple: true, sortable: true</code>, selected tags can be reordered by dragging (mouse/touch/pen, via Pointer Events) or with <code>Alt+Left</code>/<code>Alt+Right</code> when a tag has keyboard focus — both paths funnel through the same <code>change</code> event, so <code>getValue()</code> always reflects the current tag order. If mounted on a native <code>&lt;select multiple&gt;</code>, the underlying <code>&lt;option&gt;</code> elements are also reordered to match, so a plain <code>&lt;form&gt;</code> submission serializes values in the dragged order. Purely opt-in — multi-select behavior is unchanged when <code>sortable</code> is left at its default <code>false</code>.</p>
 <h3>Rich items</h3>
 <p>When an option has <code>avatar</code> and/or <code>description</code> and no custom template is set, ForgeSelect renders them with a built-in layout (avatar + label + description in the dropdown; small avatar + label in the selected value/tags). All built-in fields are inserted via <code>textContent</code>, so they are <strong>XSS-safe</strong> — no escaping needed on your side. <code>description</code> is also matched by the search filter.</p>
 <p>Custom templates (<code>templateResult</code>/<code>templateSelection</code>) receive the full option including <code>meta</code>. A <strong>string</strong> return value is injected as raw HTML — sanitize any user-provided data yourself. Rendered row content is cached per option value and cloned on scroll, so templates run once per option regardless of scrolling; if your template returns a DOM <strong>Node</strong>, don't rely on event listeners attached inside it (clones don't carry listeners — use event delegation on the document instead).</p>

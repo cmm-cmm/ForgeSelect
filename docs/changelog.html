@@ -58,6 +58,10 @@
 <p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>,
 and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <h2><a href="https://github.com/cmm-cmm/ForgeSelect/compare/v0.2.0...HEAD">Unreleased</a></h2>
+<h3>Added</h3>
+<ul>
+<li><strong>Drag &amp; Drop Ordering</strong>: <code>sortable: true</code> (multi-select only) lets users reorder selected tags by dragging with mouse/touch/pen (Pointer Events), or via <code>Alt+Left</code>/<code>Alt+Right</code> when a tag has keyboard focus. Fully opt-in — multi-select behavior, markup, and events are unchanged when <code>sortable</code> is left at its default <code>false</code>. When mounted on a native <code>&lt;select multiple&gt;</code>, the underlying <code>&lt;option&gt;</code> elements are also reordered to match, so a plain <code>&lt;form&gt;</code> submission serializes values in the dragged order.</li>
+</ul>
 <h3>Changed</h3>
 <ul>
 <li>Site FAQ (landing page + JSON-LD) and docs no longer say React/Vue/Angular/Svelte wrappers are &quot;on the roadmap but not yet available&quot; — <code>forge-select-react</code> and <code>forge-select-vue</code> are published and documented in <code>docs/examples.md</code> and <code>docs/api-reference.md</code>; the live demo intro links to both.</li>

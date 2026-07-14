@@ -64,6 +64,12 @@
     </div>
 
     <div class="demo-card">
+      <h2>Sortable tags</h2>
+      <p><code>sortable</code> — drag a tag (mouse/touch/pen) or focus one and press Alt+Left/Alt+Right.</p>
+      <select id="demo-sortable" multiple></select>
+    </div>
+
+    <div class="demo-card">
       <h2>Option groups</h2>
       <p>Nested groups from a <code>data</code> array.</p>
       <select id="demo-groups"></select>
@@ -176,6 +182,17 @@
       placeholder: "Pick or create tags", multiple: true, allowCreate: true, clearable: true,
       data: [{ value: "js", label: "JavaScript" }, { value: "ts", label: "TypeScript" }, { value: "css", label: "CSS" }],
     })),
+    watch("sortable", (() => {
+      const select = new ForgeSelect("#demo-sortable", {
+        placeholder: "Pick a few, then drag to reorder", multiple: true, sortable: true, clearable: true,
+        data: [
+          { value: "1", label: "First" }, { value: "2", label: "Second" },
+          { value: "3", label: "Third" }, { value: "4", label: "Fourth" },
+        ],
+      });
+      select.setValue(["1", "2", "3"]);
+      return select;
+    })()),
     watch("groups", new ForgeSelect("#demo-groups", {
       placeholder: "Grouped options",
       data: [
