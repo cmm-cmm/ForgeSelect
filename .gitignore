@@ -4,3 +4,4 @@ _site/
 coverage/
 *.log
 .DS_Store
+.wrangler/

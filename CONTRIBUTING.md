@@ -70,18 +70,20 @@ This requires a repository secret named `NPM_TOKEN` (an npm **Automation** acces
 Every push to `main` deploys the assembled site (`npm run build:site` → `_site/`) to two places:
 
 - **GitHub Pages**, via `.github/workflows/pages.yml` — force-pushes `_site/` to the `gh-pages` branch (`peaceiris/actions-gh-pages`). This is the canonical, public live site.
-- **Cloudflare Pages** (`https://forgeselect.pages.dev`), via a Cloudflare Pages project connected directly to this GitHub repo through the Cloudflare Dashboard (Git integration) — **not** a GitHub Actions workflow. Currently a staging mirror running alongside GitHub Pages, not yet the canonical URL (so `homepage` in `package.json` and hardcoded canonical/OG URLs still point at GitHub Pages).
+- **Cloudflare Workers (static assets)**, via a Workers Builds project named `forge-select` connected directly to this GitHub repo through the Cloudflare Dashboard (Git integration) — **not** a GitHub Actions workflow. This account has Cloudflare Pages unified into Workers, so the project is a genuine Worker serving static assets, not a classic "Pages project"; see `wrangler.jsonc` at the repo root for its config (`assets.directory` pointing at `_site/`). Deploys to `https://forge-select.<account-subdomain>.workers.dev` by default (exact subdomain shown in the deploy output) — currently a staging mirror running alongside GitHub Pages, not yet the canonical URL, so `homepage` in `package.json` and hardcoded canonical/OG URLs still point at GitHub Pages.
 
-The Cloudflare Pages project is configured with:
+The Cloudflare Workers Builds project is configured with:
 
 | Field | Value |
 | --- | --- |
 | Build command | `npm run build:site` |
-| Deploy command | `npx wrangler pages deploy _site --project-name=forgeselect` |
-| Non-production branch deploy command | `npx wrangler pages deploy _site --project-name=forgeselect` |
+| Deploy command | `npx wrangler deploy` |
+| Non-production branch deploy command | `npx wrangler deploy` |
 | Path (root directory) | *(blank — repo root)* |
 
-Cloudflare's own build environment requires a Deploy command (it can't auto-deploy `_site/` on its own the way the classic Pages Git integration used to), so it needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set as **Environment variables on the Cloudflare Pages project itself** (Settings → Environment variables) — the token must have `Account > Cloudflare Pages > Edit` permission, or every deploy fails with an authentication error even though the token is otherwise valid. To deploy from a local machine instead, run `npm run build:site && npm run deploy:cloudflare` (requires either a local `wrangler login` or a `CLOUDFLARE_API_TOKEN` environment variable).
+Do **not** use `wrangler pages deploy` here — this project type is a Worker, not a Pages project, so that command targets the wrong API/resource and fails with a generic authentication error regardless of token permissions. `wrangler deploy` reads its config from `wrangler.jsonc`.
+
+Cloudflare's build environment requires a Deploy command, so it needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set as **Environment variables on the project itself** (Settings → Environment variables). The token must have **`Account > Workers Scripts > Edit`** permission — *not* "Cloudflare Pages: Edit" (that permission doesn't apply here since the resource is a Worker). To deploy from a local machine instead, run `npm run build:site && npm run deploy:cloudflare` (requires either a local `wrangler login` or a `CLOUDFLARE_API_TOKEN` environment variable).
 
 ## Reporting bugs & requesting features
 
