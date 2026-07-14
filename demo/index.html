@@ -69,6 +69,12 @@
     </div>
 
     <div class="demo-card">
+      <h2>Tree select</h2>
+      <p>Nested <code>children</code>, expand/collapse, cascading multi-select.</p>
+      <select id="demo-tree"></select>
+    </div>
+
+    <div class="demo-card">
       <h2>Custom templates</h2>
       <p><code>templateResult</code> and <code>templateSelection</code>.</p>
       <select id="demo-template"></select>
@@ -174,6 +180,23 @@
       data: [
         { label: "Asia", options: [{ value: "vn", label: "Vietnam" }, { value: "jp", label: "Japan" }] },
         { label: "Europe", options: [{ value: "fr", label: "France" }, { value: "de", label: "Germany" }] },
+      ],
+    })),
+    watch("tree", new ForgeSelect("#demo-tree", {
+      placeholder: "Pick categories", multiple: true, clearable: true,
+      data: [
+        { value: "fruits", label: "Fruits", children: [
+          { value: "apple", label: "Apple" },
+          { value: "banana", label: "Banana" },
+          { value: "citrus", label: "Citrus", children: [
+            { value: "orange", label: "Orange" },
+            { value: "lemon", label: "Lemon" },
+          ] },
+        ] },
+        { value: "veggies", label: "Vegetables", children: [
+          { value: "carrot", label: "Carrot" },
+          { value: "potato", label: "Potato" },
+        ] },
       ],
     })),
     watch("template", new ForgeSelect("#demo-template", {

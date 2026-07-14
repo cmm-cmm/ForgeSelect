@@ -43,6 +43,7 @@ interface Option {
   avatar?: string;                 // image URL/data URI, shown as a round avatar
   description?: string;            // secondary line under the label
   meta?: Record<string, unknown>;  // arbitrary payload for custom templates
+  children?: Option[];             // nested options — makes this a tree node
 }
 
 interface OptionGroup {
@@ -50,6 +51,26 @@ interface OptionGroup {
   options: Option[];
 }
 ```
+
+### Tree select (nested options)
+
+Add `children` to any `Option` to turn it into an expandable/collapsible tree node — purely additive, so a list where no option has `children` renders and behaves exactly like a flat list:
+
+```js
+new ForgeSelect("#categories", {
+  data: [
+    {
+      value: "fruits", label: "Fruits",
+      children: [
+        { value: "apple", label: "Apple" },
+        { value: "banana", label: "Banana" },
+      ],
+    },
+  ],
+});
+```
+
+Nodes with children start collapsed and show a twisty (▶/▼) to expand/collapse; searching shows a node if it or any descendant matches, temporarily auto-expanding matching branches without disturbing manually-expanded state. In `multiple: true` mode, selecting a parent selects/deselects all of its descendants, and a parent whose descendants are only partially selected gets the `forge-select__option--indeterminate` class.
 
 ### Rich items
 

@@ -10,6 +10,11 @@ export interface Option {
   description?: string;
   /** Arbitrary payload for custom templates; ForgeSelect never reads it. */
   meta?: Record<string, unknown>;
+  /**
+   * Nested options, making this a tree node. Purely additive: lists where
+   * no option has `children` render and behave exactly as a flat list.
+   */
+  children?: Option[];
 }
 
 export interface OptionGroup {

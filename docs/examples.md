@@ -101,6 +101,32 @@ new ForgeSelect("#country", {
 });
 ```
 
+## Tree select (nested options)
+
+```js
+new ForgeSelect("#categories", {
+  multiple: true,
+  data: [
+    {
+      value: "electronics", label: "Electronics",
+      children: [
+        { value: "phones", label: "Phones" },
+        { value: "laptops", label: "Laptops" },
+      ],
+    },
+    {
+      value: "clothing", label: "Clothing",
+      children: [
+        { value: "shirts", label: "Shirts" },
+        { value: "shoes", label: "Shoes" },
+      ],
+    },
+  ],
+});
+```
+
+Nodes with `children` start collapsed; click the twisty (▶/▼) to expand. In `multiple` mode, selecting "Electronics" also selects "Phones" and "Laptops"; selecting only some of a parent's descendants shows it as indeterminate.
+
 ## Rich items (avatar + name + description)
 
 Options with `avatar`/`description` get a built-in rich layout — no template needed, and the fields are XSS-safe:

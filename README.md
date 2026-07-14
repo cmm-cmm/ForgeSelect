@@ -51,6 +51,7 @@ Browse the documentation website at **<https://cmm-cmm.github.io/ForgeSelect/doc
 - Keyboard Navigation
 - Disabled Options
 - Option Groups
+- Tree Select (nested options with expand/collapse and cascading multi-select)
 - Clear Selection
 - Placeholder
 - Custom Themes (CSS variables, dark mode included)
@@ -59,7 +60,7 @@ Browse the documentation website at **<https://cmm-cmm.github.io/ForgeSelect/doc
 - Internationalization (en/vi built in, custom string tables)
 - TypeScript Support (written in strict TypeScript, ships `.d.ts`)
 
-> Planned/in-progress capabilities — Tree Select, Drag & Drop Ordering, and React/Vue/Angular/Svelte wrappers — are tracked in the [Roadmap](#roadmap) below and intentionally not listed above as shipped features.
+> Planned/in-progress capabilities — Drag & Drop Ordering and React/Vue/Angular/Svelte wrappers — are tracked in the [Roadmap](#roadmap) below and intentionally not listed above as shipped features.
 
 ## Installation
 
@@ -188,7 +189,7 @@ Performance benchmarking (bundle size, init time, search latency, virtual scroll
 
 ## Roadmap
 
-- [ ] Tree Select
+- [x] Tree Select
 - [x] Virtualized List
 - [x] Async Pagination
 - [ ] Drag & Drop Ordering
