@@ -156,6 +156,111 @@ describe("selection", () => {
   });
 });
 
+describe("sortable tags (drag & drop ordering)", () => {
+  function pointerEvent(
+    type: string,
+    clientX: number,
+    opts: Partial<{ pointerId: number; button: number }> = {},
+  ): PointerEvent {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    Object.assign(event, { clientX, pointerId: opts.pointerId ?? 1, button: opts.button ?? 0 });
+    return event as unknown as PointerEvent;
+  }
+
+  /** jsdom has no real layout, so stub each tag's rect by its intended left offset. */
+  function stubTagRects(lefts: number[]): HTMLElement[] {
+    const tags = Array.from(document.querySelectorAll<HTMLElement>(".forge-select__tag"));
+    tags.forEach((tag, i) => {
+      tag.getBoundingClientRect = () =>
+        ({
+          left: lefts[i],
+          right: lefts[i] + 50,
+          width: 50,
+          height: 20,
+          top: 0,
+          bottom: 20,
+          x: lefts[i],
+          y: 0,
+          toJSON() {},
+        }) as DOMRect;
+    });
+    return tags;
+  }
+
+  it("reorders tags via pointer drag and emits change exactly once", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, sortable: true });
+    select.setValue(["vn", "jp", "us"]);
+    const changed = vi.fn();
+    select.on("change", changed);
+
+    const tags = stubTagRects([0, 60, 120]); // midpoints: 25, 85, 145
+    tags[0].dispatchEvent(pointerEvent("pointerdown", 10));
+    tags[0].dispatchEvent(pointerEvent("pointermove", 90)); // past jp's midpoint
+    tags[0].dispatchEvent(pointerEvent("pointerup", 90));
+
+    expect(select.getValue()).toEqual(["jp", "vn", "us"]);
+    expect(changed).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores small movements so a plain tag click still passes through", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, sortable: true });
+    select.setValue(["vn", "jp"]);
+    const changed = vi.fn();
+    select.on("change", changed);
+
+    const tags = stubTagRects([0, 60]);
+    tags[0].dispatchEvent(pointerEvent("pointerdown", 10));
+    tags[0].dispatchEvent(pointerEvent("pointermove", 11)); // below the drag threshold
+    tags[0].dispatchEvent(pointerEvent("pointerup", 11));
+
+    expect(select.getValue()).toEqual(["vn", "jp"]);
+    expect(changed).not.toHaveBeenCalled();
+  });
+
+  it("reorders via Alt+ArrowRight on a focused tag and refocuses it", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, sortable: true });
+    select.setValue(["vn", "jp", "us"]);
+
+    const tags = Array.from(document.querySelectorAll<HTMLElement>(".forge-select__tag"));
+    tags[0].focus();
+    tags[0].dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowRight", altKey: true, bubbles: true, cancelable: true }),
+    );
+
+    expect(select.getValue()).toEqual(["jp", "vn", "us"]);
+    expect((document.activeElement as HTMLElement | null)?.dataset.value).toBe("vn");
+  });
+
+  it("leaves default multiple-select tags unchanged when sortable is not set", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true });
+    select.setValue(["vn", "jp"]);
+    const tag = document.querySelector<HTMLElement>(".forge-select__tag")!;
+    expect(tag.hasAttribute("tabindex")).toBe(false);
+    expect(tag.dataset.value).toBeUndefined();
+  });
+
+  it("reorders the native <select>'s option elements to match the dragged order", () => {
+    const el = mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, sortable: true });
+    select.setValue(["vn", "jp", "us"]);
+
+    const tags = stubTagRects([0, 60, 120]);
+    tags[0].dispatchEvent(pointerEvent("pointerdown", 10));
+    tags[0].dispatchEvent(pointerEvent("pointermove", 90));
+    tags[0].dispatchEvent(pointerEvent("pointerup", 90));
+
+    const value = select.getValue() as string[];
+    const order = Array.from(el.options)
+      .map((o) => o.value)
+      .filter((v) => value.includes(v));
+    expect(order).toEqual(value);
+  });
+});
+
 describe("search", () => {
   it("filters options and emits search", () => {
     mountSelect();

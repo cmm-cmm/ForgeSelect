@@ -9,6 +9,7 @@ const locales: Record<string, Strings> = {
     clearSelection: "Clear selection",
     removeItem: "Remove {label}",
     search: "Search",
+    reorderHint: "{label}. Press Alt+Left or Alt+Right to reorder.",
   },
   vi: {
     noResults: "Không tìm thấy kết quả",
@@ -18,6 +19,7 @@ const locales: Record<string, Strings> = {
     clearSelection: "Xóa lựa chọn",
     removeItem: "Xóa {label}",
     search: "Tìm kiếm",
+    reorderHint: "{label}. Nhấn Alt+Trái hoặc Alt+Phải để sắp xếp lại.",
   },
 };
 

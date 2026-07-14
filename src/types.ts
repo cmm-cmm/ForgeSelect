@@ -58,6 +58,13 @@ export interface ForgeSelectOptions {
   multiple?: boolean;
   clearable?: boolean;
   allowCreate?: boolean;
+  /**
+   * Let the user reorder selected tags by dragging them (mouse/touch/pen via
+   * Pointer Events), or via Alt+Left/Alt+Right when a tag has focus. Only
+   * meaningful when `multiple` is true. Default false — existing multi-select
+   * behavior and tag markup are unchanged when this is left off.
+   */
+  sortable?: boolean;
   theme?: string;
   disabled?: boolean;
   data?: DataItem[];
