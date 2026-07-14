@@ -22,6 +22,7 @@ const select = new ForgeSelect(target, options);
 | `multiple` | `boolean` | `false` | Allow selecting more than one option. |
 | `clearable` | `boolean` | `false` | Show a button to clear the current selection. |
 | `allowCreate` | `boolean` | `false` | Let the user create a new option from free text (tags mode). |
+| `sortable` | `boolean` | `false` | Multi-select only: let the user reorder selected tags by dragging (mouse/touch/pen), or with `Alt+Left`/`Alt+Right` when a tag has focus. |
 | `theme` | `string` | `"default"` | Named theme applied via a `data-theme` attribute / CSS class. |
 | `disabled` | `boolean` | `false` | Render the control as disabled. |
 | `data` | `Array<Option \| OptionGroup>` | `undefined` | Static options, used instead of `<option>` children. |
@@ -71,6 +72,10 @@ new ForgeSelect("#categories", {
 ```
 
 Nodes with children start collapsed and show a twisty (▶/▼) to expand/collapse; searching shows a node if it or any descendant matches, temporarily auto-expanding matching branches without disturbing manually-expanded state. In `multiple: true` mode, selecting a parent selects/deselects all of its descendants, and a parent whose descendants are only partially selected gets the `forge-select__option--indeterminate` class.
+
+### Sortable tags (drag & drop ordering)
+
+With `multiple: true, sortable: true`, selected tags can be reordered by dragging (mouse/touch/pen, via Pointer Events) or with `Alt+Left`/`Alt+Right` when a tag has keyboard focus — both paths funnel through the same `change` event, so `getValue()` always reflects the current tag order. If mounted on a native `<select multiple>`, the underlying `<option>` elements are also reordered to match, so a plain `<form>` submission serializes values in the dragged order. Purely opt-in — multi-select behavior is unchanged when `sortable` is left at its default `false`.
 
 ### Rich items
 

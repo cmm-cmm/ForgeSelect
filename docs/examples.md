@@ -31,6 +31,18 @@ new ForgeSelect("#tags", {
 });
 ```
 
+## Reorderable tags (drag & drop)
+
+```js
+new ForgeSelect("#skills", {
+  multiple: true,
+  sortable: true,
+  placeholder: "Select skills, then drag to reorder",
+});
+```
+
+Drag a tag with the mouse, touch, or a pen to reorder it; with a tag focused, `Alt+Left`/`Alt+Right` does the same via keyboard. `getValue()` (and the `change` event) always reflect the current tag order — on a native `<select multiple>`, the underlying `<option>` elements are reordered to match too, so a plain `<form>` submission serializes values in the dragged order.
+
 ## Async / AJAX data source
 
 ```js

@@ -28,6 +28,7 @@ interface ResolvedOptions {
   multiple: boolean;
   clearable: boolean;
   allowCreate: boolean;
+  sortable: boolean;
   theme: string;
   disabled: boolean;
   data?: DataItem[];
@@ -85,6 +86,7 @@ export default class ForgeSelect {
   private data: DataItem[];
   private selected: string[] = [];
   private selectedOptions = new Map<string, Option>();
+  private suppressNextTagClick = false;
   private emitter = new Emitter();
   private plugins: ForgeSelectPlugin[];
 
@@ -133,6 +135,7 @@ export default class ForgeSelect {
       multiple: options.multiple ?? nativeSelect?.multiple ?? false,
       clearable: options.clearable ?? false,
       allowCreate: options.allowCreate ?? false,
+      sortable: options.sortable ?? false,
       theme: options.theme ?? "default",
       disabled: options.disabled ?? false,
       data: options.data,
@@ -254,6 +257,7 @@ export default class ForgeSelect {
     this.root.className = "forge-select";
     this.root.dataset.theme = this.opts.theme;
     this.root.style.setProperty("--fs-item-height", `${this.opts.itemHeight}px`);
+    if (this.opts.sortable && this.opts.multiple) this.root.classList.add("forge-select--sortable");
 
     this.control = document.createElement("div");
     this.control.className = "forge-select__control";
@@ -310,6 +314,10 @@ export default class ForgeSelect {
   private bindEvents(): void {
     this.control.addEventListener("click", (event) => {
       if (event.target === this.clearBtn) return;
+      if (this.suppressNextTagClick) {
+        this.suppressNextTagClick = false;
+        return;
+      }
       if (this.isDisabled) return;
       this.isOpen ? this.close() : this.open();
     });
@@ -481,6 +489,16 @@ export default class ForgeSelect {
       option.selected = true;
       this.el.append(option);
     }
+    if (this.opts.sortable && this.opts.multiple) {
+      // Re-appending in `this.selected` order moves each selected <option> to
+      // the end in that relative order, so a real <select multiple> form
+      // submission serializes values in the dragged order (unselected options
+      // simply end up interleaved before them, which submission ignores).
+      for (const value of this.selected) {
+        const option = Array.from(this.el.options).find((o) => o.value === value);
+        if (option) this.el.append(option);
+      }
+    }
     this.el.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
@@ -565,6 +583,14 @@ export default class ForgeSelect {
           if (!this.isDisabled) this.deselectValue(value, true);
         });
         tag.append(label, remove);
+        if (this.opts.sortable) {
+          tag.dataset.value = value;
+          tag.tabIndex = 0;
+          tag.setAttribute("aria-roledescription", "draggable item");
+          tag.setAttribute("aria-label", format(this.strings.reorderHint, { label: option.label }));
+          tag.addEventListener("keydown", (event) => this.handleTagKeydown(event, value));
+          this.bindTagDrag(tag, value);
+        }
         this.valueEl.append(tag);
       }
     } else {
@@ -576,6 +602,104 @@ export default class ForgeSelect {
       span.className = "forge-select__single-value";
       this.renderTemplate(span, option, this.opts.templateSelection, "inline");
       this.valueEl.append(span);
+    }
+  }
+
+  /**
+   * Pointer-based (mouse/touch/pen) reorder for a single tag. Only the real
+   * dragged DOM node is moved during the gesture — a full renderValue()
+   * mid-drag would destroy it — so the reordered `this.selected` is only
+   * committed on release. The move/up listeners and pointer capture live on
+   * the stable `this.valueEl` container rather than the tag itself: `tag`
+   * gets repositioned via `insertBefore` during the drag, and browsers treat
+   * that reparenting as detaching the node, which silently drops pointer
+   * capture (and further move events) if it were captured on `tag`.
+   */
+  private bindTagDrag(tag: HTMLSpanElement, value: string): void {
+    const DRAG_THRESHOLD = 4;
+    let startX = 0;
+    let dragging = false;
+    let order: string[] = [];
+
+    const onPointerMove = (event: PointerEvent): void => {
+      if (!dragging) {
+        if (Math.abs(event.clientX - startX) < DRAG_THRESHOLD) return;
+        dragging = true;
+        order = [...this.selected];
+        if (typeof this.valueEl.setPointerCapture === "function") {
+          this.valueEl.setPointerCapture(event.pointerId);
+        }
+        tag.classList.add("forge-select__tag--dragging");
+      }
+      event.preventDefault();
+
+      const draggedIndex = order.indexOf(value);
+      const siblings = Array.from(this.valueEl.querySelectorAll<HTMLElement>(".forge-select__tag"));
+      for (const sibling of siblings) {
+        if (sibling === tag) continue;
+        const siblingValue = sibling.dataset.value;
+        if (!siblingValue) continue;
+        const siblingIndex = order.indexOf(siblingValue);
+        if (siblingIndex === -1) continue;
+        const rect = sibling.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        const movingRight = draggedIndex < siblingIndex;
+        const crossed = movingRight ? event.clientX > midX : event.clientX < midX;
+        if (!crossed) continue;
+        order.splice(draggedIndex, 1);
+        order.splice(siblingIndex, 0, value);
+        if (movingRight) this.valueEl.insertBefore(tag, sibling.nextSibling);
+        else this.valueEl.insertBefore(tag, sibling);
+        break;
+      }
+    };
+
+    const finishDrag = (event: PointerEvent): void => {
+      this.valueEl.removeEventListener("pointermove", onPointerMove);
+      this.valueEl.removeEventListener("pointerup", finishDrag);
+      this.valueEl.removeEventListener("pointercancel", finishDrag);
+      if (!dragging) return;
+      if (typeof this.valueEl.releasePointerCapture === "function") {
+        this.valueEl.releasePointerCapture(event.pointerId);
+      }
+      tag.classList.remove("forge-select__tag--dragging");
+      this.selected = order;
+      this.suppressNextTagClick = true;
+      this.afterSelectionChange();
+    };
+
+    tag.addEventListener("pointerdown", (event) => {
+      if (this.isDisabled || event.button !== 0) return;
+      if ((event.target as HTMLElement).closest(".forge-select__tag-remove")) return;
+      startX = event.clientX;
+      dragging = false;
+      this.valueEl.addEventListener("pointermove", onPointerMove);
+      this.valueEl.addEventListener("pointerup", finishDrag);
+      this.valueEl.addEventListener("pointercancel", finishDrag);
+    });
+  }
+
+  /** Alt+Left/Alt+Right on a focused tag: the keyboard-operable equivalent of dragging. */
+  private handleTagKeydown(event: KeyboardEvent, value: string): void {
+    if (!event.altKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+    const index = this.selected.indexOf(value);
+    const targetIndex = event.key === "ArrowLeft" ? index - 1 : index + 1;
+    if (index === -1 || targetIndex < 0 || targetIndex >= this.selected.length) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const next = [...this.selected];
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    this.selected = next;
+    this.afterSelectionChange();
+    this.focusTagByValue(value);
+  }
+
+  private focusTagByValue(value: string): void {
+    for (const tag of Array.from(this.valueEl.querySelectorAll<HTMLElement>(".forge-select__tag"))) {
+      if (tag.dataset.value === value) {
+        tag.focus();
+        return;
+      }
     }
   }
 
