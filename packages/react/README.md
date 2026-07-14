@@ -1,6 +1,6 @@
 # forge-select-react
 
-React wrapper for [ForgeSelect](https://github.com/cmm-cmm/ForgeSelect) — a zero-dependency, accessible select/combobox component.
+React wrapper for [Forge Select](https://github.com/cmm-cmm/ForgeSelect) — a zero-dependency, accessible select/combobox component.
 
 ## Installation
 
@@ -40,14 +40,14 @@ function CountryPicker() {
 
 - `value` — controlled value (`string | string[] | null`), kept in sync via `.setValue()` whenever it changes.
 - `onChange` — called with the new value on the underlying `change` event.
-- `className` — applied to the wrapper `<div>` ForgeSelect mounts into.
+- `className` — applied to the wrapper `<div>` Forge Select mounts into.
 
 ## Important limitation
 
-ForgeSelect's own options (`data`, `templateResult`, `templateSelection`, `plugins`, etc.) are read once at construction time and are **not reactive** — the underlying instance is created once when the component mounts and only `value` is synced afterwards. To apply new `data`/templates/plugins, remount the component with a different `key` prop:
+Forge Select's own options (`data`, `templateResult`, `templateSelection`, `plugins`, etc.) are read once at construction time and are **not reactive** — the underlying instance is created once when the component mounts and only `value` is synced afterwards. To apply new `data`/templates/plugins, remount the component with a different `key` prop:
 
 ```jsx
 <ForgeSelectReact key={datasetVersion} data={data} />
 ```
 
-See the [ForgeSelect docs](https://forgeselect.konexforge.com/docs/) for the full option/event/method reference.
+See the [Forge Select docs](https://forgeselect.konexforge.com/docs/) for the full option/event/method reference.

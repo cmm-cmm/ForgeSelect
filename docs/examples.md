@@ -194,7 +194,7 @@ new ForgeSelect("#big-list", {
 
 ## React
 
-The official [`forge-select-react`](https://www.npmjs.com/package/forge-select-react) package wraps ForgeSelect in a controlled component — no manual mounting required:
+The official [`forge-select-react`](https://www.npmjs.com/package/forge-select-react) package wraps Forge Select in a controlled component — no manual mounting required:
 
 ```bash
 npm install forge-select forge-select-react
@@ -250,7 +250,7 @@ function CountrySelect() {
 
 ## Vue
 
-The official [`forge-select-vue`](https://www.npmjs.com/package/forge-select-vue) package wraps ForgeSelect as a Vue 3 component with `v-model` support:
+The official [`forge-select-vue`](https://www.npmjs.com/package/forge-select-vue) package wraps Forge Select as a Vue 3 component with `v-model` support:
 
 ```bash
 npm install forge-select forge-select-vue

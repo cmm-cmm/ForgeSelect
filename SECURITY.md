@@ -6,7 +6,7 @@
 | ------- | --------- |
 | 0.1.x   | ✅        |
 
-ForgeSelect is pre-1.0; only the latest released minor version receives security fixes.
+Forge Select is pre-1.0; only the latest released minor version receives security fixes.
 
 ## Reporting a Vulnerability
 

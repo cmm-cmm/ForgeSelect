@@ -20,21 +20,21 @@ const SITE_URL = pkg.homepage.endsWith("/") ? pkg.homepage : `${pkg.homepage}/`;
 
 const DOCS = [
   { file: "docs/README.md", slug: "index", title: "Introduction",
-    description: "ForgeSelect docs home: what it is, installation, quick start, and links to every guide." },
+    description: "Forge Select docs home: what it is, installation, quick start, and links to every guide." },
   { file: "docs/api-reference.md", slug: "api-reference", title: "API Reference",
-    description: "Full ForgeSelect constructor, options, instance methods, and event reference." },
+    description: "Full Forge Select constructor, options, instance methods, and event reference." },
   { file: "docs/examples.md", slug: "examples", title: "Examples",
-    description: "Copy-pasteable ForgeSelect code snippets for single/multi select, tags, AJAX, templates, and more." },
+    description: "Copy-pasteable Forge Select code snippets for single/multi select, tags, AJAX, templates, and more." },
   { file: "docs/playground.md", slug: "playground", title: "Playground",
-    description: "How to use the live ForgeSelect playground and demo to try every feature in the browser." },
+    description: "How to use the live Forge Select playground and demo to try every feature in the browser." },
   { file: "docs/migration-from-select2.md", slug: "migration-from-select2", title: "Migration from Select2",
-    description: "Option, event, and method mapping plus a step-by-step guide for migrating from Select2 to ForgeSelect." },
+    description: "Option, event, and method mapping plus a step-by-step guide for migrating from Select2 to Forge Select." },
   { file: "docs/benchmarks.md", slug: "benchmarks", title: "Benchmarks",
-    description: "Planned performance benchmarking methodology comparing ForgeSelect to Select2." },
+    description: "Planned performance benchmarking methodology comparing Forge Select to Select2." },
   { file: "docs/plugin-development.md", slug: "plugin-development", title: "Plugin Development",
-    description: "How to write and register custom ForgeSelect plugins using lifecycle hooks." },
+    description: "How to write and register custom Forge Select plugins using lifecycle hooks." },
   { file: "CHANGELOG.md", slug: "changelog", title: "Changelog",
-    description: "Release history and notable changes for ForgeSelect, following Keep a Changelog and Semantic Versioning." },
+    description: "Release history and notable changes for Forge Select, following Keep a Changelog and Semantic Versioning." },
 ];
 
 // site/index.html, demo/index.html, and site/playground/index.html are copied
@@ -42,17 +42,17 @@ const DOCS = [
 // hand in each file. This array is only the sitemap/robots/llms.txt source of
 // truth for those 3 pages; keep it in sync with the hand-written meta tags.
 const STATIC_PAGES = [
-  { path: "", title: "ForgeSelect — A modern, lightweight replacement for Select2",
-    description: "ForgeSelect is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, and a plugin architecture.",
+  { path: "", title: "Forge Select — A modern, lightweight replacement for Select2",
+    description: "Forge Select is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, tree select, drag-and-drop tag ordering, and a plugin architecture.",
     changefreq: "weekly", priority: "1.0" },
-  { path: "demo/", title: "Live Demo · ForgeSelect",
-    description: "Interactive showcase of every ForgeSelect feature: single/multi select, tags, option groups, custom templates, rich items, virtual scrolling, i18n, and events.",
+  { path: "demo/", title: "Live Demo · Forge Select",
+    description: "Interactive showcase of every Forge Select feature: single/multi select, tags, drag-and-drop tag reordering, option groups, tree select, custom templates, rich items, virtual scrolling, i18n, and events.",
     changefreq: "monthly", priority: "0.8" },
-  { path: "playground/", title: "Playground · ForgeSelect",
-    description: "Write and run ForgeSelect code live in the browser with ready-made presets for every major feature — no install required.",
+  { path: "playground/", title: "Playground · Forge Select",
+    description: "Write and run Forge Select code live in the browser with ready-made presets for every major feature — no install required.",
     changefreq: "monthly", priority: "0.7" },
-  { path: "theme-builder/", title: "Theme Builder · ForgeSelect",
-    description: "Customize every ForgeSelect CSS variable live and copy the generated theme CSS — no build step required.",
+  { path: "theme-builder/", title: "Theme Builder · Forge Select",
+    description: "Customize every Forge Select CSS variable live and copy the generated theme CSS — no build step required.",
     changefreq: "monthly", priority: "0.6" },
 ];
 
@@ -97,11 +97,11 @@ function generateLlmsTxt() {
   const docsLinks = DOCS.map(
     (d) => `- [${d.title}](${SITE_URL}${d.slug === "index" ? "docs/" : `docs/${d.slug}.html`}): ${d.description}`,
   ).join("\n");
-  return `# ForgeSelect
+  return `# Forge Select
 
 > ${pkg.description}
 
-ForgeSelect is a zero-runtime-dependency, framework-agnostic TypeScript select/combobox component — a modern replacement for Select2. It ships ESM/CJS/IIFE bundles with type declarations, automatic virtualization for large option lists, tags, AJAX/remote data loading, rich item templates, i18n, and a small plugin architecture.
+Forge Select (v${pkg.version}) is a zero-runtime-dependency, framework-agnostic TypeScript select/combobox component — a modern replacement for Select2. It ships ESM/CJS/IIFE bundles with type declarations, automatic virtualization for large option lists, tags with drag-and-drop reordering, tree select, AJAX/remote data loading, rich item templates, i18n, and a small plugin architecture.
 
 ## Docs
 
@@ -110,7 +110,7 @@ ${docsLinks}
 ## Try it
 
 - [Live demo](${SITE_URL}demo/): a curated showcase of every feature.
-- [Playground](${SITE_URL}playground/): write and run ForgeSelect code live in the browser.
+- [Playground](${SITE_URL}playground/): write and run Forge Select code live in the browser.
 - [Theme Builder](${SITE_URL}theme-builder/): customize every CSS variable live and copy the generated theme CSS.
 
 ## Source
@@ -159,20 +159,24 @@ function layout({ title, description, canonicalPath, jsonLdBlocks, active, conte
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${title} · ForgeSelect</title>
+<title>${title} · Forge Select</title>
 <meta name="description" content="${description}">
+<meta name="robots" content="index, follow">
+<meta name="author" content="KonexForge">
 <link rel="canonical" href="${SITE_URL}${canonicalPath}">
 <meta property="og:type" content="article">
-<meta property="og:site_name" content="ForgeSelect">
-<meta property="og:title" content="${title} · ForgeSelect">
+<meta property="og:site_name" content="Forge Select">
+<meta property="og:title" content="${title} · Forge Select">
 <meta property="og:description" content="${description}">
 <meta property="og:url" content="${SITE_URL}${canonicalPath}">
 <meta property="og:image" content="${SITE_URL}assets/og-banner.svg">
 <meta property="og:image:type" content="image/svg+xml">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Forge Select — select/combobox component banner">
+<meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="${title} · ForgeSelect">
+<meta name="twitter:title" content="${title} · Forge Select">
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${SITE_URL}assets/og-banner.svg">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2384cc16'/><stop offset='0.5' stop-color='%2322c55e'/><stop offset='1' stop-color='%2315803d'/></linearGradient></defs><path d='M4 3L12 9L20 3' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 12L12 18L20 12' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 21L12 27L20 21' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
@@ -183,7 +187,7 @@ ${jsonLdBlocks.map((j) => `<script type="application/ld+json">${j}</script>`).jo
 </head>
 <body>
 <header class="site-header">
-  <a class="site-logo" href="../"><span class="mark"><svg viewBox="0 0 24 28" fill="none" aria-hidden="true"><defs><linearGradient id="fsLogoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#84cc16"/><stop offset="0.5" stop-color="#22c55e"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs><path d="M4 3L12 9L20 3" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12L12 18L20 12" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21L12 27L20 21" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> ForgeSelect</a>
+  <a class="site-logo" href="../"><span class="mark"><svg viewBox="0 0 24 28" fill="none" aria-hidden="true"><defs><linearGradient id="fsLogoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#84cc16"/><stop offset="0.5" stop-color="#22c55e"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs><path d="M4 3L12 9L20 3" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12L12 18L20 12" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21L12 27L20 21" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Forge Select <span class="version">v${pkg.version}</span></a>
   <nav class="site-nav">
     ${nav("../demo/", "Live Demo", "demo")}
     ${nav("./", "Docs", "docs")}

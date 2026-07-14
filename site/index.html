@@ -3,40 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ForgeSelect — A modern, lightweight replacement for Select2</title>
-<meta name="description" content="ForgeSelect is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, and a plugin architecture.">
+<title>Forge Select — A modern, lightweight replacement for Select2</title>
+<meta name="description" content="Forge Select is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, tree select, drag-and-drop tag ordering, and a plugin architecture.">
+<meta name="keywords" content="select component, dropdown, combobox, select2 alternative, select2 replacement, multiselect, autocomplete, tags input, virtual scroll select, tree select, typescript select">
+<meta name="robots" content="index, follow">
+<meta name="author" content="KonexForge">
 <link rel="canonical" href="https://forgeselect.konexforge.com/">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="ForgeSelect">
-<meta property="og:title" content="ForgeSelect — A modern, lightweight replacement for Select2">
-<meta property="og:description" content="ForgeSelect is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, and a plugin architecture.">
+<meta property="og:site_name" content="Forge Select">
+<meta property="og:title" content="Forge Select — A modern, lightweight replacement for Select2">
+<meta property="og:description" content="Forge Select is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, tree select, drag-and-drop tag ordering, and a plugin architecture.">
 <meta property="og:url" content="https://forgeselect.konexforge.com/">
 <meta property="og:image" content="https://forgeselect.konexforge.com/assets/og-banner.svg">
 <meta property="og:image:type" content="image/svg+xml">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Forge Select — select/combobox component banner">
+<meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="ForgeSelect — A modern, lightweight replacement for Select2">
-<meta name="twitter:description" content="ForgeSelect is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, and a plugin architecture.">
+<meta name="twitter:title" content="Forge Select — A modern, lightweight replacement for Select2">
+<meta name="twitter:description" content="Forge Select is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, tree select, drag-and-drop tag ordering, and a plugin architecture.">
 <meta name="twitter:image" content="https://forgeselect.konexforge.com/assets/og-banner.svg">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2384cc16'/><stop offset='0.5' stop-color='%2322c55e'/><stop offset='1' stop-color='%2315803d'/></linearGradient></defs><path d='M4 3L12 9L20 3' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 12L12 18L20 12' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 21L12 27L20 21' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
 <link rel="stylesheet" href="./assets/site.css">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": ["SoftwareApplication", "SoftwareSourceCode"],
-  "name": "ForgeSelect",
+  "@type": "WebSite",
+  "@id": "https://forgeselect.konexforge.com/#website",
+  "name": "Forge Select",
+  "url": "https://forgeselect.konexforge.com/",
   "description": "A modern, lightweight, highly customizable replacement for Select2.",
+  "inLanguage": "en",
+  "publisher": { "@type": "Organization", "name": "KonexForge" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": ["SoftwareApplication", "SoftwareSourceCode"],
+  "@id": "https://forgeselect.konexforge.com/#software",
+  "isPartOf": { "@id": "https://forgeselect.konexforge.com/#website" },
+  "name": "Forge Select",
+  "description": "A modern, lightweight, highly customizable replacement for Select2 — zero-dependency, accessible, high-performance select/combobox with rich items, virtual scrolling, tags, AJAX, tree select, drag-and-drop tag ordering, and a plugin architecture.",
   "url": "https://forgeselect.konexforge.com/",
   "codeRepository": "https://github.com/cmm-cmm/ForgeSelect",
   "downloadUrl": "https://www.npmjs.com/package/forge-select",
   "softwareVersion": "0.2.0",
   "programmingLanguage": "TypeScript",
   "applicationCategory": "DeveloperApplication",
+  "applicationSubCategory": "Form Component",
   "operatingSystem": "Any",
   "license": "https://opensource.org/licenses/MIT",
+  "isAccessibleForFree": true,
   "author": { "@type": "Organization", "name": "KonexForge" },
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "screenshot": "https://forgeselect.konexforge.com/assets/og-banner.svg",
+  "softwareHelp": { "@type": "CreativeWork", "url": "https://forgeselect.konexforge.com/docs/" },
+  "featureList": [
+    "Rich items with avatar, label, and description",
+    "Automatic virtual scrolling for large lists",
+    "Tags mode with free-text create",
+    "Async AJAX data source with pagination",
+    "Tree select with cascading multi-select",
+    "Drag-and-drop tag reordering",
+    "Plugin architecture",
+    "React and Vue 3 wrapper packages",
+    "Built-in i18n (English, Vietnamese)",
+    "Zero runtime dependencies"
+  ]
 }
 </script>
 <script type="application/ld+json">
@@ -44,18 +79,20 @@
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
-    { "@type": "Question", "name": "Is ForgeSelect a drop-in replacement for Select2?",
-      "acceptedAnswer": { "@type": "Answer", "text": "ForgeSelect is a drop-in-concept replacement, not a byte-for-byte API clone: it covers Select2's core ideas (searchable dropdowns, tags, AJAX, templates) with a smaller, framework-agnostic API. See the Migration from Select2 guide for the full option/event/method mapping." } },
-    { "@type": "Question", "name": "Does ForgeSelect have any dependencies?",
-      "acceptedAnswer": { "@type": "Answer", "text": "No. ForgeSelect has zero runtime dependencies — it's written in strict TypeScript and ships ESM, CJS, and IIFE bundles with type declarations, so it works with any framework or none." } },
-    { "@type": "Question", "name": "Can ForgeSelect handle large option lists?",
+    { "@type": "Question", "name": "Is Forge Select a drop-in replacement for Select2?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Forge Select is a drop-in-concept replacement, not a byte-for-byte API clone: it covers Select2's core ideas (searchable dropdowns, tags, AJAX, templates) with a smaller, framework-agnostic API. See the Migration from Select2 guide for the full option/event/method mapping." } },
+    { "@type": "Question", "name": "Does Forge Select have any dependencies?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. Forge Select has zero runtime dependencies — it's written in strict TypeScript and ships ESM, CJS, and IIFE bundles with type declarations, so it works with any framework or none." } },
+    { "@type": "Question", "name": "Can Forge Select handle large option lists?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. Lists over 100 rows virtualize automatically — rendering only the visible rows plus a small buffer — and rendered row content is cached per option, so lists with thousands of items stay fast." } },
-    { "@type": "Question", "name": "Is ForgeSelect accessible?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Yes. ForgeSelect implements ARIA combobox/listbox semantics, aria-activedescendant, and full keyboard navigation out of the box." } },
-    { "@type": "Question", "name": "Does ForgeSelect work with React, Vue, Angular, or Svelte?",
-      "acceptedAnswer": { "@type": "Answer", "text": "ForgeSelect is framework-agnostic vanilla JavaScript/TypeScript, so it can be mounted inside any framework today. Official wrapper packages are available for React (forge-select-react) and Vue (forge-select-vue) with controlled value/v-model support; Angular and Svelte wrappers are on the roadmap." } },
-    { "@type": "Question", "name": "Is ForgeSelect production-ready?",
-      "acceptedAnswer": { "@type": "Answer", "text": "ForgeSelect is pre-1.0 (currently 0.2.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release." } }
+    { "@type": "Question", "name": "Is Forge Select accessible?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. Forge Select implements ARIA combobox/listbox semantics, aria-activedescendant, and full keyboard navigation out of the box." } },
+    { "@type": "Question", "name": "Does Forge Select work with React, Vue, Angular, or Svelte?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Forge Select is framework-agnostic vanilla JavaScript/TypeScript, so it can be mounted inside any framework today. Official wrapper packages are available for React (forge-select-react) and Vue (forge-select-vue) with controlled value/v-model support; Angular and Svelte wrappers are on the roadmap." } },
+    { "@type": "Question", "name": "Can I reorder selected tags by dragging them?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set sortable: true on a multiple select to let users drag tags into a new order with mouse, touch, or pen, or use Alt+Left/Alt+Right when a tag has keyboard focus." } },
+    { "@type": "Question", "name": "Is Forge Select production-ready?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Forge Select is pre-1.0 (currently 0.2.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release." } }
   ]
 }
 </script>
@@ -63,7 +100,7 @@
 <body>
 
 <header class="site-header">
-  <a class="site-logo" href="./"><span class="mark"><svg viewBox="0 0 24 28" fill="none" aria-hidden="true"><defs><linearGradient id="fsLogoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#84cc16"/><stop offset="0.5" stop-color="#22c55e"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs><path d="M4 3L12 9L20 3" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12L12 18L20 12" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21L12 27L20 21" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> ForgeSelect</a>
+  <a class="site-logo" href="./"><span class="mark"><svg viewBox="0 0 24 28" fill="none" aria-hidden="true"><defs><linearGradient id="fsLogoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#84cc16"/><stop offset="0.5" stop-color="#22c55e"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs><path d="M4 3L12 9L20 3" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12L12 18L20 12" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21L12 27L20 21" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Forge Select <span class="version">v0.2.0</span></a>
   <nav class="site-nav">
     <a href="./demo/">Live Demo</a>
     <a href="./docs/">Docs</a>
@@ -75,8 +112,9 @@
 </header>
 
 <section class="hero">
+  <p class="eyebrow" style="text-align:center">Open Source · MIT License · v0.2.0</p>
   <h1>The select component,<br><span class="grad">reforged for the modern web</span></h1>
-  <p class="lead">ForgeSelect is a zero-dependency, accessible, high-performance replacement for Select2 — rich items, automatic virtualization for huge lists, tags, AJAX, i18n, and a plugin architecture.</p>
+  <p class="lead">Forge Select is a zero-dependency, accessible, high-performance replacement for Select2 — rich items, automatic virtualization for huge lists, tags, AJAX, tree select, drag-and-drop tag ordering, i18n, and a plugin architecture.</p>
   <div class="actions">
     <a class="btn btn-primary" href="./docs/">Get Started</a>
     <a class="btn btn-ghost" href="./demo/">Live Demo</a>
@@ -112,8 +150,9 @@ select.on("change", (value) =&gt; console.log(value));</code></pre>
     <div class="feature"><div class="icon">🖼️</div><h3>Rich items</h3><p>Built-in <code>avatar</code> and <code>description</code> fields render avatar + label + subtext layouts with zero templates — and they're XSS-safe.</p></div>
     <div class="feature"><div class="icon">🎨</div><h3>Fully themeable</h3><p>Styling is driven entirely by CSS variables. A dark theme ships out of the box; custom templates give you full HTML control.</p></div>
     <div class="feature"><div class="icon">♿</div><h3>Accessible</h3><p>ARIA combobox/listbox semantics, aria-activedescendant, and complete keyboard navigation are built in, not bolted on.</p></div>
-    <div class="feature"><div class="icon">🏷️</div><h3>Tags &amp; multi-select</h3><p>Multiple selection with removable tags, and <code>allowCreate</code> to add options from free text.</p></div>
-    <div class="feature"><div class="icon">🌐</div><h3>Async data</h3><p>Debounced AJAX loading with a <code>transform</code> hook and stale-response guarding, ready for remote search.</p></div>
+    <div class="feature"><div class="icon">🏷️</div><h3>Tags &amp; multi-select</h3><p>Multiple selection with removable, drag-to-reorder tags, and <code>allowCreate</code> to add options from free text.</p></div>
+    <div class="feature"><div class="icon">🌐</div><h3>Async data</h3><p>Debounced AJAX loading with a <code>transform</code> hook, stale-response guarding, and optional infinite-scroll pagination.</p></div>
+    <div class="feature"><div class="icon">🌲</div><h3>Tree select</h3><p>Nested <code>children</code> with expand/collapse and cascading multi-select — purely additive on top of flat lists.</p></div>
     <div class="feature"><div class="icon">🧩</div><h3>Plugin architecture</h3><p>Extend behavior with lifecycle hooks (<code>onInit</code>, <code>onOpen</code>, <code>onClose</code>, <code>onDestroy</code>) instead of forking the core.</p></div>
     <div class="feature"><div class="icon">📦</div><h3>Zero dependencies</h3><p>Written in strict TypeScript, ships ESM + CJS + IIFE bundles with type declarations. Works with every framework.</p></div>
   </div>
@@ -129,28 +168,32 @@ select.on("change", (value) =&gt; console.log(value));</code></pre>
   <h2 style="text-align:center">Frequently asked questions</h2>
   <div class="faq-list">
     <details class="faq-item">
-      <summary>Is ForgeSelect a drop-in replacement for Select2?</summary>
-      <p>ForgeSelect is a drop-in-<em>concept</em> replacement, not a byte-for-byte API clone: it covers Select2's core ideas (searchable dropdowns, tags, AJAX, templates) with a smaller, framework-agnostic API. See the <a href="./docs/migration-from-select2.html">Migration from Select2</a> guide for the full option/event/method mapping.</p>
+      <summary>Is Forge Select a drop-in replacement for Select2?</summary>
+      <p>Forge Select is a drop-in-<em>concept</em> replacement, not a byte-for-byte API clone: it covers Select2's core ideas (searchable dropdowns, tags, AJAX, templates) with a smaller, framework-agnostic API. See the <a href="./docs/migration-from-select2.html">Migration from Select2</a> guide for the full option/event/method mapping.</p>
     </details>
     <details class="faq-item">
-      <summary>Does ForgeSelect have any dependencies?</summary>
-      <p>No. ForgeSelect has zero runtime dependencies — it's written in strict TypeScript and ships ESM, CJS, and IIFE bundles with type declarations, so it works with any framework or none.</p>
+      <summary>Does Forge Select have any dependencies?</summary>
+      <p>No. Forge Select has zero runtime dependencies — it's written in strict TypeScript and ships ESM, CJS, and IIFE bundles with type declarations, so it works with any framework or none.</p>
     </details>
     <details class="faq-item">
-      <summary>Can ForgeSelect handle large option lists?</summary>
+      <summary>Can Forge Select handle large option lists?</summary>
       <p>Yes. Lists over 100 rows virtualize automatically — rendering only the visible rows plus a small buffer — and rendered row content is cached per option, so lists with thousands of items stay fast.</p>
     </details>
     <details class="faq-item">
-      <summary>Is ForgeSelect accessible?</summary>
-      <p>Yes. ForgeSelect implements ARIA combobox/listbox semantics, <code>aria-activedescendant</code>, and full keyboard navigation out of the box.</p>
+      <summary>Is Forge Select accessible?</summary>
+      <p>Yes. Forge Select implements ARIA combobox/listbox semantics, <code>aria-activedescendant</code>, and full keyboard navigation out of the box.</p>
     </details>
     <details class="faq-item">
-      <summary>Does ForgeSelect work with React, Vue, Angular, or Svelte?</summary>
-      <p>ForgeSelect is framework-agnostic vanilla JavaScript/TypeScript, so it can be mounted inside any framework today. Official wrapper packages are available for React (<a href="https://www.npmjs.com/package/forge-select-react"><code>forge-select-react</code></a>) and Vue (<a href="https://www.npmjs.com/package/forge-select-vue"><code>forge-select-vue</code></a>) with controlled <code>value</code>/<code>v-model</code> support; Angular and Svelte wrappers are on the <a href="https://github.com/cmm-cmm/ForgeSelect#roadmap">roadmap</a>.</p>
+      <summary>Does Forge Select work with React, Vue, Angular, or Svelte?</summary>
+      <p>Forge Select is framework-agnostic vanilla JavaScript/TypeScript, so it can be mounted inside any framework today. Official wrapper packages are available for React (<a href="https://www.npmjs.com/package/forge-select-react"><code>forge-select-react</code></a>) and Vue (<a href="https://www.npmjs.com/package/forge-select-vue"><code>forge-select-vue</code></a>) with controlled <code>value</code>/<code>v-model</code> support; Angular and Svelte wrappers are on the <a href="https://github.com/cmm-cmm/ForgeSelect#roadmap">roadmap</a>.</p>
     </details>
     <details class="faq-item">
-      <summary>Is ForgeSelect production-ready?</summary>
-      <p>ForgeSelect is pre-1.0 (currently 0.2.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release.</p>
+      <summary>Can I reorder selected tags by dragging them?</summary>
+      <p>Yes. Set <code>sortable: true</code> on a multiple select to let users drag tags into a new order with mouse, touch, or pen, or use <code>Alt+Left</code>/<code>Alt+Right</code> when a tag has keyboard focus.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Is Forge Select production-ready?</summary>
+      <p>Forge Select is pre-1.0 (currently 0.2.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release.</p>
     </details>
   </div>
 </section>

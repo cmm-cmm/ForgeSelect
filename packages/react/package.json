@@ -1,7 +1,7 @@
 {
   "name": "forge-select-react",
   "version": "0.1.0",
-  "description": "React wrapper component for ForgeSelect.",
+  "description": "React wrapper component for Forge Select.",
   "license": "MIT",
   "author": "KonexForge",
   "homepage": "https://forgeselect.konexforge.com/",

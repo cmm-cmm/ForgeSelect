@@ -1,4 +1,4 @@
-# Contributing to ForgeSelect
+# Contributing to Forge Select
 
 Thanks for your interest in contributing! This guide covers everything you need to get productive.
 
@@ -49,7 +49,7 @@ All three packages (`forge-select`, `forge-select-react`, `forge-select-vue`) pu
 
 **Core (`forge-select`)**:
 
-1. Bump `version` in `package.json` (following [SemVer](https://semver.org/)) and add a matching entry to `CHANGELOG.md`. Also update the hardcoded `softwareVersion` in the `SoftwareApplication` JSON-LD block in `site/index.html` — that page is copied verbatim (not templated), so it doesn't pick up the new version automatically.
+1. Bump `version` in `package.json` (following [SemVer](https://semver.org/)) and add a matching entry to `CHANGELOG.md`. Also update every hardcoded version string in `site/index.html` (the `softwareVersion` field in the `SoftwareApplication` JSON-LD block, the header version badge, and the hero eyebrow line) and the header version badge in `demo/index.html`, `site/playground/index.html`, and `site/theme-builder/index.html` — those pages are copied verbatim (not templated), so they don't pick up the new version automatically. Docs pages under `docs/` are templated through `scripts/build-site.mjs`'s `layout()` and read `package.json`'s version at build time, so they need no manual update.
 2. Merge that change to `main`.
 3. Tag the release commit and push the tag: `git tag v1.2.3 && git push origin v1.2.3` (or create a GitHub Release with that tag).
 4. The `publish-core` job verifies the tag matches `package.json`, runs typecheck/test/build, and publishes with npm provenance.

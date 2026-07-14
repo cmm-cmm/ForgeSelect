@@ -79,7 +79,7 @@ With `multiple: true, sortable: true`, selected tags can be reordered by draggin
 
 ### Rich items
 
-When an option has `avatar` and/or `description` and no custom template is set, ForgeSelect renders them with a built-in layout (avatar + label + description in the dropdown; small avatar + label in the selected value/tags). All built-in fields are inserted via `textContent`, so they are **XSS-safe** — no escaping needed on your side. `description` is also matched by the search filter.
+When an option has `avatar` and/or `description` and no custom template is set, Forge Select renders them with a built-in layout (avatar + label + description in the dropdown; small avatar + label in the selected value/tags). All built-in fields are inserted via `textContent`, so they are **XSS-safe** — no escaping needed on your side. `description` is also matched by the search filter.
 
 Custom templates (`templateResult`/`templateSelection`) receive the full option including `meta`. A **string** return value is injected as raw HTML — sanitize any user-provided data yourself. Rendered row content is cached per option value and cloned on scroll, so templates run once per option regardless of scrolling; if your template returns a DOM **Node**, don't rely on event listeners attached inside it (clones don't carry listeners — use event delegation on the document instead).
 
@@ -95,7 +95,7 @@ interface AjaxConfig {
 }
 ```
 
-By default `ajax` replaces the whole list on every search (`transform` returns a plain `Option[]`, as above). Set `pagination: true` to additionally load more pages as the user scrolls near the bottom of the dropdown: `params` now also receives the current `page` (starting at `0`), and `transform` should return `{ options, hasMore }` so ForgeSelect knows whether to keep requesting further pages. A search query change always resets back to page `0` and replaces the list, regardless of `pagination`. See [Examples](./examples.md) for a full snippet.
+By default `ajax` replaces the whole list on every search (`transform` returns a plain `Option[]`, as above). Set `pagination: true` to additionally load more pages as the user scrolls near the bottom of the dropdown: `params` now also receives the current `page` (starting at `0`), and `transform` should return `{ options, hasMore }` so Forge Select knows whether to keep requesting further pages. A search query change always resets back to page `0` and replaces the list, regardless of `pagination`. See [Examples](./examples.md) for a full snippet.
 
 ## Instance methods
 
@@ -103,7 +103,7 @@ By default `ajax` replaces the whole list on every search (`transform` returns a
 |---|---|---|
 | `.open()` | `void` | Opens the dropdown. |
 | `.close()` | `void` | Closes the dropdown. |
-| `.destroy()` | `void` | Removes ForgeSelect and restores the original element. |
+| `.destroy()` | `void` | Removes Forge Select and restores the original element. |
 | `.getValue()` | `string \| string[] \| null` | Returns the current value(s). |
 | `.setValue(value)` | `void` | Programmatically sets the current value(s). |
 | `.enable()` | `void` | Enables the control. |

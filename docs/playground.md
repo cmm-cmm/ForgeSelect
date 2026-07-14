@@ -4,7 +4,7 @@
 
 ## Interactive playground
 
-Write and run ForgeSelect code directly in the browser — with presets for every major feature:
+Write and run Forge Select code directly in the browser — with presets for every major feature:
 
 **<https://forgeselect.konexforge.com/playground/>**
 

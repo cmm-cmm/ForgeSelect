@@ -2,11 +2,11 @@
 
 > [Docs home](./README.md)
 >
-> **Status: planned.** ForgeSelect has no published release yet, so there are no real numbers to report. This page defines the methodology and the exact shape the results will be published in, so contributors can run and submit benchmarks as the library matures.
+> **Status: planned.** Forge Select has no published release yet, so there are no real numbers to report. This page defines the methodology and the exact shape the results will be published in, so contributors can run and submit benchmarks as the library matures.
 
 ## Methodology
 
-Benchmarks will compare ForgeSelect against Select2 (and, where relevant, other popular alternatives) on:
+Benchmarks will compare Forge Select against Select2 (and, where relevant, other popular alternatives) on:
 
 - **Bundle size** — minified and minified+gzip, zero-dependency build.
 - **Initialization time** — time to first render for a single instance, and for 50 instances on one page.
@@ -18,7 +18,7 @@ Benchmarks will compare ForgeSelect against Select2 (and, where relevant, other 
 
 Once a release exists, results will be recorded here in this format:
 
-| Metric | Select2 | ForgeSelect | Notes |
+| Metric | Select2 | Forge Select | Notes |
 |---|---|---|---|
 | Bundle size (min+gzip) | _TBD_ | _TBD_ | Zero-dependency vs. requires jQuery. |
 | Init time (1 instance) | _TBD_ | _TBD_ | Cold render, ms. |
