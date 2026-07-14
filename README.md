@@ -1,4 +1,4 @@
-# ForgeSelect
+# Forge Select
 
 [![npm version](https://img.shields.io/npm/v/forge-select.svg)](https://www.npmjs.com/package/forge-select)
 [![CI](https://github.com/cmm-cmm/ForgeSelect/actions/workflows/ci.yml/badge.svg)](https://github.com/cmm-cmm/ForgeSelect/actions/workflows/ci.yml)
@@ -6,13 +6,13 @@
 
 «A modern, lightweight, highly customizable replacement for Select2.»
 
-ForgeSelect is a next-generation JavaScript select component built for modern web applications. It provides a clean API, powerful customization options, excellent performance, and accessibility while remaining framework-agnostic.
+Forge Select is a next-generation JavaScript select component built for modern web applications. It provides a clean API, powerful customization options, excellent performance, and accessibility while remaining framework-agnostic.
 
-## Why ForgeSelect?
+## Why Forge Select?
 
 Select2 has served the community well for many years, but modern web development has evolved.
 
-ForgeSelect is designed to provide:
+Forge Select is designed to provide:
 
 - 🚀 High performance
 - 🎨 Fully customizable UI
@@ -133,7 +133,7 @@ More copy-pasteable snippets (multi-select, tags, custom templates, virtual scro
 
 ## Playground
 
-Write and run ForgeSelect code in the browser at **<https://forgeselect.konexforge.com/playground/>** — with presets for every major feature. A curated feature showcase also lives at **<https://forgeselect.konexforge.com/demo/>**. See [`docs/playground.md`](./docs/playground.md) for details and local setup.
+Write and run Forge Select code in the browser at **<https://forgeselect.konexforge.com/playground/>** — with presets for every major feature. A curated feature showcase also lives at **<https://forgeselect.konexforge.com/demo/>**. See [`docs/playground.md`](./docs/playground.md) for details and local setup.
 
 ## API Reference
 
@@ -163,7 +163,7 @@ new ForgeSelect("#country", { theme: "dark" });
 
 ## Framework Support
 
-ForgeSelect is vanilla TypeScript/JavaScript, so it can be mounted inside any framework today. Official wrapper packages exist for a couple of them:
+Forge Select is vanilla TypeScript/JavaScript, so it can be mounted inside any framework today. Official wrapper packages exist for a couple of them:
 
 - Vanilla JavaScript
 - React — via [`forge-select-react`](./packages/react/README.md) (`ForgeSelectReact` component, controlled `value`/`onChange`)
@@ -184,7 +184,7 @@ ForgeSelect is vanilla TypeScript/JavaScript, so it can be mounted inside any fr
 
 ## Migration from Select2
 
-ForgeSelect is designed as a drop-in-concept replacement for Select2: no jQuery dependency, native accessibility, and a smaller API surface. A full option/event/method mapping table and a step-by-step migration checklist are available in [`docs/migration-from-select2.md`](./docs/migration-from-select2.md).
+Forge Select is designed as a drop-in-concept replacement for Select2: no jQuery dependency, native accessibility, and a smaller API surface. A full option/event/method mapping table and a step-by-step migration checklist are available in [`docs/migration-from-select2.md`](./docs/migration-from-select2.md).
 
 ## Benchmarks
 
@@ -205,7 +205,7 @@ Performance benchmarking (bundle size, init time, search latency, virtual scroll
 
 ## Plugin Development Guide
 
-ForgeSelect uses a small plugin architecture (`onInit`, `onOpen`, `onClose`, `onDestroy` lifecycle hooks) so behavior can be extended without forking the core. See [`docs/plugin-development.md`](./docs/plugin-development.md) for the plugin interface and a complete example plugin.
+Forge Select uses a small plugin architecture (`onInit`, `onOpen`, `onClose`, `onDestroy` lifecycle hooks) so behavior can be extended without forking the core. See [`docs/plugin-development.md`](./docs/plugin-development.md) for the plugin interface and a complete example plugin.
 
 ## Development
 

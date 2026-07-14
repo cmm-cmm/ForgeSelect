@@ -2,7 +2,7 @@
 
 > [Docs home](./README.md)
 
-ForgeSelect is built around a small plugin architecture so behavior can be extended without forking the core. A plugin is a plain object with lifecycle hooks that ForgeSelect calls at the right time.
+Forge Select is built around a small plugin architecture so behavior can be extended without forking the core. A plugin is a plain object with lifecycle hooks that Forge Select calls at the right time.
 
 ## Plugin interface
 

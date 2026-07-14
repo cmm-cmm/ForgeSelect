@@ -1,6 +1,6 @@
 # forge-select-vue
 
-Vue 3 wrapper for [ForgeSelect](https://github.com/cmm-cmm/ForgeSelect) — a zero-dependency, accessible select/combobox component.
+Vue 3 wrapper for [Forge Select](https://github.com/cmm-cmm/ForgeSelect) — a zero-dependency, accessible select/combobox component.
 
 ## Installation
 
@@ -42,10 +42,10 @@ const options = {
 
 ## Important limitation
 
-`options` is read once when the underlying ForgeSelect instance is created and is **not reactive** — changing `data`, `templateResult`, `plugins`, etc. after mount has no effect on the existing instance. To apply new options, force a remount with a different `:key`:
+`options` is read once when the underlying Forge Select instance is created and is **not reactive** — changing `data`, `templateResult`, `plugins`, etc. after mount has no effect on the existing instance. To apply new options, force a remount with a different `:key`:
 
 ```vue
 <ForgeSelectVue :key="datasetVersion" :options="options" v-model="value" />
 ```
 
-See the [ForgeSelect docs](https://forgeselect.konexforge.com/docs/) for the full option/event/method reference.
+See the [Forge Select docs](https://forgeselect.konexforge.com/docs/) for the full option/event/method reference.
