@@ -33,7 +33,7 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 - `docs/` — markdown documentation, rendered to the website by `scripts/build-site.mjs`
 - `demo/`, `site/` — feature demo, landing page, and playground
 - `packages/` — npm workspaces for framework wrapper packages (`packages/react` → `forge-select-react`, `packages/vue` → `forge-select-vue`), each with its own `package.json`/tests/build, independent of the core library's zero-dependency promise
-- `.github/workflows/` — CI (typecheck/test/build, plus `--workspaces` for the wrapper packages), npm publishing, and site deployment (GitHub Pages + Cloudflare Pages)
+- `.github/workflows/` — CI (typecheck/test/build, plus `--workspaces` for the wrapper packages), npm publishing, and GitHub Pages deployment (Cloudflare Pages deploys separately, via a Cloudflare Dashboard Git connection — see "Deploying the site" below)
 
 ## Pull request guidelines
 
@@ -67,17 +67,21 @@ This requires a repository secret named `NPM_TOKEN` (an npm **Automation** acces
 
 ## Deploying the site
 
-Every push to `main` deploys the assembled site (`npm run build:site` → `_site/`) to two places in parallel:
+Every push to `main` deploys the assembled site (`npm run build:site` → `_site/`) to two places:
 
 - **GitHub Pages**, via `.github/workflows/pages.yml` — force-pushes `_site/` to the `gh-pages` branch (`peaceiris/actions-gh-pages`). This is the canonical, public live site.
-- **Cloudflare Pages**, via `.github/workflows/cloudflare-pages.yml` — deploys `_site/` with `wrangler pages deploy --project-name=forgeselect`, publishing to `https://forgeselect.pages.dev`. Currently a staging mirror running alongside GitHub Pages, not yet the canonical URL (so `homepage` in `package.json` and hardcoded canonical/OG URLs still point at GitHub Pages).
+- **Cloudflare Pages** (`https://forgeselect.pages.dev`), via a Cloudflare Pages project connected directly to this GitHub repo through the Cloudflare Dashboard (Git integration) — **not** a GitHub Actions workflow. Currently a staging mirror running alongside GitHub Pages, not yet the canonical URL (so `homepage` in `package.json` and hardcoded canonical/OG URLs still point at GitHub Pages).
 
-The Cloudflare workflow needs two repository secrets, which aren't set up by default:
+The Cloudflare Pages project is configured with:
 
-1. `CLOUDFLARE_API_TOKEN` — an API token with Cloudflare Pages edit permission (Cloudflare dashboard → **My Profile → API Tokens**).
-2. `CLOUDFLARE_ACCOUNT_ID` — found in the Cloudflare dashboard sidebar.
+| Field | Value |
+| --- | --- |
+| Build command | `npm run build:site` |
+| Deploy command | `npx wrangler pages deploy _site --project-name=forgeselect` |
+| Non-production branch deploy command | `npx wrangler pages deploy _site --project-name=forgeselect` |
+| Path (root directory) | *(blank — repo root)* |
 
-Add both under **Settings → Secrets and variables → Actions**. `wrangler pages deploy --project-name=forgeselect` creates the Pages project automatically on first run if it doesn't already exist. To deploy from a local machine instead of CI, run `npm run build:site && npm run deploy:cloudflare` (requires either a local `wrangler login` or a `CLOUDFLARE_API_TOKEN` environment variable).
+Cloudflare's own build environment requires a Deploy command (it can't auto-deploy `_site/` on its own the way the classic Pages Git integration used to), so it needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set as **Environment variables on the Cloudflare Pages project itself** (Settings → Environment variables) — the token must have `Account > Cloudflare Pages > Edit` permission, or every deploy fails with an authentication error even though the token is otherwise valid. To deploy from a local machine instead, run `npm run build:site && npm run deploy:cloudflare` (requires either a local `wrangler login` or a `CLOUDFLARE_API_TOKEN` environment variable).
 
 ## Reporting bugs & requesting features
 
