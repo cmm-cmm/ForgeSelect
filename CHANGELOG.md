@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Cloudflare Pages staging deploy**: `.github/workflows/cloudflare-pages.yml` deploys the assembled site to `https://forgeselect.pages.dev` on every push to `main`, alongside the existing GitHub Pages deploy (`pages.yml`, untouched). GitHub Pages remains the canonical live site for now — this is a staging mirror while Cloudflare is evaluated, so `homepage`/canonical URLs are unchanged. Requires repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; see `CONTRIBUTING.md`. Adds a `wrangler` dev dependency and a `deploy:cloudflare` script for manual/local deploys.
 - **Drag & Drop Ordering**: `sortable: true` (multi-select only) lets users reorder selected tags by dragging with mouse/touch/pen (Pointer Events), or via `Alt+Left`/`Alt+Right` when a tag has keyboard focus. Fully opt-in — multi-select behavior, markup, and events are unchanged when `sortable` is left at its default `false`. When mounted on a native `<select multiple>`, the underlying `<option>` elements are also reordered to match, so a plain `<form>` submission serializes values in the dragged order.
 
 ### Changed

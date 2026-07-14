@@ -33,7 +33,7 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 - `docs/` — markdown documentation, rendered to the website by `scripts/build-site.mjs`
 - `demo/`, `site/` — feature demo, landing page, and playground
 - `packages/` — npm workspaces for framework wrapper packages (`packages/react` → `forge-select-react`, `packages/vue` → `forge-select-vue`), each with its own `package.json`/tests/build, independent of the core library's zero-dependency promise
-- `.github/workflows/` — CI (typecheck/test/build, plus `--workspaces` for the wrapper packages) and GitHub Pages deployment
+- `.github/workflows/` — CI (typecheck/test/build, plus `--workspaces` for the wrapper packages), npm publishing, and site deployment (GitHub Pages + Cloudflare Pages)
 
 ## Pull request guidelines
 
@@ -45,7 +45,7 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 
 ## Releasing (maintainers)
 
-All three packages (`forge-select`, `forge-select-react`, `forge-select-vue`) publish to npm through a single workflow, `.github/workflows/release.yml`, which contains one job per package (`publish-core`, `publish-react`, `publish-vue`). Each job is gated on its own tag prefix, so the packages are versioned and released independently of each other, but there is only one workflow file to maintain.
+All three packages (`forge-select`, `forge-select-react`, `forge-select-vue`) publish to npm through a single workflow, `.github/workflows/release.yml`, which has one job (`publish`) whose steps branch on which tag prefix (or `workflow_dispatch` input) triggered the run — so only one job/process shows in the Actions UI, even though the three packages are versioned and released independently of each other.
 
 **Core (`forge-select`)**:
 
@@ -64,6 +64,20 @@ All three packages (`forge-select`, `forge-select-react`, `forge-select-vue`) pu
 Any of the three jobs can also be run manually from the Actions tab via `workflow_dispatch`, picking the target package from the `package` input — useful for retrying a publish without pushing a new tag.
 
 This requires a repository secret named `NPM_TOKEN` (an npm **Automation** access token, so it works without interactive 2FA) — add it under **Settings → Secrets and variables → Actions**.
+
+## Deploying the site
+
+Every push to `main` deploys the assembled site (`npm run build:site` → `_site/`) to two places in parallel:
+
+- **GitHub Pages**, via `.github/workflows/pages.yml` — force-pushes `_site/` to the `gh-pages` branch (`peaceiris/actions-gh-pages`). This is the canonical, public live site.
+- **Cloudflare Pages**, via `.github/workflows/cloudflare-pages.yml` — deploys `_site/` with `wrangler pages deploy --project-name=forgeselect`, publishing to `https://forgeselect.pages.dev`. Currently a staging mirror running alongside GitHub Pages, not yet the canonical URL (so `homepage` in `package.json` and hardcoded canonical/OG URLs still point at GitHub Pages).
+
+The Cloudflare workflow needs two repository secrets, which aren't set up by default:
+
+1. `CLOUDFLARE_API_TOKEN` — an API token with Cloudflare Pages edit permission (Cloudflare dashboard → **My Profile → API Tokens**).
+2. `CLOUDFLARE_ACCOUNT_ID` — found in the Cloudflare dashboard sidebar.
+
+Add both under **Settings → Secrets and variables → Actions**. `wrangler pages deploy --project-name=forgeselect` creates the Pages project automatically on first run if it doesn't already exist. To deploy from a local machine instead of CI, run `npm run build:site && npm run deploy:cloudflare` (requires either a local `wrangler login` or a `CLOUDFLARE_API_TOKEN` environment variable).
 
 ## Reporting bugs & requesting features
 
