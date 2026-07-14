@@ -45,21 +45,25 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 
 ## Releasing (maintainers)
 
-Releases publish to npm automatically via `.github/workflows/release.yml`:
+All three packages (`forge-select`, `@forge-select/react`, `@forge-select/vue`) publish to npm through a single workflow, `.github/workflows/release.yml`, which contains one job per package (`publish-core`, `publish-react`, `publish-vue`). Each job is gated on its own tag prefix, so the packages are versioned and released independently of each other, but there is only one workflow file to maintain.
+
+**Core (`forge-select`)**:
 
 1. Bump `version` in `package.json` (following [SemVer](https://semver.org/)) and add a matching entry to `CHANGELOG.md`. Also update the hardcoded `softwareVersion` in the `SoftwareApplication` JSON-LD block in `site/index.html` — that page is copied verbatim (not templated), so it doesn't pick up the new version automatically.
 2. Merge that change to `main`.
 3. Tag the release commit and push the tag: `git tag v1.2.3 && git push origin v1.2.3` (or create a GitHub Release with that tag).
-4. The workflow verifies the tag matches `package.json`, runs typecheck/test/build, and publishes with npm provenance.
+4. The `publish-core` job verifies the tag matches `package.json`, runs typecheck/test/build, and publishes with npm provenance.
 
-This requires a repository secret named `NPM_TOKEN` (an npm **Automation** access token, so it works without interactive 2FA) — add it under **Settings → Secrets and variables → Actions**.
-
-`@forge-select/react` and `@forge-select/vue` are versioned and released independently from the core package via their own workflows and tag prefixes:
+**`@forge-select/react` / `@forge-select/vue`**:
 
 1. Bump `version` in `packages/react/package.json` (or `packages/vue/package.json`) and add a matching entry to that package's own `CHANGELOG.md`.
 2. Merge to `main`.
 3. Tag and push: `git tag react-v1.2.3 && git push origin react-v1.2.3` (or `vue-v1.2.3`).
-4. `.github/workflows/release-react.yml` / `release-vue.yml` verifies the tag matches that package's `package.json`, runs typecheck/test/build scoped to the workspace, and publishes with npm provenance.
+4. The `publish-react` / `publish-vue` job verifies the tag matches that package's `package.json`, builds the core library first (the wrapper's typecheck/build depends on `forge-select`'s compiled `dist/`), runs typecheck/test/build scoped to the workspace, and publishes with npm provenance.
+
+Any of the three jobs can also be run manually from the Actions tab via `workflow_dispatch`, picking the target package from the `package` input — useful for retrying a publish without pushing a new tag.
+
+This requires a repository secret named `NPM_TOKEN` (an npm **Automation** access token, so it works without interactive 2FA) — add it under **Settings → Secrets and variables → Actions**.
 
 ## Reporting bugs & requesting features
 
