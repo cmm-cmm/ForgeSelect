@@ -3,15 +3,29 @@ name: Publish to npm
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v[0-9]*.[0-9]*.[0-9]*"
+      - "react-v*.*.*"
+      - "vue-v*.*.*"
   workflow_dispatch:
+    inputs:
+      package:
+        description: "Package to publish"
+        required: true
+        type: choice
+        options:
+          - core
+          - react
+          - vue
 
 permissions:
   contents: read
   id-token: write # needed for npm provenance
 
 jobs:
-  publish:
+  publish-core:
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'react-v') && !startsWith(github.ref_name, 'vue-v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.package == 'core')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,5 +59,91 @@ jobs:
 
       - name: Publish
         run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-react:
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref_name, 'react-v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.package == 'react')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tag matches packages/react/package.json version
+        if: github.event_name == 'push'
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#react-v}"
+          PKG_VERSION="$(node -p "require('./packages/react/package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag react-v$TAG_VERSION does not match packages/react/package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Build core library
+        run: npm run build
+
+      - name: Typecheck, test, build
+        run: |
+          npm run typecheck --workspace=packages/react
+          npm test --workspace=packages/react
+          npm run build --workspace=packages/react
+
+      - name: Publish
+        run: npm publish --workspace=packages/react --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-vue:
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref_name, 'vue-v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.package == 'vue')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tag matches packages/vue/package.json version
+        if: github.event_name == 'push'
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#vue-v}"
+          PKG_VERSION="$(node -p "require('./packages/vue/package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag vue-v$TAG_VERSION does not match packages/vue/package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Build core library
+        run: npm run build
+
+      - name: Typecheck, test, build
+        run: |
+          npm run typecheck --workspace=packages/vue
+          npm test --workspace=packages/vue
+          npm run build --workspace=packages/vue
+
+      - name: Publish
+        run: npm publish --workspace=packages/vue --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
