@@ -36,7 +36,7 @@ function CountryPicker() {
 
 ## API
 
-`ForgeSelectReact` accepts every [`ForgeSelectOptions`](https://cmm-cmm.github.io/ForgeSelect/docs/api-reference.html) field as a prop, plus:
+`ForgeSelectReact` accepts every [`ForgeSelectOptions`](https://forgeselect.konexforge.com/docs/api-reference.html) field as a prop, plus:
 
 - `value` — controlled value (`string | string[] | null`), kept in sync via `.setValue()` whenever it changes.
 - `onChange` — called with the new value on the underlying `change` event.
@@ -50,4 +50,4 @@ ForgeSelect's own options (`data`, `templateResult`, `templateSelection`, `plugi
 <ForgeSelectReact key={datasetVersion} data={data} />
 ```
 
-See the [ForgeSelect docs](https://cmm-cmm.github.io/ForgeSelect/docs/) for the full option/event/method reference.
+See the [ForgeSelect docs](https://forgeselect.konexforge.com/docs/) for the full option/event/method reference.

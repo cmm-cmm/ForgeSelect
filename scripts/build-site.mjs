@@ -1,5 +1,5 @@
 /**
- * Assembles the GitHub Pages site into _site/:
+ * Assembles the site into _site/ (deployed to Cloudflare Workers, see CONTRIBUTING.md):
  *   /            landing page (site/index.html)
  *   /demo/       interactive demo (demo/)
  *   /docs/       docs/*.md rendered to HTML with a shared layout
@@ -233,7 +233,6 @@ async function main() {
   await cp(path.join(root, "demo"), path.join(out, "demo"), { recursive: true });
   await cp(path.join(root, "dist"), path.join(out, "dist"), { recursive: true });
   await cp(path.join(root, "styles"), path.join(out, "styles"), { recursive: true });
-  await writeFile(path.join(out, ".nojekyll"), "");
   await writeFile(path.join(out, "sitemap.xml"), generateSitemap());
   await writeFile(path.join(out, "robots.txt"), generateRobotsTxt());
   await writeFile(path.join(out, "llms.txt"), generateLlmsTxt());

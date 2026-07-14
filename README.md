@@ -29,11 +29,11 @@ ForgeSelect is designed to provide:
 
 ## Documentation
 
-Browse the documentation website at **<https://cmm-cmm.github.io/ForgeSelect/docs/>**, or read the sources in [`docs/`](./docs/README.md):
+Browse the documentation website at **<https://forgeselect.konexforge.com/docs/>**, or read the sources in [`docs/`](./docs/README.md):
 
 - [API Reference](./docs/api-reference.md) — constructor, options, methods, events
 - [Examples](./docs/examples.md) — copy-pasteable snippets for every feature and framework
-- [Playground](./docs/playground.md) — [live demo](https://cmm-cmm.github.io/ForgeSelect/demo/) on GitHub Pages
+- [Playground](./docs/playground.md) — [live demo](https://forgeselect.konexforge.com/demo/)
 - [Migration from Select2](./docs/migration-from-select2.md) — option/event/method mapping and a migration checklist
 - [Benchmarks](./docs/benchmarks.md) — performance methodology and results (planned)
 - [Plugin Development Guide](./docs/plugin-development.md) — write and register your own plugins
@@ -133,7 +133,7 @@ More copy-pasteable snippets (multi-select, tags, custom templates, virtual scro
 
 ## Playground
 
-Write and run ForgeSelect code in the browser at **<https://cmm-cmm.github.io/ForgeSelect/playground/>** — with presets for every major feature. A curated feature showcase also lives at **<https://cmm-cmm.github.io/ForgeSelect/demo/>**. See [`docs/playground.md`](./docs/playground.md) for details and local setup.
+Write and run ForgeSelect code in the browser at **<https://forgeselect.konexforge.com/playground/>** — with presets for every major feature. A curated feature showcase also lives at **<https://forgeselect.konexforge.com/demo/>**. See [`docs/playground.md`](./docs/playground.md) for details and local setup.
 
 ## API Reference
 

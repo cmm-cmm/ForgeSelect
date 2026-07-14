@@ -36,7 +36,7 @@ const options = {
 
 ## API
 
-- `options` — a single object bundling every [`ForgeSelectOptions`](https://cmm-cmm.github.io/ForgeSelect/docs/api-reference.html) field (`placeholder`, `data`, `multiple`, `ajax`, `templateResult`, `plugins`, ...).
+- `options` — a single object bundling every [`ForgeSelectOptions`](https://forgeselect.konexforge.com/docs/api-reference.html) field (`placeholder`, `data`, `multiple`, `ajax`, `templateResult`, `plugins`, ...).
 - `modelValue` / `v-model` — controlled value (`string | string[] | null`), kept in sync via `.setValue()` whenever it changes.
 - `change` event — also emitted alongside `update:modelValue`, carrying the same value, for consumers not using `v-model`.
 
@@ -48,4 +48,4 @@ const options = {
 <ForgeSelectVue :key="datasetVersion" :options="options" v-model="value" />
 ```
 
-See the [ForgeSelect docs](https://cmm-cmm.github.io/ForgeSelect/docs/) for the full option/event/method reference.
+See the [ForgeSelect docs](https://forgeselect.konexforge.com/docs/) for the full option/event/method reference.
