@@ -44,7 +44,7 @@
     "vue": ">=3.2"
   },
   "dependencies": {
-    "forge-select": "file:../.."
+    "forge-select": "^0.2.0"
   },
   "devDependencies": {
     "jsdom": "^26.0.0",
