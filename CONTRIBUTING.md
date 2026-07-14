@@ -54,6 +54,13 @@ Releases publish to npm automatically via `.github/workflows/release.yml`:
 
 This requires a repository secret named `NPM_TOKEN` (an npm **Automation** access token, so it works without interactive 2FA) — add it under **Settings → Secrets and variables → Actions**.
 
+`@forge-select/react` and `@forge-select/vue` are versioned and released independently from the core package via their own workflows and tag prefixes:
+
+1. Bump `version` in `packages/react/package.json` (or `packages/vue/package.json`) and add a matching entry to that package's own `CHANGELOG.md`.
+2. Merge to `main`.
+3. Tag and push: `git tag react-v1.2.3 && git push origin react-v1.2.3` (or `vue-v1.2.3`).
+4. `.github/workflows/release-react.yml` / `release-vue.yml` verifies the tag matches that package's `package.json`, runs typecheck/test/build scoped to the workspace, and publishes with npm provenance.
+
 ## Reporting bugs & requesting features
 
 Open a [GitHub issue](https://github.com/cmm-cmm/ForgeSelect/issues) with a minimal reproduction — a snippet that runs in the [playground](https://cmm-cmm.github.io/ForgeSelect/playground/) is perfect.
