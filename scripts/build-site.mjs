@@ -11,6 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
+import sharp from "sharp";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "_site");
@@ -164,22 +165,24 @@ function layout({ title, description, canonicalPath, jsonLdBlocks, active, conte
 <meta name="robots" content="index, follow">
 <meta name="author" content="KonexForge">
 <link rel="canonical" href="${SITE_URL}${canonicalPath}">
+<link rel="sitemap" href="${SITE_URL}sitemap.xml" type="application/xml">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Forge Select">
 <meta property="og:title" content="${title} · Forge Select">
 <meta property="og:description" content="${description}">
 <meta property="og:url" content="${SITE_URL}${canonicalPath}">
-<meta property="og:image" content="${SITE_URL}assets/og-banner.svg">
-<meta property="og:image:type" content="image/svg+xml">
+<meta property="og:image" content="${SITE_URL}assets/og-banner.png">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Forge Select — select/combobox component banner">
 <meta property="og:locale" content="en_US">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${title} · Forge Select">
 <meta name="twitter:description" content="${description}">
-<meta name="twitter:image" content="${SITE_URL}assets/og-banner.svg">
+<meta name="twitter:image" content="${SITE_URL}assets/og-banner.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2384cc16'/><stop offset='0.5' stop-color='%2322c55e'/><stop offset='1' stop-color='%2315803d'/></linearGradient></defs><path d='M4 3L12 9L20 3' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 12L12 18L20 12' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 21L12 27L20 21' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
+<link rel="apple-touch-icon" href="../assets/og-banner.png">
 <link rel="stylesheet" href="../assets/site.css">
 <link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
 <link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
@@ -232,6 +235,10 @@ async function main() {
   // Static pieces
   await cp(path.join(root, "site/index.html"), path.join(out, "index.html"));
   await cp(path.join(root, "site/assets"), path.join(out, "assets"), { recursive: true });
+  // Rasterize the OG banner at build time (not committed) — Twitter/X and
+  // LinkedIn render svg og:image/twitter:image inconsistently, so a real
+  // PNG is required for a reliable social preview.
+  await sharp(path.join(out, "assets/og-banner.svg")).png().toFile(path.join(out, "assets/og-banner.png"));
   await cp(path.join(root, "site/playground"), path.join(out, "playground"), { recursive: true });
   await cp(path.join(root, "site/theme-builder"), path.join(out, "theme-builder"), { recursive: true });
   await cp(path.join(root, "demo"), path.join(out, "demo"), { recursive: true });
