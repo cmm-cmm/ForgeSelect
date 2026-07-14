@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Theme Builder**: a new site page (`/theme-builder/`) for live-editing every `--fs-*` CSS variable against real ForgeSelect instances, starting from Light/Dark presets, with a one-click "Copy CSS" output. Site-only — no library code changes.
 - **Async pagination**: `ajax.pagination` opts in to loading further pages as the user scrolls near the bottom of the dropdown, instead of only reloading on search (`params` now also receives the current `page`; `transform` may return `{ options, hasMore }` to control it). Fully backward compatible — existing `ajax` configs without `pagination` behave exactly as before, and cached row content is preserved across appended pages instead of being cleared.
 - **Tree select**: add `children` to any `Option` to get an expandable/collapsible tree node, with cascading select/deselect and an indeterminate state for partially-selected parents in `multiple` mode. Purely additive — lists with no `children` anywhere render and behave exactly as before.
+- **Framework wrapper packages**: new npm workspaces under `packages/` — [`@forge-select/react`](./packages/react/CHANGELOG.md) and [`@forge-select/vue`](./packages/vue/CHANGELOG.md), each a thin component wrapping the core library with controlled-value support (`onChange` / `v-model`). CI now also runs typecheck/test/build across workspaces after the core library's own steps. Publishing these packages to npm is not yet wired up (see each package's own changelog for details).
 
 ### Fixed
 

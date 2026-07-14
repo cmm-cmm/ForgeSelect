@@ -30,3 +30,12 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Typecheck workspaces (React/Vue wrappers)
+        run: npm run typecheck --workspaces --if-present
+
+      - name: Test workspaces (React/Vue wrappers)
+        run: npm test --workspaces --if-present
+
+      - name: Build workspaces (React/Vue wrappers)
+        run: npm run build --workspaces --if-present
