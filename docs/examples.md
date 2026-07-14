@@ -182,6 +182,38 @@ new ForgeSelect("#big-list", {
 
 ## React
 
+The official [`forge-select-react`](https://www.npmjs.com/package/forge-select-react) package wraps ForgeSelect in a controlled component — no manual mounting required:
+
+```bash
+npm install forge-select forge-select-react
+```
+
+```jsx
+import { useState } from "react";
+import { ForgeSelectReact } from "forge-select-react";
+import "forge-select/styles.css";
+
+function CountrySelect() {
+  const [value, setValue] = useState(null);
+
+  return (
+    <ForgeSelectReact
+      searchable
+      data={[
+        { value: "vn", label: "Vietnam" },
+        { value: "jp", label: "Japan" },
+      ]}
+      value={value}
+      onChange={setValue}
+    />
+  );
+}
+```
+
+`data`, `templateResult`, `plugins`, and other constructor-only options are read once at mount; remount with a different `key` to change them. See the [package README](https://github.com/cmm-cmm/ForgeSelect/blob/main/packages/react/README.md) for the full prop reference.
+
+If you'd rather not add the extra dependency, mount the core library directly:
+
 ```jsx
 import { useEffect, useRef } from "react";
 import ForgeSelect from "forge-select";
@@ -205,6 +237,37 @@ function CountrySelect() {
 ```
 
 ## Vue
+
+The official [`forge-select-vue`](https://www.npmjs.com/package/forge-select-vue) package wraps ForgeSelect as a Vue 3 component with `v-model` support:
+
+```bash
+npm install forge-select forge-select-vue
+```
+
+```vue
+<script setup>
+import { ref } from "vue";
+import { ForgeSelectVue } from "forge-select-vue";
+import "forge-select/styles.css";
+
+const value = ref(null);
+const options = {
+  searchable: true,
+  data: [
+    { value: "vn", label: "Vietnam" },
+    { value: "jp", label: "Japan" },
+  ],
+};
+</script>
+
+<template>
+  <ForgeSelectVue :options="options" v-model="value" />
+</template>
+```
+
+`options` is read once when the instance is created; force a remount with a different `:key` to apply new `data`/templates/plugins. See the [package README](https://github.com/cmm-cmm/ForgeSelect/blob/main/packages/vue/README.md) for the full reference.
+
+If you'd rather not add the extra dependency, mount the core library directly:
 
 ```vue
 <template>

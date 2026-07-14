@@ -53,9 +53,9 @@
     { "@type": "Question", "name": "Is ForgeSelect accessible?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. ForgeSelect implements ARIA combobox/listbox semantics, aria-activedescendant, and full keyboard navigation out of the box." } },
     { "@type": "Question", "name": "Does ForgeSelect work with React, Vue, Angular, or Svelte?",
-      "acceptedAnswer": { "@type": "Answer", "text": "ForgeSelect is framework-agnostic vanilla JavaScript/TypeScript, so it can be mounted inside any framework today. Dedicated React/Vue/Angular/Svelte wrapper components are on the roadmap but not yet available." } },
+      "acceptedAnswer": { "@type": "Answer", "text": "ForgeSelect is framework-agnostic vanilla JavaScript/TypeScript, so it can be mounted inside any framework today. Official wrapper packages are available for React (forge-select-react) and Vue (forge-select-vue) with controlled value/v-model support; Angular and Svelte wrappers are on the roadmap." } },
     { "@type": "Question", "name": "Is ForgeSelect production-ready?",
-      "acceptedAnswer": { "@type": "Answer", "text": "ForgeSelect is pre-1.0 (currently 0.1.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release." } }
+      "acceptedAnswer": { "@type": "Answer", "text": "ForgeSelect is pre-1.0 (currently 0.2.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release." } }
   ]
 }
 </script>
@@ -146,11 +146,11 @@ select.on("change", (value) =&gt; console.log(value));</code></pre>
     </details>
     <details class="faq-item">
       <summary>Does ForgeSelect work with React, Vue, Angular, or Svelte?</summary>
-      <p>ForgeSelect is framework-agnostic vanilla JavaScript/TypeScript, so it can be mounted inside any framework today. Dedicated React/Vue/Angular/Svelte wrapper components are on the roadmap but not yet available.</p>
+      <p>ForgeSelect is framework-agnostic vanilla JavaScript/TypeScript, so it can be mounted inside any framework today. Official wrapper packages are available for React (<a href="https://www.npmjs.com/package/forge-select-react"><code>forge-select-react</code></a>) and Vue (<a href="https://www.npmjs.com/package/forge-select-vue"><code>forge-select-vue</code></a>) with controlled <code>value</code>/<code>v-model</code> support; Angular and Svelte wrappers are on the <a href="https://github.com/cmm-cmm/ForgeSelect#roadmap">roadmap</a>.</p>
     </details>
     <details class="faq-item">
       <summary>Is ForgeSelect production-ready?</summary>
-      <p>ForgeSelect is pre-1.0 (currently 0.1.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release.</p>
+      <p>ForgeSelect is pre-1.0 (currently 0.2.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release.</p>
     </details>
   </div>
 </section>

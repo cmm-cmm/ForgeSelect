@@ -121,6 +121,17 @@ select.on("change", (value) => console.log(value));
 select.on("search", (query) => console.log("searching:", query));
 ```
 
+## Framework wrappers
+
+The constructor/options/methods/events above are the core `forge-select` API. Official wrapper components expose the same functionality with framework-native conventions:
+
+| Package | Framework | Value binding |
+|---|---|---|
+| [`forge-select-react`](https://www.npmjs.com/package/forge-select-react) | React | `value` prop + `onChange` |
+| [`forge-select-vue`](https://www.npmjs.com/package/forge-select-vue) | Vue 3 | `v-model` |
+
+Constructor-only options (`data`, `templateResult`, `templateSelection`, `plugins`, etc.) are read once when the wrapped instance mounts and are not reactive in either wrapper — see the [Examples](./examples.md#react) or each package's own README for details and the remount-with-`key` workaround.
+
 ## See also
 
 - [Examples](./examples.md)
