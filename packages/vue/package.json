@@ -1,5 +1,5 @@
 {
-  "name": "@forge-select/vue",
+  "name": "forge-select-vue",
   "version": "0.1.0",
   "description": "Vue 3 wrapper component for ForgeSelect.",
   "license": "MIT",

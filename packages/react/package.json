@@ -1,5 +1,5 @@
 {
-  "name": "@forge-select/react",
+  "name": "forge-select-react",
   "version": "0.1.0",
   "description": "React wrapper component for ForgeSelect.",
   "license": "MIT",

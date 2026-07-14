@@ -165,8 +165,8 @@ new ForgeSelect("#country", { theme: "dark" });
 ForgeSelect is vanilla TypeScript/JavaScript, so it can be mounted inside any framework today. Official wrapper packages exist for a couple of them:
 
 - Vanilla JavaScript
-- React — via [`@forge-select/react`](./packages/react/README.md) (`ForgeSelectReact` component, controlled `value`/`onChange`)
-- Vue — via [`@forge-select/vue`](./packages/vue/README.md) (`ForgeSelectVue` component, `v-model` support)
+- React — via [`forge-select-react`](./packages/react/README.md) (`ForgeSelectReact` component, controlled `value`/`onChange`)
+- Vue — via [`forge-select-vue`](./packages/vue/README.md) (`ForgeSelectVue` component, `v-model` support)
 - Angular — mount manually for now; a dedicated wrapper is on the [Roadmap](#roadmap)
 - Svelte — mount manually for now; a dedicated wrapper is on the [Roadmap](#roadmap)
 - Next.js

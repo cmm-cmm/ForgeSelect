@@ -32,7 +32,7 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 - `tests/` — vitest + jsdom unit tests
 - `docs/` — markdown documentation, rendered to the website by `scripts/build-site.mjs`
 - `demo/`, `site/` — feature demo, landing page, and playground
-- `packages/` — npm workspaces for framework wrapper packages (`packages/react` → `@forge-select/react`, `packages/vue` → `@forge-select/vue`), each with its own `package.json`/tests/build, independent of the core library's zero-dependency promise
+- `packages/` — npm workspaces for framework wrapper packages (`packages/react` → `forge-select-react`, `packages/vue` → `forge-select-vue`), each with its own `package.json`/tests/build, independent of the core library's zero-dependency promise
 - `.github/workflows/` — CI (typecheck/test/build, plus `--workspaces` for the wrapper packages) and GitHub Pages deployment
 
 ## Pull request guidelines
@@ -45,7 +45,7 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 
 ## Releasing (maintainers)
 
-All three packages (`forge-select`, `@forge-select/react`, `@forge-select/vue`) publish to npm through a single workflow, `.github/workflows/release.yml`, which contains one job per package (`publish-core`, `publish-react`, `publish-vue`). Each job is gated on its own tag prefix, so the packages are versioned and released independently of each other, but there is only one workflow file to maintain.
+All three packages (`forge-select`, `forge-select-react`, `forge-select-vue`) publish to npm through a single workflow, `.github/workflows/release.yml`, which contains one job per package (`publish-core`, `publish-react`, `publish-vue`). Each job is gated on its own tag prefix, so the packages are versioned and released independently of each other, but there is only one workflow file to maintain.
 
 **Core (`forge-select`)**:
 
@@ -54,7 +54,7 @@ All three packages (`forge-select`, `@forge-select/react`, `@forge-select/vue`) 
 3. Tag the release commit and push the tag: `git tag v1.2.3 && git push origin v1.2.3` (or create a GitHub Release with that tag).
 4. The `publish-core` job verifies the tag matches `package.json`, runs typecheck/test/build, and publishes with npm provenance.
 
-**`@forge-select/react` / `@forge-select/vue`**:
+**`forge-select-react` / `forge-select-vue`**:
 
 1. Bump `version` in `packages/react/package.json` (or `packages/vue/package.json`) and add a matching entry to that package's own `CHANGELOG.md`.
 2. Merge to `main`.

@@ -1,11 +1,11 @@
-# @forge-select/react
+# forge-select-react
 
 React wrapper for [ForgeSelect](https://github.com/cmm-cmm/ForgeSelect) — a zero-dependency, accessible select/combobox component.
 
 ## Installation
 
 ```bash
-npm install forge-select @forge-select/react
+npm install forge-select forge-select-react
 ```
 
 `forge-select` is a peer of this package (installed automatically as a regular dependency); `react`/`react-dom` are peer dependencies you provide.
@@ -13,7 +13,7 @@ npm install forge-select @forge-select/react
 ## Usage
 
 ```jsx
-import { ForgeSelectReact } from "@forge-select/react";
+import { ForgeSelectReact } from "forge-select-react";
 import "forge-select/styles.css";
 
 function CountryPicker() {

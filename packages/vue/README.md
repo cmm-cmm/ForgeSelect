@@ -1,11 +1,11 @@
-# @forge-select/vue
+# forge-select-vue
 
 Vue 3 wrapper for [ForgeSelect](https://github.com/cmm-cmm/ForgeSelect) — a zero-dependency, accessible select/combobox component.
 
 ## Installation
 
 ```bash
-npm install forge-select @forge-select/vue
+npm install forge-select forge-select-vue
 ```
 
 `forge-select` is a peer of this package (installed automatically as a regular dependency); `vue` (3.2+) is a peer dependency you provide.
@@ -15,7 +15,7 @@ npm install forge-select @forge-select/vue
 ```vue
 <script setup>
 import { ref } from "vue";
-import { ForgeSelectVue } from "@forge-select/vue";
+import { ForgeSelectVue } from "forge-select-vue";
 import "forge-select/styles.css";
 
 const value = ref(null);
