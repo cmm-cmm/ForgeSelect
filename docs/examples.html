@@ -197,6 +197,31 @@
 });
 </code></pre>
 <h2>React</h2>
+<p>The official <a href="https://www.npmjs.com/package/forge-select-react"><code>forge-select-react</code></a> package wraps ForgeSelect in a controlled component — no manual mounting required:</p>
+<pre><code class="language-bash">npm install forge-select forge-select-react
+</code></pre>
+<pre><code class="language-jsx"><span class="hljs-keyword">import</span> { useState } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;react&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">ForgeSelectReact</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;forge-select-react&quot;</span>;
+<span class="hljs-keyword">import</span> <span class="hljs-string">&quot;forge-select/styles.css&quot;</span>;
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">CountrySelect</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">const</span> [value, setValue] = <span class="hljs-title function_">useState</span>(<span class="hljs-literal">null</span>);
+
+  <span class="hljs-keyword">return</span> (
+    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">ForgeSelectReact</span>
+      <span class="hljs-attr">searchable</span>
+      <span class="hljs-attr">data</span>=<span class="hljs-string">{[</span>
+        { <span class="hljs-attr">value:</span> &quot;<span class="hljs-attr">vn</span>&quot;, <span class="hljs-attr">label:</span> &quot;<span class="hljs-attr">Vietnam</span>&quot; },
+        { <span class="hljs-attr">value:</span> &quot;<span class="hljs-attr">jp</span>&quot;, <span class="hljs-attr">label:</span> &quot;<span class="hljs-attr">Japan</span>&quot; },
+      ]}
+      <span class="hljs-attr">value</span>=<span class="hljs-string">{value}</span>
+      <span class="hljs-attr">onChange</span>=<span class="hljs-string">{setValue}</span>
+    /&gt;</span></span>
+  );
+}
+</code></pre>
+<p><code>data</code>, <code>templateResult</code>, <code>plugins</code>, and other constructor-only options are read once at mount; remount with a different <code>key</code> to change them. See the <a href="https://github.com/cmm-cmm/ForgeSelect/blob/main/packages/react/README.md">package README</a> for the full prop reference.</p>
+<p>If you'd rather not add the extra dependency, mount the core library directly:</p>
 <pre><code class="language-jsx"><span class="hljs-keyword">import</span> { useEffect, useRef } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;react&quot;</span>;
 <span class="hljs-keyword">import</span> <span class="hljs-title class_">ForgeSelect</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;forge-select&quot;</span>;
 
@@ -218,6 +243,30 @@
 }
 </code></pre>
 <h2>Vue</h2>
+<p>The official <a href="https://www.npmjs.com/package/forge-select-vue"><code>forge-select-vue</code></a> package wraps ForgeSelect as a Vue 3 component with <code>v-model</code> support:</p>
+<pre><code class="language-bash">npm install forge-select forge-select-vue
+</code></pre>
+<pre><code class="language-vue">&lt;script setup&gt;
+import { ref } from &quot;vue&quot;;
+import { ForgeSelectVue } from &quot;forge-select-vue&quot;;
+import &quot;forge-select/styles.css&quot;;
+
+const value = ref(null);
+const options = {
+  searchable: true,
+  data: [
+    { value: &quot;vn&quot;, label: &quot;Vietnam&quot; },
+    { value: &quot;jp&quot;, label: &quot;Japan&quot; },
+  ],
+};
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;ForgeSelectVue :options=&quot;options&quot; v-model=&quot;value&quot; /&gt;
+&lt;/template&gt;
+</code></pre>
+<p><code>options</code> is read once when the instance is created; force a remount with a different <code>:key</code> to apply new <code>data</code>/templates/plugins. See the <a href="https://github.com/cmm-cmm/ForgeSelect/blob/main/packages/vue/README.md">package README</a> for the full reference.</p>
+<p>If you'd rather not add the extra dependency, mount the core library directly:</p>
 <pre><code class="language-vue">&lt;template&gt;
   &lt;select ref=&quot;el&quot;&gt;
     &lt;option value=&quot;vn&quot;&gt;Vietnam&lt;/option&gt;
