@@ -44,6 +44,24 @@ new ForgeSelect("#users", {
 });
 ```
 
+## Async pagination (load more on scroll)
+
+```js
+new ForgeSelect("#users", {
+  ajax: {
+    url: "/api/users",
+    pagination: true,
+    params: (query, page) => ({ q: query, page }),
+    transform: (response) => ({
+      options: response.items.map((u) => ({ value: u.id, label: u.name })),
+      hasMore: response.hasMore,
+    }),
+  },
+});
+```
+
+Scrolling near the bottom of the dropdown fetches the next page and appends it to the list instead of replacing it; typing a new search query still resets back to page 0 as usual.
+
 ## Tags mode (allow creating new options)
 
 ```js
@@ -82,6 +100,32 @@ new ForgeSelect("#country", {
   ],
 });
 ```
+
+## Tree select (nested options)
+
+```js
+new ForgeSelect("#categories", {
+  multiple: true,
+  data: [
+    {
+      value: "electronics", label: "Electronics",
+      children: [
+        { value: "phones", label: "Phones" },
+        { value: "laptops", label: "Laptops" },
+      ],
+    },
+    {
+      value: "clothing", label: "Clothing",
+      children: [
+        { value: "shirts", label: "Shirts" },
+        { value: "shoes", label: "Shoes" },
+      ],
+    },
+  ],
+});
+```
+
+Nodes with `children` start collapsed; click the twisty (▶/▼) to expand. In `multiple` mode, selecting "Electronics" also selects "Phones" and "Laptops"; selecting only some of a parent's descendants shows it as indeterminate.
 
 ## Rich items (avatar + name + description)
 

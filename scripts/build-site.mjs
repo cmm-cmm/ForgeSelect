@@ -190,6 +190,7 @@ ${jsonLdBlocks.map((j) => `<script type="application/ld+json">${j}</script>`).jo
     ${nav("../playground/", "Playground", "playground")}
     ${nav("../theme-builder/", "Theme Builder", "theme-builder")}
     <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+    <a href="https://www.npmjs.com/package/forge-select">npm</a>
   </nav>
 </header>
 <div class="docs-shell">

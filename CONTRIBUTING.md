@@ -32,7 +32,8 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 - `tests/` — vitest + jsdom unit tests
 - `docs/` — markdown documentation, rendered to the website by `scripts/build-site.mjs`
 - `demo/`, `site/` — feature demo, landing page, and playground
-- `.github/workflows/` — CI (typecheck/test/build) and GitHub Pages deployment
+- `packages/` — npm workspaces for framework wrapper packages (`packages/react` → `@forge-select/react`, `packages/vue` → `@forge-select/vue`), each with its own `package.json`/tests/build, independent of the core library's zero-dependency promise
+- `.github/workflows/` — CI (typecheck/test/build, plus `--workspaces` for the wrapper packages) and GitHub Pages deployment
 
 ## Pull request guidelines
 

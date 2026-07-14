@@ -14,10 +14,11 @@ import type {
 
 type Row =
   | { kind: "group"; label: string }
-  | { kind: "option"; option: Option; navIndex: number }
+  | { kind: "option"; option: Option; navIndex: number; depth: number; hasChildren: boolean }
   | { kind: "create"; navIndex: number }
   | { kind: "empty" }
-  | { kind: "loading" };
+  | { kind: "loading" }
+  | { kind: "loading-more" };
 
 type NavItem = { kind: "option"; option: Option } | { kind: "create" };
 
@@ -50,6 +51,31 @@ function isGroup(item: DataItem): item is OptionGroup {
   return (item as OptionGroup).options !== undefined;
 }
 
+/** All descendant values under `option` (children, recursively), not including `option` itself. */
+function collectDescendantValues(option: Option): string[] {
+  if (!option.children) return [];
+  const values: string[] = [];
+  for (const child of option.children) {
+    values.push(child.value, ...collectDescendantValues(child));
+  }
+  return values;
+}
+
+/**
+ * Tri-state checkbox state for a tree node, derived purely from `selected`:
+ * "all"/"none" if every (or no) leaf descendant is selected, "some" otherwise.
+ * Leaf options (no children) are just "all"/"none" based on their own value.
+ */
+function computeCheckState(option: Option, selected: string[]): "none" | "some" | "all" {
+  if (!option.children || option.children.length === 0) {
+    return selected.includes(option.value) ? "all" : "none";
+  }
+  const states = option.children.map((child) => computeCheckState(child, selected));
+  if (states.every((s) => s === "all")) return "all";
+  if (states.every((s) => s === "none")) return "none";
+  return "some";
+}
+
 export default class ForgeSelect {
   /** The original element ForgeSelect was mounted on. */
   readonly el: HTMLElement;
@@ -79,8 +105,12 @@ export default class ForgeSelect {
   private navItems: NavItem[] = [];
   private highlightedIndex = -1;
   private rowContentCache = new Map<string, Node>();
+  private expandedValues = new Set<string>();
 
   private loading = false;
+  private loadingMore = false;
+  private page = 0;
+  private hasMore = true;
   private ajaxTimer: ReturnType<typeof setTimeout> | null = null;
   private ajaxRequestId = 0;
   private remoteLoaded = false;
@@ -307,7 +337,16 @@ export default class ForgeSelect {
     }
 
     this.list.addEventListener("click", (event) => {
-      const li = (event.target as HTMLElement).closest<HTMLLIElement>("li[data-nav-index]");
+      const target = event.target as HTMLElement;
+      const twisty = target.closest<HTMLElement>("[data-twisty]");
+      if (twisty) {
+        const value = twisty.dataset.twisty!;
+        if (this.expandedValues.has(value)) this.expandedValues.delete(value);
+        else this.expandedValues.add(value);
+        this.renderList();
+        return;
+      }
+      const li = target.closest<HTMLLIElement>("li[data-nav-index]");
       if (!li) return;
       const navIndex = Number(li.dataset.navIndex);
       this.activateNavItem(navIndex);
@@ -315,6 +354,7 @@ export default class ForgeSelect {
 
     this.list.addEventListener("scroll", () => {
       if (this.usesVirtualScroll()) this.renderRows();
+      this.maybeLoadNextPage();
     });
   }
 
@@ -360,8 +400,17 @@ export default class ForgeSelect {
     if (this.selected.includes(value)) return;
     const option = this.findOption(value) ?? this.selectedOptions.get(value) ?? { value, label: value };
     this.selectedOptions.set(value, option);
-    if (this.opts.multiple) this.selected.push(value);
-    else this.selected = [value];
+    if (this.opts.multiple) {
+      this.selected.push(value);
+      // Selecting a tree node cascades to its descendants too; for a plain
+      // option (no children) this is a no-op.
+      for (const v of collectDescendantValues(option)) {
+        if (!this.selected.includes(v)) this.selected.push(v);
+      }
+      this.syncTreeAncestors();
+    } else {
+      this.selected = [value];
+    }
     if (notify) this.afterSelectionChange();
   }
 
@@ -369,7 +418,38 @@ export default class ForgeSelect {
     const index = this.selected.indexOf(value);
     if (index === -1) return;
     this.selected.splice(index, 1);
+    if (this.opts.multiple) {
+      const option = this.findOption(value) ?? this.selectedOptions.get(value);
+      if (option) {
+        for (const v of collectDescendantValues(option)) {
+          const i = this.selected.indexOf(v);
+          if (i !== -1) this.selected.splice(i, 1);
+        }
+      }
+      this.syncTreeAncestors();
+    }
     if (notify) this.afterSelectionChange();
+  }
+
+  /**
+   * Keeps every tree parent's own membership in `selected` consistent with
+   * its descendants (post-order, so parents see already-corrected children):
+   * a parent counts as selected only when `computeCheckState` says "all".
+   * No-op for data with no `children` anywhere.
+   */
+  private syncTreeAncestors(): void {
+    const sync = (option: Option): void => {
+      if (!option.children || option.children.length === 0) return;
+      for (const child of option.children) sync(child);
+      const state = computeCheckState(option, this.selected);
+      const index = this.selected.indexOf(option.value);
+      if (state === "all" && index === -1) this.selected.push(option.value);
+      else if (state !== "all" && index !== -1) this.selected.splice(index, 1);
+    };
+    for (const item of this.data) {
+      const options = isGroup(item) ? item.options : [item];
+      options.forEach(sync);
+    }
   }
 
   private clearSelection(): void {
@@ -405,13 +485,19 @@ export default class ForgeSelect {
   }
 
   private findOption(value: string): Option | undefined {
-    for (const item of this.data) {
-      if (isGroup(item)) {
-        const found = item.options.find((o) => o.value === value);
-        if (found) return found;
-      } else if (item.value === value) {
-        return item;
+    const search = (options: Option[]): Option | undefined => {
+      for (const option of options) {
+        if (option.value === value) return option;
+        if (option.children) {
+          const found = search(option.children);
+          if (found) return found;
+        }
       }
+      return undefined;
+    };
+    for (const item of this.data) {
+      const found = search(isGroup(item) ? item.options : [item]);
+      if (found) return found;
     }
     return undefined;
   }
@@ -548,13 +634,29 @@ export default class ForgeSelect {
       option.label.toLowerCase().includes(query) ||
       (option.description?.toLowerCase().includes(query) ?? false);
 
-    const pushOption = (option: Option): void => {
+    // A tree node is visible while searching if it matches, or any descendant
+    // does (leaf options with no children just reduce to `matches()`).
+    const subtreeMatches = (option: Option): boolean =>
+      query === "" || matches(option) || (option.children ?? []).some(subtreeMatches);
+
+    const pushOption = (option: Option, depth: number): void => {
       let navIndex = -1;
       if (!option.disabled) {
         navIndex = this.navItems.length;
         this.navItems.push({ kind: "option", option });
       }
-      this.rows.push({ kind: "option", option, navIndex });
+      const hasChildren = !!option.children && option.children.length > 0;
+      this.rows.push({ kind: "option", option, navIndex, depth, hasChildren });
+      if (hasChildren) {
+        // Expanding is ephemeral while searching (never written to
+        // expandedValues), so clearing the query restores manual state.
+        const expanded = query !== "" || this.expandedValues.has(option.value);
+        if (expanded) {
+          for (const child of option.children!) {
+            if (subtreeMatches(child)) pushOption(child, depth + 1);
+          }
+        }
+      }
     };
 
     if (this.loading) {
@@ -564,12 +666,12 @@ export default class ForgeSelect {
 
     for (const item of this.data) {
       if (isGroup(item)) {
-        const visible = item.options.filter(matches);
+        const visible = item.options.filter(subtreeMatches);
         if (visible.length === 0) continue;
         this.rows.push({ kind: "group", label: item.label });
-        visible.forEach(pushOption);
-      } else if (matches(item)) {
-        pushOption(item);
+        visible.forEach((o) => pushOption(o, 0));
+      } else if (subtreeMatches(item)) {
+        pushOption(item, 0);
       }
     }
 
@@ -580,12 +682,15 @@ export default class ForgeSelect {
     }
 
     if (this.rows.length === 0) this.rows.push({ kind: "empty" });
+    else if (this.loadingMore) this.rows.push({ kind: "loading-more" });
   }
 
   private hasExactMatch(lowerQuery: string): boolean {
+    const matchesExactly = (option: Option): boolean =>
+      option.label.toLowerCase() === lowerQuery || (option.children ?? []).some(matchesExactly);
     for (const item of this.data) {
       const options = isGroup(item) ? item.options : [item];
-      if (options.some((o) => o.label.toLowerCase() === lowerQuery)) return true;
+      if (options.some(matchesExactly)) return true;
     }
     return false;
   }
@@ -662,6 +767,11 @@ export default class ForgeSelect {
         li.className = "forge-select__loading";
         li.textContent = this.strings.loading;
         break;
+      case "loading-more":
+        li.className = "forge-select__loading-more";
+        li.setAttribute("aria-hidden", "true");
+        li.textContent = this.strings.loadingMore;
+        break;
       case "create":
         li.className = "forge-select__option forge-select__option--create";
         li.setAttribute("role", "option");
@@ -676,6 +786,12 @@ export default class ForgeSelect {
         const isSelected = this.selected.includes(row.option.value);
         li.setAttribute("aria-selected", String(isSelected));
         if (isSelected) li.classList.add("forge-select__option--selected");
+        if (this.opts.multiple && row.hasChildren && computeCheckState(row.option, this.selected) === "some") {
+          li.classList.add("forge-select__option--indeterminate");
+        }
+        if (row.depth > 0) {
+          li.style.paddingLeft = `calc(12px + ${row.depth} * var(--fs-tree-indent, 18px))`;
+        }
         if (row.option.disabled) {
           li.classList.add("forge-select__option--disabled");
           li.setAttribute("aria-disabled", "true");
@@ -683,6 +799,14 @@ export default class ForgeSelect {
           li.id = `${this.uid}-nav-${row.navIndex}`;
           li.dataset.navIndex = String(row.navIndex);
           if (row.navIndex === this.highlightedIndex) li.classList.add("forge-select__option--highlighted");
+        }
+        if (row.hasChildren) {
+          const twisty = document.createElement("span");
+          twisty.className = "forge-select__twisty";
+          twisty.dataset.twisty = row.option.value;
+          twisty.setAttribute("aria-hidden", "true");
+          twisty.textContent = this.expandedValues.has(row.option.value) ? "▼" : "▶";
+          li.append(twisty);
         }
         li.append(this.optionContent(row.option));
         break;
@@ -756,6 +880,8 @@ export default class ForgeSelect {
 
   private scheduleRemoteLoad(query: string, delay: number): void {
     if (this.ajaxTimer) clearTimeout(this.ajaxTimer);
+    this.page = 0;
+    this.hasMore = true;
     this.loading = true;
     this.renderList();
     this.ajaxTimer = setTimeout(() => {
@@ -763,24 +889,56 @@ export default class ForgeSelect {
     }, delay);
   }
 
-  private async loadRemote(query: string): Promise<void> {
+  /**
+   * Fires on every list scroll. Only acts when pagination is opted into via
+   * `ajax.pagination`; reads real scroll geometry rather than row counts so
+   * it works whether or not virtual scrolling is active for this list.
+   */
+  private maybeLoadNextPage(): void {
+    const ajax = this.opts.ajax;
+    if (!ajax?.pagination || !this.hasMore || this.loading || this.loadingMore) return;
+    const { scrollHeight, scrollTop, clientHeight } = this.list;
+    const threshold = this.opts.itemHeight * 2;
+    if (scrollHeight - scrollTop - clientHeight >= threshold) return;
+    this.loadingMore = true;
+    this.renderList();
+    void this.loadRemote(this.query, { append: true });
+  }
+
+  private async loadRemote(query: string, { append = false }: { append?: boolean } = {}): Promise<void> {
     const ajax = this.opts.ajax!;
     const requestId = ++this.ajaxRequestId;
+    const page = append ? this.page + 1 : 0;
     try {
-      const url = buildUrl(ajax, query);
+      const url = buildUrl(ajax, query, page);
       const response = await fetch(url);
       const json: unknown = await response.json();
       if (requestId !== this.ajaxRequestId || this.destroyed) return;
-      this.data = ajax.transform ? ajax.transform(json) : (json as Option[]);
-      this.rowContentCache.clear();
+      const result = ajax.transform ? ajax.transform(json) : (json as Option[]);
+      const options = Array.isArray(result) ? result : result.options;
+      const hasMore = ajax.pagination ? (Array.isArray(result) ? false : result.hasMore) : false;
+
+      if (append) {
+        const existing = collectValues(this.data);
+        this.data = [...this.data, ...options.filter((o) => !existing.has(o.value))];
+      } else {
+        this.data = options;
+        this.rowContentCache.clear();
+      }
+      this.page = page;
+      this.hasMore = hasMore;
       this.remoteLoaded = true;
     } catch {
       if (requestId !== this.ajaxRequestId || this.destroyed) return;
-      this.data = [];
-      this.rowContentCache.clear();
+      if (!append) {
+        this.data = [];
+        this.rowContentCache.clear();
+      }
+      this.hasMore = false;
     } finally {
       if (requestId === this.ajaxRequestId && !this.destroyed) {
         this.loading = false;
+        this.loadingMore = false;
         if (this.isOpen) this.renderList();
       }
     }
@@ -810,15 +968,27 @@ function parseOption(option: HTMLOptionElement): Option {
   };
 }
 
-function buildUrl(ajax: AjaxConfig, query: string): string {
+function buildUrl(ajax: AjaxConfig, query: string, page: number): string {
   if (typeof ajax.url === "function") return ajax.url(query);
   if (!ajax.params) return ajax.url;
   const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(ajax.params(query))) {
+  for (const [key, value] of Object.entries(ajax.params(query, page))) {
     params.set(key, String(value));
   }
   const separator = ajax.url.includes("?") ? "&" : "?";
   return `${ajax.url}${separator}${params.toString()}`;
+}
+
+function collectValues(items: DataItem[]): Set<string> {
+  const values = new Set<string>();
+  for (const item of items) {
+    if (isGroup(item)) {
+      for (const option of item.options) values.add(option.value);
+    } else {
+      values.add(item.value);
+    }
+  }
+  return values;
 }
 
 function arraysEqual(a: string[], b: string[]): boolean {

@@ -43,7 +43,7 @@ Browse the documentation website at **<https://cmm-cmm.github.io/ForgeSelect/doc
 - Single Select
 - Multiple Select
 - Searchable Dropdown
-- Async Data Source (AJAX with debounce)
+- Async Data Source (AJAX with debounce, optional infinite-scroll pagination)
 - Rich Item Rendering (avatar + label + description, XSS-safe built-in fields)
 - Virtual Scrolling (automatic for large lists, with per-option render caching)
 - Custom Templates
@@ -51,6 +51,7 @@ Browse the documentation website at **<https://cmm-cmm.github.io/ForgeSelect/doc
 - Keyboard Navigation
 - Disabled Options
 - Option Groups
+- Tree Select (nested options with expand/collapse and cascading multi-select)
 - Clear Selection
 - Placeholder
 - Custom Themes (CSS variables, dark mode included)
@@ -59,7 +60,7 @@ Browse the documentation website at **<https://cmm-cmm.github.io/ForgeSelect/doc
 - Internationalization (en/vi built in, custom string tables)
 - TypeScript Support (written in strict TypeScript, ships `.d.ts`)
 
-> Planned/in-progress capabilities — Tree Select, Async Pagination, Drag & Drop Ordering, and React/Vue/Angular/Svelte wrappers — are tracked in the [Roadmap](#roadmap) below and intentionally not listed above as shipped features.
+> Planned/in-progress capabilities — Drag & Drop Ordering and Angular/Svelte wrappers — are tracked in the [Roadmap](#roadmap) below and intentionally not listed above as shipped features.
 
 ## Installation
 
@@ -161,11 +162,13 @@ new ForgeSelect("#country", { theme: "dark" });
 
 ## Framework Support
 
+ForgeSelect is vanilla TypeScript/JavaScript, so it can be mounted inside any framework today. Official wrapper packages exist for a couple of them:
+
 - Vanilla JavaScript
-- React
-- Vue
-- Angular
-- Svelte
+- React — via [`@forge-select/react`](./packages/react/README.md) (`ForgeSelectReact` component, controlled `value`/`onChange`)
+- Vue — via [`@forge-select/vue`](./packages/vue/README.md) (`ForgeSelectVue` component, `v-model` support)
+- Angular — mount manually for now; a dedicated wrapper is on the [Roadmap](#roadmap)
+- Svelte — mount manually for now; a dedicated wrapper is on the [Roadmap](#roadmap)
 - Next.js
 - Nuxt
 - Astro
@@ -188,14 +191,14 @@ Performance benchmarking (bundle size, init time, search latency, virtual scroll
 
 ## Roadmap
 
-- [ ] Tree Select
+- [x] Tree Select
 - [x] Virtualized List
-- [ ] Async Pagination
+- [x] Async Pagination
 - [ ] Drag & Drop Ordering
 - [x] Theme Builder
 - [x] CSS Variables
-- [ ] React Component
-- [ ] Vue Component
+- [x] React Component
+- [x] Vue Component
 - [ ] Angular Component
 - [ ] Svelte Component
 

@@ -1,16 +1,7 @@
 {
-  "name": "forge-select",
-  "version": "0.2.0",
-  "description": "A modern, lightweight, highly customizable replacement for Select2.",
-  "keywords": [
-    "select",
-    "dropdown",
-    "combobox",
-    "select2",
-    "autocomplete",
-    "multiselect",
-    "tags"
-  ],
+  "name": "@forge-select/vue",
+  "version": "0.1.0",
+  "description": "Vue 3 wrapper component for ForgeSelect.",
   "license": "MIT",
   "author": "KonexForge",
   "homepage": "https://cmm-cmm.github.io/ForgeSelect/",
@@ -19,7 +10,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cmm-cmm/ForgeSelect.git"
+    "url": "git+https://github.com/cmm-cmm/ForgeSelect.git",
+    "directory": "packages/vue"
   },
   "engines": {
     "node": ">=18"
@@ -27,9 +19,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "workspaces": [
-    "packages/*"
-  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -39,28 +28,29 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    },
-    "./styles.css": "./styles/forge-select.css"
+    }
   },
   "files": [
-    "dist",
-    "styles"
+    "dist"
   ],
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
-    "build:site": "npm run build && node scripts/build-site.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "vue": ">=3.2"
+  },
+  "dependencies": {
+    "forge-select": "file:../.."
   },
   "devDependencies": {
-    "highlight.js": "^11.11.1",
     "jsdom": "^26.0.0",
-    "markdown-it": "^14.3.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "vue": "^3.4.0"
   }
 }

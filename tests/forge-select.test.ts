@@ -219,6 +219,125 @@ describe("option groups", () => {
   });
 });
 
+describe("tree select", () => {
+  function optionLabel(li: HTMLLIElement): string {
+    const clone = li.cloneNode(true) as HTMLElement;
+    clone.querySelector(".forge-select__twisty")?.remove();
+    return clone.textContent?.trim() ?? "";
+  }
+
+  const treeData = () => [
+    {
+      value: "fruits",
+      label: "Fruits",
+      children: [
+        { value: "apple", label: "Apple" },
+        { value: "banana", label: "Banana" },
+      ],
+    },
+    {
+      value: "veggies",
+      label: "Vegetables",
+      children: [
+        { value: "carrot", label: "Carrot" },
+        { value: "potato", label: "Potato" },
+      ],
+    },
+  ];
+
+  it("renders only top-level nodes collapsed by default", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: treeData() });
+    select.open();
+    expect(optionEls().map(optionLabel)).toEqual(
+      expect.arrayContaining(["Fruits", "Vegetables"]),
+    );
+    expect(optionEls()).toHaveLength(2);
+  });
+
+  it("expands a node to reveal its children when the twisty is clicked", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: treeData() });
+    select.open();
+
+    document.querySelector<HTMLElement>(".forge-select__twisty")!.click();
+    const labels = optionEls().map(optionLabel);
+    expect(labels).toEqual(expect.arrayContaining(["Fruits", "Apple", "Banana", "Vegetables"]));
+    expect(optionEls()).toHaveLength(4);
+
+    // Toggling again collapses it back.
+    document.querySelector<HTMLElement>(".forge-select__twisty")!.click();
+    expect(optionEls()).toHaveLength(2);
+  });
+
+  it("shows matching descendants while searching and restores prior collapsed state after clearing the query", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: treeData() });
+    select.open();
+
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "apple";
+    input.dispatchEvent(new Event("input"));
+
+    let labels = optionEls().map(optionLabel);
+    expect(labels).toEqual(expect.arrayContaining(["Fruits", "Apple"]));
+    expect(labels).not.toContain("Vegetables");
+
+    input.value = "";
+    input.dispatchEvent(new Event("input"));
+
+    // The auto-expansion during search was ephemeral: back to collapsed.
+    expect(optionEls()).toHaveLength(2);
+  });
+
+  it("cascades selecting a parent to all its children in multiple mode", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { multiple: true, data: treeData() });
+    select.open();
+
+    const fruitsLi = optionEls().find((li) => li.textContent?.includes("Fruits"))!;
+    fruitsLi.click();
+
+    expect(select.getValue()).toEqual(["fruits", "apple", "banana"]);
+  });
+
+  it("shows the indeterminate class when only some descendants are selected", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { multiple: true, data: treeData() });
+    select.open();
+
+    document.querySelector<HTMLElement>(".forge-select__twisty")!.click();
+    const appleLi = optionEls().find((li) => li.textContent?.includes("Apple"))!;
+    appleLi.click();
+
+    const fruitsLi = optionEls().find((li) => li.textContent?.includes("Fruits"))!;
+    expect(fruitsLi.classList.contains("forge-select__option--indeterminate")).toBe(true);
+    expect(fruitsLi.classList.contains("forge-select__option--selected")).toBe(false);
+    expect(select.getValue()).toEqual(["apple"]);
+  });
+
+  it("un-checks the parent (not just indeterminate) when a leaf is deselected after a full cascade select", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { multiple: true, data: treeData() });
+    select.open();
+
+    // Select "Fruits" -> cascades to Apple + Banana too.
+    const fruitsLi = optionEls().find((li) => li.textContent?.includes("Fruits"))!;
+    fruitsLi.click();
+    expect(select.getValue()).toEqual(["fruits", "apple", "banana"]);
+
+    document.querySelector<HTMLElement>(".forge-select__twisty")!.click();
+    const bananaLi = optionEls().find((li) => li.textContent?.includes("Banana"))!;
+    bananaLi.click();
+
+    // Fruits must not be both "selected" and "indeterminate" at once.
+    const fruitsLiAfter = optionEls().find((li) => li.textContent?.includes("Fruits"))!;
+    expect(fruitsLiAfter.classList.contains("forge-select__option--selected")).toBe(false);
+    expect(fruitsLiAfter.classList.contains("forge-select__option--indeterminate")).toBe(true);
+    expect(select.getValue()).toEqual(["apple"]);
+  });
+});
+
 describe("keyboard navigation", () => {
   it("navigates with arrows and selects with Enter", () => {
     mountSelect();
@@ -347,6 +466,125 @@ describe("ajax", () => {
 
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+});
+
+describe("ajax pagination", () => {
+  type Item = { id: string; name: string };
+
+  function transform(res: unknown) {
+    const r = res as { items: Item[]; hasMore: boolean };
+    return { options: r.items.map((i) => ({ value: i.id, label: i.name })), hasMore: r.hasMore };
+  }
+
+  function pagedFetchMock() {
+    return vi.fn().mockImplementation((url: string) => {
+      const page = url.includes("page=1") ? 1 : 0;
+      const items: Item[] =
+        page === 0
+          ? [{ id: "a", name: "Alpha" }, { id: "b", name: "Beta" }]
+          : [{ id: "c", name: "Gamma" }, { id: "d", name: "Delta" }];
+      return Promise.resolve({ json: () => Promise.resolve({ items, hasMore: page === 0 }) });
+    });
+  }
+
+  function mockNearBottom(list: HTMLElement): void {
+    Object.defineProperty(list, "scrollHeight", { value: 1000, configurable: true });
+    Object.defineProperty(list, "clientHeight", { value: 260, configurable: true });
+    Object.defineProperty(list, "scrollTop", { value: 800, configurable: true, writable: true });
+  }
+
+  it("appends the next page instead of replacing when scrolled near the bottom", async () => {
+    const fetchMock = pagedFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      ajax: { url: "/api/items", pagination: true, params: (q, page) => ({ q, page }), transform },
+    });
+
+    select.open();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta"]);
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    mockNearBottom(list);
+    list.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toContain("page=1");
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta", "Gamma", "Delta"]);
+
+    vi.unstubAllGlobals();
+  });
+
+  it("does not clear the row content cache when appending a page", async () => {
+    const fetchMock = pagedFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+    const template = vi.fn((o: { label: string }) => o.label);
+
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      templateResult: template,
+      ajax: { url: "/api/items", pagination: true, params: (q, page) => ({ q, page }), transform },
+    });
+
+    select.open();
+    await new Promise((r) => setTimeout(r, 0));
+    const callsAfterFirstPage = template.mock.calls.length;
+    expect(callsAfterFirstPage).toBe(2);
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    mockNearBottom(list);
+    list.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Alpha/Beta must not be re-rendered via the template; only the 2 new options do.
+    expect(template.mock.calls.length).toBe(callsAfterFirstPage + 2);
+
+    vi.unstubAllGlobals();
+  });
+
+  it("resets page state on a new search and ignores a stale next-page response", async () => {
+    let resolvePage1!: (v: unknown) => void;
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("page=1")) {
+        return new Promise((resolve) => {
+          resolvePage1 = resolve;
+        });
+      }
+      return Promise.resolve({
+        json: () => Promise.resolve({ items: [{ id: "a", name: "Alpha" }], hasMore: true }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      ajax: { url: "/api/items", debounce: 0, pagination: true, params: (q, page) => ({ q, page }), transform },
+    });
+
+    select.open();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha"]);
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    mockNearBottom(list);
+    list.dispatchEvent(new Event("scroll")); // triggers the page=1 request, left pending
+
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "x";
+    input.dispatchEvent(new Event("input"));
+    await new Promise((r) => setTimeout(r, 0));
+
+    // The stale page-1 response resolves only now, after a new search replaced the data.
+    resolvePage1({ json: () => Promise.resolve({ items: [{ id: "c", name: "Gamma" }], hasMore: true }) });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(optionEls().map((li) => li.textContent)).not.toContain("Gamma");
+
+    vi.unstubAllGlobals();
   });
 });
 

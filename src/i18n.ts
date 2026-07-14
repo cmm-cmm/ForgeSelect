@@ -4,6 +4,7 @@ const locales: Record<string, Strings> = {
   en: {
     noResults: "No results found",
     loading: "Loading…",
+    loadingMore: "Loading more…",
     createOption: 'Create "{query}"',
     clearSelection: "Clear selection",
     removeItem: "Remove {label}",
@@ -12,6 +13,7 @@ const locales: Record<string, Strings> = {
   vi: {
     noResults: "Không tìm thấy kết quả",
     loading: "Đang tải…",
+    loadingMore: "Đang tải thêm…",
     createOption: 'Tạo "{query}"',
     clearSelection: "Xóa lựa chọn",
     removeItem: "Xóa {label}",
