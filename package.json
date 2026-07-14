@@ -54,7 +54,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
-    "deploy:cloudflare": "wrangler pages deploy _site --project-name=forgeselect"
+    "deploy:cloudflare": "wrangler deploy"
   },
   "devDependencies": {
     "highlight.js": "^11.11.1",

@@ -1,0 +1,8 @@
+{
+  "name": "forge-select",
+  "compatibility_date": "2026-07-14",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./_site"
+  }
+}
