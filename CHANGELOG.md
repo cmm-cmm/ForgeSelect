@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Cloudflare deploy**: the site now deploys to Cloudflare (Workers with static assets, project `forge-select`) on every push to `main`, via a Workers Builds project connected directly to this repo through the Cloudflare Dashboard's Git integration (not a GitHub Actions workflow), configured by the new `wrangler.jsonc` at the repo root; see "Deploying the site" in `CONTRIBUTING.md`. Adds a `wrangler` dev dependency and a `deploy:cloudflare` script for manual/local deploys.
 - **Drag & Drop Ordering**: `sortable: true` (multi-select only) lets users reorder selected tags by dragging with mouse/touch/pen (Pointer Events), or via `Alt+Left`/`Alt+Right` when a tag has keyboard focus. Fully opt-in — multi-select behavior, markup, and events are unchanged when `sortable` is left at its default `false`. When mounted on a native `<select multiple>`, the underlying `<option>` elements are also reordered to match, so a plain `<form>` submission serializes values in the dragged order.
+- Live demo: new "Rich items — 1,000 users (multiple)" card showing the built-in `avatar`/`description` rich-item rendering combined with `multiple` + tags on a 1,000-item virtualized list.
 
 ### Changed
 

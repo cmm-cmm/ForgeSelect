@@ -118,6 +118,12 @@
     </div>
 
     <div class="demo-card">
+      <h2>Rich items — 1,000 users (multiple)</h2>
+      <p>Same <code>avatar</code> + <code>description</code> dataset with <code>multiple</code> and tags — virtual scroll and search stay fast with many selections.</p>
+      <select id="demo-rich-multi" multiple></select>
+    </div>
+
+    <div class="demo-card">
       <h2>Custom HTML template</h2>
       <p><code>templateResult</code> returning an HTML string, with a status dot from <code>meta</code>.</p>
       <select id="demo-html"></select>
@@ -247,6 +253,10 @@
     })),
     watch("rich", new ForgeSelect("#demo-rich", {
       placeholder: "Search 1,000 users…", clearable: true, itemHeight: 52,
+      data: makeUsers(1000),
+    })),
+    watch("rich-multi", new ForgeSelect("#demo-rich-multi", {
+      placeholder: "Search and pick multiple users…", multiple: true, clearable: true, itemHeight: 52,
       data: makeUsers(1000),
     })),
     watch("html", new ForgeSelect("#demo-html", {
