@@ -46,7 +46,7 @@ export const ForgeSelectVue = defineComponent({
     watch(
       () => props.modelValue,
       (value) => {
-        if (instance && value !== undefined) instance.setValue(value);
+        if (instance && value !== undefined) instance.setValue(value, { emitChange: false });
       },
     );
 
@@ -65,5 +65,6 @@ export type {
   ForgeSelectValue,
   Option,
   OptionGroup,
+  SetValueOptions,
   TemplateFn,
 } from "forge-select";

@@ -60,6 +60,23 @@ describe("ForgeSelectReact", () => {
     expect(container.querySelector(".forge-select__single-value")?.textContent).toBe("B");
   });
 
+  it("does not call onChange for prop synchronization and uses the latest callback", () => {
+    const data = [
+      { value: "a", label: "A" },
+      { value: "b", label: "B" },
+    ];
+    const first = vi.fn();
+    const latest = vi.fn();
+    const { container, root } = mount({ data, value: "a", onChange: first });
+    act(() => root.render(createElement(ForgeSelectReact, { data, value: "b", onChange: latest })));
+    expect(first).not.toHaveBeenCalled();
+    expect(latest).not.toHaveBeenCalled();
+    act(() => container.querySelector<HTMLElement>(".forge-select__control")!.click());
+    act(() => container.querySelectorAll<HTMLElement>(".forge-select__option")[0].click());
+    expect(first).not.toHaveBeenCalled();
+    expect(latest).toHaveBeenCalledWith("a");
+  });
+
   it("destroys the instance on unmount", () => {
     const { container, root } = mount({ data: [{ value: "a", label: "A" }] });
     expect(container.querySelector(".forge-select")).not.toBeNull();

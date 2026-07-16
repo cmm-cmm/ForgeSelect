@@ -4,7 +4,8 @@
 
 | Version | Supported |
 | ------- | --------- |
-| 0.1.x   | ✅        |
+| 0.2.x   | ✅        |
+| < 0.2   | ❌        |
 
 Forge Select is pre-1.0; only the latest released minor version receives security fixes.
 

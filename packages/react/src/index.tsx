@@ -20,6 +20,11 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
   const { value, onChange, className, ...options } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<ForgeSelect | null>(null);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -29,7 +34,7 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     const instance = new ForgeSelect(mountEl, options);
     instanceRef.current = instance;
     if (value !== undefined) instance.setValue(value);
-    if (onChange) instance.on("change", (v) => onChange(v as ForgeSelectValue));
+    instance.on("change", (v) => onChangeRef.current?.(v as ForgeSelectValue));
 
     return () => {
       instance.destroy();
@@ -41,7 +46,7 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
 
   useEffect(() => {
     if (instanceRef.current && value !== undefined) {
-      instanceRef.current.setValue(value);
+      instanceRef.current.setValue(value, { emitChange: false });
     }
   }, [value]);
 
@@ -59,5 +64,6 @@ export type {
   ForgeSelectValue,
   Option,
   OptionGroup,
+  SetValueOptions,
   TemplateFn,
 } from "forge-select";

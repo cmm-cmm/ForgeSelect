@@ -20,22 +20,56 @@ const pkg = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
 const SITE_URL = pkg.homepage.endsWith("/") ? pkg.homepage : `${pkg.homepage}/`;
 
 const DOCS = [
-  { file: "docs/README.md", slug: "index", title: "Introduction",
-    description: "Forge Select docs home: what it is, installation, quick start, and links to every guide." },
-  { file: "docs/api-reference.md", slug: "api-reference", title: "API Reference",
-    description: "Full Forge Select constructor, options, instance methods, and event reference." },
-  { file: "docs/examples.md", slug: "examples", title: "Examples",
-    description: "Copy-pasteable Forge Select code snippets for single/multi select, tags, AJAX, templates, and more." },
-  { file: "docs/playground.md", slug: "playground", title: "Playground",
-    description: "How to use the live Forge Select playground and demo to try every feature in the browser." },
-  { file: "docs/migration-from-select2.md", slug: "migration-from-select2", title: "Migration from Select2",
-    description: "Option, event, and method mapping plus a step-by-step guide for migrating from Select2 to Forge Select." },
-  { file: "docs/benchmarks.md", slug: "benchmarks", title: "Benchmarks",
-    description: "Planned performance benchmarking methodology comparing Forge Select to Select2." },
-  { file: "docs/plugin-development.md", slug: "plugin-development", title: "Plugin Development",
-    description: "How to write and register custom Forge Select plugins using lifecycle hooks." },
-  { file: "CHANGELOG.md", slug: "changelog", title: "Changelog",
-    description: "Release history and notable changes for Forge Select, following Keep a Changelog and Semantic Versioning." },
+  {
+    file: "docs/README.md",
+    slug: "index",
+    title: "Introduction",
+    description: "Forge Select docs home: what it is, installation, quick start, and links to every guide.",
+  },
+  {
+    file: "docs/api-reference.md",
+    slug: "api-reference",
+    title: "API Reference",
+    description: "Full Forge Select constructor, options, instance methods, and event reference.",
+  },
+  {
+    file: "docs/examples.md",
+    slug: "examples",
+    title: "Examples",
+    description: "Copy-pasteable Forge Select code snippets for single/multi select, tags, AJAX, templates, and more.",
+  },
+  {
+    file: "docs/playground.md",
+    slug: "playground",
+    title: "Playground",
+    description: "How to use the live Forge Select playground and demo to try every feature in the browser.",
+  },
+  {
+    file: "docs/migration-from-select2.md",
+    slug: "migration-from-select2",
+    title: "Migration from Select2",
+    description:
+      "Option, event, and method mapping plus a step-by-step guide for migrating from Select2 to Forge Select.",
+  },
+  {
+    file: "docs/benchmarks.md",
+    slug: "benchmarks",
+    title: "Benchmarks",
+    description: "Planned performance benchmarking methodology comparing Forge Select to Select2.",
+  },
+  {
+    file: "docs/plugin-development.md",
+    slug: "plugin-development",
+    title: "Plugin Development",
+    description: "How to write and register custom Forge Select plugins using lifecycle hooks.",
+  },
+  {
+    file: "CHANGELOG.md",
+    slug: "changelog",
+    title: "Changelog",
+    description:
+      "Release history and notable changes for Forge Select, following Keep a Changelog and Semantic Versioning.",
+  },
 ];
 
 // site/index.html, demo/index.html, and site/playground/index.html are copied
@@ -43,18 +77,38 @@ const DOCS = [
 // hand in each file. This array is only the sitemap/robots/llms.txt source of
 // truth for those 3 pages; keep it in sync with the hand-written meta tags.
 const STATIC_PAGES = [
-  { path: "", title: "Forge Select — A modern, lightweight replacement for Select2",
-    description: "Forge Select is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, tree select, drag-and-drop tag ordering, and a plugin architecture.",
-    changefreq: "weekly", priority: "1.0" },
-  { path: "demo/", title: "Live Demo · Forge Select",
-    description: "Interactive showcase of every Forge Select feature: single/multi select, tags, drag-and-drop tag reordering, option groups, tree select, custom templates, rich items, virtual scrolling, i18n, and events.",
-    changefreq: "monthly", priority: "0.8" },
-  { path: "playground/", title: "Playground · Forge Select",
-    description: "Write and run Forge Select code live in the browser with ready-made presets for every major feature — no install required.",
-    changefreq: "monthly", priority: "0.7" },
-  { path: "theme-builder/", title: "Theme Builder · Forge Select",
-    description: "Customize every Forge Select CSS variable live and copy the generated theme CSS — no build step required.",
-    changefreq: "monthly", priority: "0.6" },
+  {
+    path: "",
+    title: "Forge Select — A modern, lightweight replacement for Select2",
+    description:
+      "Forge Select is a zero-dependency, accessible, high-performance select component with rich items, virtual scrolling, tags, AJAX, tree select, drag-and-drop tag ordering, and a plugin architecture.",
+    changefreq: "weekly",
+    priority: "1.0",
+  },
+  {
+    path: "demo/",
+    title: "Live Demo · Forge Select",
+    description:
+      "Interactive showcase of every Forge Select feature: single/multi select, tags, drag-and-drop tag reordering, option groups, tree select, custom templates, rich items, virtual scrolling, i18n, and events.",
+    changefreq: "monthly",
+    priority: "0.8",
+  },
+  {
+    path: "playground/",
+    title: "Playground · Forge Select",
+    description:
+      "Write and run Forge Select code live in the browser with ready-made presets for every major feature — no install required.",
+    changefreq: "monthly",
+    priority: "0.7",
+  },
+  {
+    path: "theme-builder/",
+    title: "Theme Builder · Forge Select",
+    description:
+      "Customize every Forge Select CSS variable live and copy the generated theme CSS — no build step required.",
+    changefreq: "monthly",
+    priority: "0.6",
+  },
 ];
 
 const md = new MarkdownIt({
@@ -147,8 +201,7 @@ function techArticleJsonLd({ title, description, canonicalPath }) {
 }
 
 function layout({ title, description, canonicalPath, jsonLdBlocks, active, content }) {
-  const nav = (href, label, key) =>
-    `<a href="${href}"${active === key ? ' class="active"' : ""}>${label}</a>`;
+  const nav = (href, label, key) => `<a href="${href}"${active === key ? ' class="active"' : ""}>${label}</a>`;
   const side = DOCS.map(
     (d) =>
       `<li><a href="./${d.slug === "index" ? "" : `${d.slug}.html`}"${
@@ -225,7 +278,11 @@ function rewriteLinks(html) {
     .replace(/href="\.\/README\.md(#[^"]*)?"/g, 'href="./$1"')
     .replace(/href="\.\.\/README\.md(#[^"]*)?"/g, 'href="../$1"')
     .replace(/href="\.\/([\w-]+)\.md(#[^"]*)?"/g, 'href="./$1.html$2"')
-    .replace(/href="\.\/docs\/([\w-]+)\.md(#[^"]*)?"/g, 'href="./docs/$1.html$2"');
+    .replace(/href="\.\/docs\/([\w-]+)\.md(#[^"]*)?"/g, 'href="./docs/$1.html$2"')
+    .replace(
+      /href="\.\/packages\/(react|vue)\/CHANGELOG\.md"/g,
+      'href="https://github.com/cmm-cmm/ForgeSelect/blob/main/packages/$1/CHANGELOG.md"',
+    );
 }
 
 async function main() {
@@ -244,15 +301,17 @@ async function main() {
   await cp(path.join(root, "demo"), path.join(out, "demo"), { recursive: true });
   await cp(path.join(root, "dist"), path.join(out, "dist"), { recursive: true });
   await cp(path.join(root, "styles"), path.join(out, "styles"), { recursive: true });
+  for (const relative of ["index.html", "demo/index.html", "playground/index.html", "theme-builder/index.html"]) {
+    const file = path.join(out, relative);
+    const html = await readFile(file, "utf8");
+    await writeFile(file, html.replaceAll("{{FORGE_SELECT_VERSION}}", pkg.version));
+  }
   await writeFile(path.join(out, "sitemap.xml"), generateSitemap());
   await writeFile(path.join(out, "robots.txt"), generateRobotsTxt());
   await writeFile(path.join(out, "llms.txt"), generateLlmsTxt());
 
   // Syntax-highlighting themes, toggled via media queries in the layout
-  await cp(
-    path.join(root, "node_modules/highlight.js/styles/github.min.css"),
-    path.join(out, "assets/hljs-light.css"),
-  );
+  await cp(path.join(root, "node_modules/highlight.js/styles/github.min.css"), path.join(out, "assets/hljs-light.css"));
   await cp(
     path.join(root, "node_modules/highlight.js/styles/github-dark.min.css"),
     path.join(out, "assets/hljs-dark.css"),

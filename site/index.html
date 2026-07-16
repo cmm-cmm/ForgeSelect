@@ -51,7 +51,7 @@
   "url": "https://forgeselect.konexforge.com/",
   "codeRepository": "https://github.com/cmm-cmm/ForgeSelect",
   "downloadUrl": "https://www.npmjs.com/package/forge-select",
-  "softwareVersion": "0.2.0",
+  "softwareVersion": "{{FORGE_SELECT_VERSION}}",
   "programmingLanguage": "TypeScript",
   "applicationCategory": "DeveloperApplication",
   "applicationSubCategory": "Form Component",
@@ -94,7 +94,7 @@
     { "@type": "Question", "name": "Can I reorder selected tags by dragging them?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. Set sortable: true on a multiple select to let users drag tags into a new order with mouse, touch, or pen, or use Alt+Left/Alt+Right when a tag has keyboard focus." } },
     { "@type": "Question", "name": "Is Forge Select production-ready?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Forge Select is pre-1.0 (currently 0.2.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release." } }
+      "acceptedAnswer": { "@type": "Answer", "text": "Forge Select is pre-1.0 (currently {{FORGE_SELECT_VERSION}}). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release." } }
   ]
 }
 </script>
@@ -102,7 +102,7 @@
 <body>
 
 <header class="site-header">
-  <a class="site-logo" href="./"><span class="mark"><svg viewBox="0 0 24 28" fill="none" aria-hidden="true"><defs><linearGradient id="fsLogoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#84cc16"/><stop offset="0.5" stop-color="#22c55e"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs><path d="M4 3L12 9L20 3" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12L12 18L20 12" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21L12 27L20 21" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Forge Select <span class="version">v0.2.0</span></a>
+  <a class="site-logo" href="./"><span class="mark"><svg viewBox="0 0 24 28" fill="none" aria-hidden="true"><defs><linearGradient id="fsLogoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#84cc16"/><stop offset="0.5" stop-color="#22c55e"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs><path d="M4 3L12 9L20 3" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12L12 18L20 12" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21L12 27L20 21" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Forge Select <span class="version">v{{FORGE_SELECT_VERSION}}</span></a>
   <nav class="site-nav">
     <a href="./demo/">Live Demo</a>
     <a href="./docs/">Docs</a>
@@ -114,7 +114,7 @@
 </header>
 
 <section class="hero">
-  <p class="eyebrow" style="text-align:center">Open Source · MIT License · v0.2.0</p>
+  <p class="eyebrow" style="text-align:center">Open Source · MIT License · v{{FORGE_SELECT_VERSION}}</p>
   <h1>The select component,<br><span class="grad">reforged for the modern web</span></h1>
   <p class="lead">Forge Select is a zero-dependency, accessible, high-performance replacement for Select2 — rich items, automatic virtualization for huge lists, tags, AJAX, tree select, drag-and-drop tag ordering, i18n, and a plugin architecture.</p>
   <div class="actions">
@@ -195,7 +195,7 @@ select.on("change", (value) =&gt; console.log(value));</code></pre>
     </details>
     <details class="faq-item">
       <summary>Is Forge Select production-ready?</summary>
-      <p>Forge Select is pre-1.0 (currently 0.2.0). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release.</p>
+      <p>Forge Select is pre-1.0 (currently {{FORGE_SELECT_VERSION}}). The core API — options, methods, and events — is functional and tested, but the API may still change before a stable 1.0 release.</p>
     </details>
   </div>
 </section>

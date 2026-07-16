@@ -15,24 +15,24 @@ const select = new ForgeSelect(target, options);
 
 ## Options
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `placeholder` | `string` | `""` | Text shown when nothing is selected. |
-| `searchable` | `boolean` | `true` | Show a search input inside the dropdown. |
-| `multiple` | `boolean` | `false` | Allow selecting more than one option. |
-| `clearable` | `boolean` | `false` | Show a button to clear the current selection. |
-| `allowCreate` | `boolean` | `false` | Let the user create a new option from free text (tags mode). |
-| `sortable` | `boolean` | `false` | Multi-select only: let the user reorder selected tags by dragging (mouse/touch/pen), or with `Alt+Left`/`Alt+Right` when a tag has focus. |
-| `theme` | `string` | `"default"` | Named theme applied via a `data-theme` attribute / CSS class. |
-| `disabled` | `boolean` | `false` | Render the control as disabled. |
-| `data` | `Array<Option \| OptionGroup>` | `undefined` | Static options, used instead of `<option>` children. |
-| `ajax` | `AjaxConfig` | `undefined` | Remote data source config (`url`, `params`, `debounce`, `pagination`, `transform`). |
-| `templateResult` | `(option) => string \| Node` | `undefined` | Custom renderer for dropdown list items. |
-| `templateSelection` | `(option) => string \| Node` | `undefined` | Custom renderer for the selected value display. |
-| `virtualScroll` | `boolean` | *(auto)* | `true`/unset = virtualize once the list exceeds ~100 rows; `false` = never virtualize. |
-| `itemHeight` | `number` | `36` | Row height in px used by the virtual scroller. Raise it (e.g. `52`) for rich items with avatars/descriptions. |
-| `language` | `string \| Record<string, string>` | `"en"` | Locale code or a custom string table for i18n. |
-| `plugins` | `Array<ForgeSelectPlugin>` | `[]` | Plugins to register on this instance. See the [Plugin Development Guide](./plugin-development.md). |
+| Option              | Type                               | Default     | Description                                                                                                                               |
+| ------------------- | ---------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `placeholder`       | `string`                           | `""`        | Text shown when nothing is selected.                                                                                                      |
+| `searchable`        | `boolean`                          | `true`      | Show a search input inside the dropdown.                                                                                                  |
+| `multiple`          | `boolean`                          | `false`     | Allow selecting more than one option.                                                                                                     |
+| `clearable`         | `boolean`                          | `false`     | Show a button to clear the current selection.                                                                                             |
+| `allowCreate`       | `boolean`                          | `false`     | Let the user create a new option from free text (tags mode).                                                                              |
+| `sortable`          | `boolean`                          | `false`     | Multi-select only: let the user reorder selected tags by dragging (mouse/touch/pen), or with `Alt+Left`/`Alt+Right` when a tag has focus. |
+| `theme`             | `string`                           | `"default"` | Named theme applied via a `data-theme` attribute / CSS class.                                                                             |
+| `disabled`          | `boolean`                          | `false`     | Render the control as disabled.                                                                                                           |
+| `data`              | `Array<Option \| OptionGroup>`     | `undefined` | Static options, used instead of `<option>` children.                                                                                      |
+| `ajax`              | `AjaxConfig`                       | `undefined` | Remote data source config (`url`, `params`, `debounce`, `pagination`, `transform`).                                                       |
+| `templateResult`    | `(option) => string \| Node`       | `undefined` | Custom renderer for dropdown list items.                                                                                                  |
+| `templateSelection` | `(option) => string \| Node`       | `undefined` | Custom renderer for the selected value display.                                                                                           |
+| `virtualScroll`     | `boolean`                          | _(auto)_    | `true`/unset = virtualize once the list exceeds ~100 rows; `false` = never virtualize.                                                    |
+| `itemHeight`        | `number`                           | `36`        | Row height in px used by the virtual scroller. Raise it (e.g. `52`) for rich items with avatars/descriptions.                             |
+| `language`          | `string \| Record<string, string>` | `"en"`      | Locale code or a custom string table for i18n.                                                                                            |
+| `plugins`           | `Array<ForgeSelectPlugin>`         | `[]`        | Plugins to register on this instance. See the [Plugin Development Guide](./plugin-development.md).                                        |
 
 ### `Option` shape
 
@@ -41,10 +41,10 @@ interface Option {
   value: string;
   label: string;
   disabled?: boolean;
-  avatar?: string;                 // image URL/data URI, shown as a round avatar
-  description?: string;            // secondary line under the label
-  meta?: Record<string, unknown>;  // arbitrary payload for custom templates
-  children?: Option[];             // nested options — makes this a tree node
+  avatar?: string; // image URL/data URI, shown as a round avatar
+  description?: string; // secondary line under the label
+  meta?: Record<string, unknown>; // arbitrary payload for custom templates
+  children?: Option[]; // nested options — makes this a tree node
 }
 
 interface OptionGroup {
@@ -61,7 +61,8 @@ Add `children` to any `Option` to turn it into an expandable/collapsible tree no
 new ForgeSelect("#categories", {
   data: [
     {
-      value: "fruits", label: "Fruits",
+      value: "fruits",
+      label: "Fruits",
       children: [
         { value: "apple", label: "Apple" },
         { value: "banana", label: "Banana" },
@@ -99,41 +100,45 @@ By default `ajax` replaces the whole list on every search (`transform` returns a
 
 ## Instance methods
 
-| Method | Returns | Description |
-|---|---|---|
-| `.open()` | `void` | Opens the dropdown. |
-| `.close()` | `void` | Closes the dropdown. |
-| `.destroy()` | `void` | Removes Forge Select and restores the original element. |
-| `.getValue()` | `string \| string[] \| null` | Returns the current value(s). |
-| `.setValue(value)` | `void` | Programmatically sets the current value(s). |
-| `.enable()` | `void` | Enables the control. |
-| `.disable()` | `void` | Disables the control. |
-| `.on(event, handler)` | `void` | Subscribes to an event (see below). |
-| `.off(event, handler)` | `void` | Unsubscribes a previously registered handler. |
+| Method                       | Returns                      | Description                                                    |
+| ---------------------------- | ---------------------------- | -------------------------------------------------------------- |
+| `.open()`                    | `void`                       | Opens the dropdown.                                            |
+| `.close()`                   | `void`                       | Closes the dropdown.                                           |
+| `.destroy()`                 | `void`                       | Removes Forge Select and restores the original element.        |
+| `.getValue()`                | `string \| string[] \| null` | Returns the current value(s).                                  |
+| `.setValue(value, options?)` | `void`                       | Sets the value; `{ emitChange: false }` synchronizes silently. |
+| `.enable()`                  | `void`                       | Enables the control.                                           |
+| `.disable()`                 | `void`                       | Disables the control.                                          |
+| `.on(event, handler)`        | `void`                       | Subscribes to an event (see below).                            |
+| `.off(event, handler)`       | `void`                       | Unsubscribes a previously registered handler.                  |
 
 ## Events
 
-| Event | Payload | Fired when |
-|---|---|---|
-| `change` | `value` | The selection changes. |
-| `open` | — | The dropdown opens. |
-| `close` | — | The dropdown closes. |
-| `search` | `query: string` | The search input value changes. |
-| `clear` | — | The selection is cleared via the clear button. |
+| Event    | Payload         | Fired when                                            |
+| -------- | --------------- | ----------------------------------------------------- |
+| `change` | `value`         | The selection changes.                                |
+| `open`   | —               | The dropdown opens.                                   |
+| `close`  | —               | The dropdown closes.                                  |
+| `search` | `query: string` | The search input value changes.                       |
+| `clear`  | —               | The selection is cleared via the clear button.        |
+| `error`  | `Error`         | A remote request, response parse, or transform fails. |
 
 ```js
 select.on("change", (value) => console.log(value));
 select.on("search", (query) => console.log("searching:", query));
+select.on("error", (error) => console.error(error));
 ```
+
+Remote failures render a localized error row. A later search or reopening the dropdown retries the request; superseded requests are aborted automatically.
 
 ## Framework wrappers
 
 The constructor/options/methods/events above are the core `forge-select` API. Official wrapper components expose the same functionality with framework-native conventions:
 
-| Package | Framework | Value binding |
-|---|---|---|
-| [`forge-select-react`](https://www.npmjs.com/package/forge-select-react) | React | `value` prop + `onChange` |
-| [`forge-select-vue`](https://www.npmjs.com/package/forge-select-vue) | Vue 3 | `v-model` |
+| Package                                                                  | Framework | Value binding             |
+| ------------------------------------------------------------------------ | --------- | ------------------------- |
+| [`forge-select-react`](https://www.npmjs.com/package/forge-select-react) | React     | `value` prop + `onChange` |
+| [`forge-select-vue`](https://www.npmjs.com/package/forge-select-vue)     | Vue 3     | `v-model`                 |
 
 Constructor-only options (`data`, `templateResult`, `templateSelection`, `plugins`, etc.) are read once when the wrapped instance mounts and are not reactive in either wrapper — see the [Examples](./examples.md#react) or each package's own README for details and the remount-with-`key` workaround.
 

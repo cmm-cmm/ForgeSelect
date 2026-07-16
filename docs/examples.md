@@ -50,8 +50,7 @@ new ForgeSelect("#users", {
   ajax: {
     url: (query) => `/api/users?q=${encodeURIComponent(query)}`,
     debounce: 300,
-    transform: (response) =>
-      response.items.map((u) => ({ value: u.id, label: u.name })),
+    transform: (response) => response.items.map((u) => ({ value: u.id, label: u.name })),
   },
 });
 ```
@@ -120,14 +119,16 @@ new ForgeSelect("#categories", {
   multiple: true,
   data: [
     {
-      value: "electronics", label: "Electronics",
+      value: "electronics",
+      label: "Electronics",
       children: [
         { value: "phones", label: "Phones" },
         { value: "laptops", label: "Laptops" },
       ],
     },
     {
-      value: "clothing", label: "Clothing",
+      value: "clothing",
+      label: "Clothing",
       children: [
         { value: "shirts", label: "Shirts" },
         { value: "shoes", label: "Shoes" },
@@ -137,7 +138,7 @@ new ForgeSelect("#categories", {
 });
 ```
 
-Nodes with `children` start collapsed; click the twisty (▶/▼) to expand. In `multiple` mode, selecting "Electronics" also selects "Phones" and "Laptops"; selecting only some of a parent's descendants shows it as indeterminate.
+Nodes with `children` start collapsed; click the twisty (▶/▼) to expand. With a node highlighted, `ArrowRight` expands it or moves to its first child; `ArrowLeft` collapses it or returns to its parent. In `multiple` mode, selecting "Electronics" also selects "Phones" and "Laptops"; selecting only some of a parent's descendants shows it as indeterminate.
 
 ## Rich items (avatar + name + description)
 

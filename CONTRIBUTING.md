@@ -10,13 +10,19 @@ cd ForgeSelect
 npm install
 ```
 
-| Command | What it does |
-| --- | --- |
-| `npm test` | Run the vitest + jsdom test suite |
-| `npm run test:watch` | Tests in watch mode |
-| `npm run typecheck` | Strict TypeScript check (`tsc --noEmit`) |
-| `npm run build` | Build ESM + CJS + IIFE bundles and `.d.ts` into `dist/` |
-| `npm run build:site` | Build the library plus the full website into `_site/` |
+| Command                 | What it does                                            |
+| ----------------------- | ------------------------------------------------------- |
+| `npm test`              | Run the vitest + jsdom test suite                       |
+| `npm run test:watch`    | Tests in watch mode                                     |
+| `npm run typecheck`     | Strict TypeScript check (`tsc --noEmit`)                |
+| `npm run build`         | Build ESM + CJS + IIFE bundles and `.d.ts` into `dist/` |
+| `npm run build:site`    | Build the library plus the full website into `_site/`   |
+| `npm run lint`          | Check TypeScript and JavaScript with ESLint             |
+| `npm run format:check`  | Check repository formatting with Prettier               |
+| `npm run test:coverage` | Run tests and enforce 80% coverage thresholds           |
+| `npm run test:browser`  | Run Playwright in Chromium, Firefox, and WebKit         |
+| `npm run check:site`    | Reject broken generated local links and assets          |
+| `npm run check:package` | Build and inspect all npm tarballs without publishing   |
 
 To preview the website/demo/playground locally:
 
@@ -75,16 +81,16 @@ This project previously also deployed to GitHub Pages (`.github/workflows/pages.
 
 The Cloudflare Workers Builds project is configured with:
 
-| Field | Value |
-| --- | --- |
-| Build command | `npm run build:site` |
-| Deploy command | `npx wrangler deploy` |
+| Field                                | Value                 |
+| ------------------------------------ | --------------------- |
+| Build command                        | `npm run build:site`  |
+| Deploy command                       | `npx wrangler deploy` |
 | Non-production branch deploy command | `npx wrangler deploy` |
-| Path (root directory) | *(blank — repo root)* |
+| Path (root directory)                | _(blank — repo root)_ |
 
 Do **not** use `wrangler pages deploy` here — this project type is a Worker, not a Pages project, so that command targets the wrong API/resource and fails with a generic authentication error regardless of token permissions. `wrangler deploy` reads its config from `wrangler.jsonc`.
 
-Cloudflare's build environment requires a Deploy command, so it needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set as **Environment variables on the project itself** (Settings → Environment variables). The token must have **`Account > Workers Scripts > Edit`** permission — *not* "Cloudflare Pages: Edit" (that permission doesn't apply here since the resource is a Worker). To deploy from a local machine instead, run `npm run build:site && npm run deploy:cloudflare` (requires either a local `wrangler login` or a `CLOUDFLARE_API_TOKEN` environment variable).
+Cloudflare's build environment requires a Deploy command, so it needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set as **Environment variables on the project itself** (Settings → Environment variables). The token must have **`Account > Workers Scripts > Edit`** permission — _not_ "Cloudflare Pages: Edit" (that permission doesn't apply here since the resource is a Worker). To deploy from a local machine instead, run `npm run build:site && npm run deploy:cloudflare` (requires either a local `wrangler login` or a `CLOUDFLARE_API_TOKEN` environment variable).
 
 ## Reporting bugs & requesting features
 

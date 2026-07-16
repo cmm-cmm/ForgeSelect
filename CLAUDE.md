@@ -36,7 +36,7 @@ Key internal concepts to know before touching `ForgeSelect.ts`:
 - **AJAX**: `scheduleRemoteLoad()` debounces then calls `loadRemote()`, which tracks an incrementing `ajaxRequestId` so a stale in-flight response can't clobber a newer one (checked before applying `data` and again in the `finally`).
 - **Native `<select>` sync**: when mounted on a real `<select>`, `syncNativeSelect()` keeps its `<option>`s' `selected` state in sync and dispatches a native `change` event, so ForgeSelect works transparently inside plain `<form>` submission.
 - **Plugins**: `ForgeSelectPlugin` is a lifecycle-hook object (`onInit`/`onOpen`/`onClose`/`onDestroy`, all optional), invoked at the corresponding point in `open()`/`close()`/`destroy()`/the constructor. See `docs/plugin-development.md` for the authoring guide.
-- **Rendering safety**: the built-in row/value renderer (`renderTemplate`) builds DOM via `textContent`/`createElement`, not `innerHTML`, so avatar/label/description fields are XSS-safe by construction. A custom `templateResult`/`templateSelection` returning a string *is* inserted via `innerHTML` — that's the one place caller-supplied HTML is trusted as-is.
+- **Rendering safety**: the built-in row/value renderer (`renderTemplate`) builds DOM via `textContent`/`createElement`, not `innerHTML`, so avatar/label/description fields are XSS-safe by construction. A custom `templateResult`/`templateSelection` returning a string _is_ inserted via `innerHTML` — that's the one place caller-supplied HTML is trusted as-is.
 
 ## Site / docs build
 

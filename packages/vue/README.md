@@ -40,6 +40,8 @@ const options = {
 - `modelValue` / `v-model` — controlled value (`string | string[] | null`), kept in sync via `.setValue()` whenever it changes.
 - `change` event — also emitted alongside `update:modelValue`, carrying the same value, for consumers not using `v-model`.
 
+Updating `modelValue` synchronizes the widget silently; `update:modelValue` and `change` are reserved for user-initiated changes.
+
 ## Important limitation
 
 `options` is read once when the underlying Forge Select instance is created and is **not reactive** — changing `data`, `templateResult`, `plugins`, etc. after mount has no effect on the existing instance. To apply new options, force a remount with a different `:key`:
