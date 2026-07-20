@@ -28,6 +28,19 @@ describe("selection helpers", () => {
     expect(computeCheckState(tree, ["a", "b"])).toBe("all");
   });
 
+  it("excludes disabled descendants from cascade collection and check-state aggregation", () => {
+    const withDisabled: Option = {
+      value: "root",
+      label: "Root",
+      children: [{ value: "a", label: "A" }, { value: "b", label: "B", disabled: true }],
+    };
+    // Disabled children can never be un-toggled through the UI (excluded
+    // from navItems), so cascading selection must not sweep them in.
+    expect(collectDescendantValues(withDisabled)).toEqual(["a"]);
+    // With "b" disabled and unselectable, "a" alone should read as "all".
+    expect(computeCheckState(withDisabled, ["a"])).toBe("all");
+  });
+
   it("finds nested options, recursively collects values, and synchronizes parents", () => {
     const data: DataItem[] = [{ label: "Group", options: [tree] }];
     expect(findOption(data, "b")?.label).toBe("B");
@@ -67,5 +80,15 @@ describe("native and remote helpers", () => {
       options: [tree],
       hasMore: true,
     });
+  });
+
+  it("passes the page number to a function-based ajax.url", () => {
+    const url = (query: string, page: number) => `/api?q=${query}&p=${page}`;
+    expect(buildUrl({ url }, "ana", 3)).toBe("/api?q=ana&p=3");
+  });
+
+  it("rejects a malformed ajax.transform result instead of returning a broken shape", () => {
+    const ajax = { url: "/api", transform: () => ({ notOptions: [] }) as unknown as Option[] };
+    expect(() => normalizeRemoteResult(ajax, {})).toThrow(/ajax\.transform must return/);
   });
 });

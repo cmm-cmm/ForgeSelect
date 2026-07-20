@@ -77,6 +77,42 @@ describe("ForgeSelectReact", () => {
     expect(latest).toHaveBeenCalledWith("a");
   });
 
+  it("forwards open, close, search, clear, and error callbacks", () => {
+    const onOpen = vi.fn();
+    const onClose = vi.fn();
+    const onSearch = vi.fn();
+    const onClear = vi.fn();
+    const { container } = mount({
+      clearable: true,
+      data: [{ value: "a", label: "A" }],
+      value: "a",
+      onOpen,
+      onClose,
+      onSearch,
+      onClear,
+    });
+
+    act(() => container.querySelector<HTMLElement>(".forge-select__control")!.click());
+    expect(onOpen).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      const input = container.querySelector<HTMLInputElement>(".forge-select__search")!;
+      input.value = "x";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(onSearch).toHaveBeenCalledWith("x");
+
+    act(() => {
+      container.querySelector<HTMLInputElement>(".forge-select__search")!.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+    });
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    act(() => container.querySelector<HTMLElement>(".forge-select__clear")!.click());
+    expect(onClear).toHaveBeenCalledTimes(1);
+  });
+
   it("destroys the instance on unmount", () => {
     const { container, root } = mount({ data: [{ value: "a", label: "A" }] });
     expect(container.querySelector(".forge-select")).not.toBeNull();

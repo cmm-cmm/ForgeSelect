@@ -6,6 +6,11 @@ export interface ForgeSelectReactProps extends ForgeSelectOptions {
   /** Controlled value; synced into the instance via `.setValue()` on change. */
   value?: ForgeSelectValue;
   onChange?: (value: ForgeSelectValue) => void;
+  onOpen?: () => void;
+  onClose?: () => void;
+  onSearch?: (query: string) => void;
+  onClear?: () => void;
+  onError?: (error: Error) => void;
   className?: string;
 }
 
@@ -17,14 +22,24 @@ export interface ForgeSelectReactProps extends ForgeSelectOptions {
  * kept in sync after mount.
  */
 export function ForgeSelectReact(props: ForgeSelectReactProps) {
-  const { value, onChange, className, ...options } = props;
+  const { value, onChange, onOpen, onClose, onSearch, onClear, onError, className, ...options } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<ForgeSelect | null>(null);
   const onChangeRef = useRef(onChange);
+  const onOpenRef = useRef(onOpen);
+  const onCloseRef = useRef(onClose);
+  const onSearchRef = useRef(onSearch);
+  const onClearRef = useRef(onClear);
+  const onErrorRef = useRef(onError);
 
   useEffect(() => {
     onChangeRef.current = onChange;
-  }, [onChange]);
+    onOpenRef.current = onOpen;
+    onCloseRef.current = onClose;
+    onSearchRef.current = onSearch;
+    onClearRef.current = onClear;
+    onErrorRef.current = onError;
+  }, [onChange, onOpen, onClose, onSearch, onClear, onError]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -35,6 +50,11 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     instanceRef.current = instance;
     if (value !== undefined) instance.setValue(value);
     instance.on("change", (v) => onChangeRef.current?.(v as ForgeSelectValue));
+    instance.on("open", () => onOpenRef.current?.());
+    instance.on("close", () => onCloseRef.current?.());
+    instance.on("search", (q) => onSearchRef.current?.(q as string));
+    instance.on("clear", () => onClearRef.current?.());
+    instance.on("error", (e) => onErrorRef.current?.(e as Error));
 
     return () => {
       instance.destroy();

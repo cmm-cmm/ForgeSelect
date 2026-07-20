@@ -101,6 +101,35 @@ describe("ForgeSelectVue", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it("emits open, close, search, and clear", () => {
+    const onOpen = vi.fn();
+    const onClose = vi.fn();
+    const onSearch = vi.fn();
+    const onClear = vi.fn();
+    const { container } = mountOnBody(ForgeSelectVue, {
+      options: { clearable: true, data: [{ value: "a", label: "A" }] },
+      modelValue: "a",
+      onOpen,
+      onClose,
+      onSearch,
+      onClear,
+    });
+
+    container.querySelector<HTMLElement>(".forge-select__control")!.click();
+    expect(onOpen).toHaveBeenCalledTimes(1);
+
+    const input = container.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "x";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(onSearch).toHaveBeenCalledWith("x");
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    container.querySelector<HTMLElement>(".forge-select__clear")!.click();
+    expect(onClear).toHaveBeenCalledTimes(1);
+  });
+
   it("destroys the instance on unmount", () => {
     const { container, app } = mountOnBody(ForgeSelectVue, {
       options: { data: [{ value: "a", label: "A" }] },

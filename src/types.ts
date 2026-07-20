@@ -25,7 +25,7 @@ export interface OptionGroup {
 export type DataItem = Option | OptionGroup;
 
 export interface AjaxConfig {
-  url: string | ((query: string) => string);
+  url: string | ((query: string, page: number) => string);
   params?: (query: string, page: number) => Record<string, unknown>;
   /** Debounce in milliseconds. Default 250. */
   debounce?: number;

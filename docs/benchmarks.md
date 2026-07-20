@@ -2,7 +2,7 @@
 
 > [Docs home](./README.md)
 >
-> **Status: planned.** Forge Select has no published release yet, so there are no real numbers to report. This page defines the methodology and the exact shape the results will be published in, so contributors can run and submit benchmarks as the library matures.
+> **Status: planned.** No formal benchmark suite has been run yet, so there are no real numbers to report. This page defines the methodology and the exact shape the results will be published in, so contributors can run and submit benchmarks as the library matures.
 
 ## Methodology
 
@@ -28,6 +28,8 @@ Once a release exists, results will be recorded here in this format:
 | Memory after 100 mount/destroy cycles | _TBD_   | _TBD_        | Heap delta, MB.                      |
 
 ## Running benchmarks locally (once available)
+
+There is no `bench` script yet — this section describes the intended workflow once the benchmark suite is added, not something you can run today.
 
 ```bash
 npm install

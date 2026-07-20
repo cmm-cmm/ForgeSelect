@@ -21,6 +21,9 @@ permissions:
   contents: read
   id-token: write # needed for npm provenance
 
+concurrency:
+  group: release-${{ github.ref }}
+
 jobs:
   publish:
     runs-on: ubuntu-latest

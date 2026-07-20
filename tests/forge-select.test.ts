@@ -82,6 +82,22 @@ describe("initialization", () => {
     new ForgeSelect("#country", { theme: "dark" });
     expect(document.querySelector<HTMLElement>(".forge-select")?.dataset.theme).toBe("dark");
   });
+
+  it("forwards a <label for> association on the original select to the new control", () => {
+    document.body.innerHTML = `<label for="country">Country</label><select id="country"><option value="vn">Vietnam</option></select>`;
+    new ForgeSelect("#country");
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    const labelledby = control.getAttribute("aria-labelledby");
+    expect(labelledby).toBeTruthy();
+    expect(document.getElementById(labelledby!)?.textContent).toBe("Country");
+  });
+
+  it("forwards aria-label / aria-labelledby set directly on the target element", () => {
+    mountSelect();
+    document.querySelector("#country")!.setAttribute("aria-label", "Pick a country");
+    new ForgeSelect("#country");
+    expect(document.querySelector(".forge-select__control")?.getAttribute("aria-label")).toBe("Pick a country");
+  });
 });
 
 describe("open/close and events", () => {
@@ -498,6 +514,36 @@ describe("tree select", () => {
     expect(fruitsLiAfter.classList.contains("forge-select__option--indeterminate")).toBe(true);
     expect(select.getValue()).toEqual(["apple"]);
   });
+
+  it("does not cascade selection onto a disabled descendant", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      data: [
+        {
+          value: "fruits",
+          label: "Fruits",
+          children: [
+            { value: "apple", label: "Apple" },
+            { value: "banana", label: "Banana", disabled: true },
+          ],
+        },
+      ],
+    });
+    select.open();
+
+    const fruitsLi = optionEls().find((li) => li.textContent?.includes("Fruits"))!;
+    fruitsLi.click();
+
+    // Banana is disabled and excluded from navItems, so it can never be
+    // un-toggled by the user — it must not be swept into `selected` either.
+    expect(select.getValue()).toEqual(["fruits", "apple"]);
+
+    document.querySelector<HTMLElement>(".forge-select__twisty")!.click();
+    const appleLi = optionEls().find((li) => li.textContent?.includes("Apple"))!;
+    appleLi.click();
+    expect(select.getValue()).toEqual([]);
+  });
 });
 
 describe("keyboard navigation", () => {
@@ -512,6 +558,18 @@ describe("keyboard navigation", () => {
     input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
 
     expect(select.getValue()).toBe("jp");
+  });
+
+  it("highlights the last option when ArrowUp is pressed before anything is highlighted", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+    expect(select.getValue()).toBe("us");
   });
 
   it("skips disabled options", () => {

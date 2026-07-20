@@ -44,7 +44,7 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 ## Pull request guidelines
 
 1. Branch from `main` and keep PRs focused on one change.
-2. `npm run typecheck && npm test && npm run build` must pass — CI enforces all three.
+2. CI (`.github/workflows/ci.yml`) must pass: lint, format check, typecheck, test with coverage, build (core and the React/Vue workspaces), `check:site`, `check:package`, `npm audit`, and the Playwright browser suite. Run `npm run verify` locally to cover the core-package subset (lint, format:check, typecheck, test:coverage, build) before pushing.
 3. Add or update tests for behavior changes; jsdom cannot model layout (e.g. `scrollTop` clamping), so verify scroll/visual behavior in a real browser too.
 4. Update the relevant docs page under `docs/` and add an entry to `CHANGELOG.md` under **Unreleased**.
 5. Keep the zero-dependency promise: no new runtime dependencies. Dev dependencies are fine when justified.
@@ -55,7 +55,7 @@ All three packages (`forge-select`, `forge-select-react`, `forge-select-vue`) pu
 
 **Core (`forge-select`)**:
 
-1. Bump `version` in `package.json` (following [SemVer](https://semver.org/)) and add a matching entry to `CHANGELOG.md`. Also update every hardcoded version string in `site/index.html` (the `softwareVersion` field in the `SoftwareApplication` JSON-LD block, the header version badge, and the hero eyebrow line) and the header version badge in `demo/index.html`, `site/playground/index.html`, and `site/theme-builder/index.html` — those pages are copied verbatim (not templated), so they don't pick up the new version automatically. Docs pages under `docs/` are templated through `scripts/build-site.mjs`'s `layout()` and read `package.json`'s version at build time, so they need no manual update.
+1. Bump `version` in `package.json` (following [SemVer](https://semver.org/)) and add a matching entry to `CHANGELOG.md`. No manual version-string edits are needed anywhere in `site/`, `demo/`, or `docs/` — every hardcoded version string (`softwareVersion` in JSON-LD, the header version badge, the hero eyebrow line) uses a `{{FORGE_SELECT_VERSION}}` placeholder that `scripts/build-site.mjs` replaces from `package.json`'s version at build time, and docs pages read the same version through `layout()`.
 2. Merge that change to `main`.
 3. Tag the release commit and push the tag: `git tag v1.2.3 && git push origin v1.2.3` (or create a GitHub Release with that tag).
 4. The `publish-core` job verifies the tag matches `package.json`, runs typecheck/test/build, and publishes with npm provenance.

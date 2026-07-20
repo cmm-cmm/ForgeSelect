@@ -191,7 +191,7 @@ Forge Select is designed as a drop-in-concept replacement for Select2: no jQuery
 
 ## Benchmarks
 
-Performance benchmarking (bundle size, init time, search latency, virtual scroll performance) against Select2 is planned once the first release ships. Methodology and the results format are documented in [`docs/benchmarks.md`](./docs/benchmarks.md).
+Performance benchmarking (bundle size, init time, search latency, virtual scroll performance) against Select2 is planned but not yet run. Methodology and the results format are documented in [`docs/benchmarks.md`](./docs/benchmarks.md).
 
 ## Roadmap
 

@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -46,11 +53,14 @@ jobs:
       - name: Build workspaces (React/Vue wrappers)
         run: npm run build --workspaces --if-present
 
+      - name: Assemble site
+        run: node scripts/build-site.mjs
+
       - name: Validate generated site
-        run: npm run check:site
+        run: node scripts/check-site.mjs
 
       - name: Validate npm package contents
-        run: npm run check:package
+        run: npm pack --dry-run --ignore-scripts && npm pack ./packages/react --dry-run --ignore-scripts && npm pack ./packages/vue --dry-run --ignore-scripts
 
       - name: Audit dependencies
         run: npm audit --audit-level=moderate
@@ -59,4 +69,4 @@ jobs:
         run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Browser tests
-        run: npm run test:browser
+        run: npx playwright test

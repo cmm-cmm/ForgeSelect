@@ -281,6 +281,30 @@ export default class ForgeSelect {
 
   // ---------------------------------------------------------------- DOM setup
 
+  /**
+   * The original target (a hidden native <select> or a plain mount div) can
+   * carry an accessible name via aria-label/aria-labelledby, or via a
+   * <label for> pointing at its id — but once `this.el` is display:none it
+   * drops out of the accessibility tree, so any such association silently
+   * stops reaching assistive tech unless we forward it onto the visible,
+   * interactive `this.control` ourselves.
+   */
+  private applyAccessibleName(): void {
+    const ariaLabelledby = this.el.getAttribute("aria-labelledby");
+    const ariaLabel = this.el.getAttribute("aria-label");
+    if (ariaLabelledby) {
+      this.control.setAttribute("aria-labelledby", ariaLabelledby);
+    } else if (ariaLabel) {
+      this.control.setAttribute("aria-label", ariaLabel);
+    } else if (this.el.id) {
+      const label = Array.from(document.getElementsByTagName("label")).find((el) => el.htmlFor === this.el.id);
+      if (label) {
+        if (!label.id) label.id = `${this.uid}-label`;
+        this.control.setAttribute("aria-labelledby", label.id);
+      }
+    }
+  }
+
   private buildDom(): void {
     this.root = document.createElement("div");
     this.root.className = "forge-select";
@@ -295,6 +319,7 @@ export default class ForgeSelect {
     this.control.setAttribute("aria-expanded", "false");
     this.control.setAttribute("aria-controls", `${this.uid}-list`);
     this.control.tabIndex = 0;
+    this.applyAccessibleName();
 
     this.valueEl = document.createElement("div");
     this.valueEl.className = "forge-select__value";
@@ -992,8 +1017,10 @@ export default class ForgeSelect {
   private moveHighlight(delta: number): void {
     if (this.navItems.length === 0) return;
     const next =
-      this.highlightedIndex === -1 && delta > 0
-        ? 0
+      this.highlightedIndex === -1
+        ? delta > 0
+          ? 0
+          : this.navItems.length - 1
         : (this.highlightedIndex + delta + this.navItems.length) % this.navItems.length;
     this.focusNavIndex(next);
   }

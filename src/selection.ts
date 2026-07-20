@@ -4,16 +4,25 @@ export function isGroup(item: DataItem): item is OptionGroup {
   return (item as OptionGroup).options !== undefined;
 }
 
+// Disabled descendants are excluded from `navItems` (see buildRows in
+// ForgeSelect.ts) and so can never be toggled back off by the user through
+// the UI — cascading a parent's (de)selection onto them would strand them
+// permanently selected. Their own children remain independently selectable
+// (only the disabled node itself is skipped), matching buildRows' rendering.
 export function collectDescendantValues(option: Option): string[] {
   if (!option.children) return [];
   const values: string[] = [];
-  for (const child of option.children) values.push(child.value, ...collectDescendantValues(child));
+  for (const child of option.children) {
+    if (!child.disabled) values.push(child.value);
+    values.push(...collectDescendantValues(child));
+  }
   return values;
 }
 
 export function computeCheckState(option: Option, selected: string[]): "none" | "some" | "all" {
   if (!option.children?.length) return selected.includes(option.value) ? "all" : "none";
-  const states = option.children.map((child) => computeCheckState(child, selected));
+  const states = option.children.filter((child) => !child.disabled).map((child) => computeCheckState(child, selected));
+  if (states.length === 0) return "none";
   if (states.every((state) => state === "all")) return "all";
   if (states.every((state) => state === "none")) return "none";
   return "some";

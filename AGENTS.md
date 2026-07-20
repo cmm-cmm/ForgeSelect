@@ -15,7 +15,7 @@ Use Node.js 18 or newer and install dependencies with `npm install`.
 - `npm run build:site` — build the library and assemble the documentation site.
 - `npm test --workspaces` — test the React and Vue workspace packages.
 
-Before submitting, run `npm run typecheck && npm test && npm run build`. Preview `_site/` with a local static server.
+Before submitting, run `npm run verify` (lint, format check, typecheck, coverage-enforced tests, build) — CI additionally runs the workspace builds, `check:site`, `check:package`, `npm audit`, and the Playwright browser suite. Preview `_site/` with a local static server.
 
 ## Coding Style & Naming Conventions
 
@@ -23,7 +23,7 @@ Follow the existing TypeScript style: two-space indentation, double quotes, semi
 
 ## Testing Guidelines
 
-Vitest with jsdom is the test framework. Name core tests `tests/*.test.ts`; wrapper tests use `packages/*/tests/*.test.ts` or `.test.tsx`. Add focused regression tests for behavior changes. Because jsdom does not model layout accurately, verify scrolling and visual behavior in a real browser using the demo or playground. No numeric coverage threshold is configured, but changed behavior should be exercised.
+Vitest with jsdom is the test framework. Name core tests `tests/*.test.ts`; wrapper tests use `packages/*/tests/*.test.ts` or `.test.tsx`. Add focused regression tests for behavior changes. Because jsdom does not model layout accurately, verify scrolling and visual behavior in a real browser using the demo or playground. `vitest.config.ts` enforces an 80% coverage threshold (lines/branches/functions/statements) via `npm run test:coverage`, which CI runs on every push — changed behavior needs a matching test, not just an assertion that it "should be exercised."
 
 ## Commit & Pull Request Guidelines
 

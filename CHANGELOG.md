@@ -15,9 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cloudflare deploy**: the site now deploys to Cloudflare (Workers with static assets, project `forge-select`) on every push to `main`, via a Workers Builds project connected directly to this repo through the Cloudflare Dashboard's Git integration (not a GitHub Actions workflow), configured by the new `wrangler.jsonc` at the repo root; see "Deploying the site" in `CONTRIBUTING.md`. Adds a `wrangler` dev dependency and a `deploy:cloudflare` script for manual/local deploys.
 - **Drag & Drop Ordering**: `sortable: true` (multi-select only) lets users reorder selected tags by dragging with mouse/touch/pen (Pointer Events), or via `Alt+Left`/`Alt+Right` when a tag has keyboard focus. Fully opt-in — multi-select behavior, markup, and events are unchanged when `sortable` is left at its default `false`. When mounted on a native `<select multiple>`, the underlying `<option>` elements are also reordered to match, so a plain `<form>` submission serializes values in the dragged order.
 - Live demo: new "Rich items — 1,000 users (multiple)" card showing the built-in `avatar`/`description` rich-item rendering combined with `multiple` + tags on a 1,000-item virtualized list.
+- The React and Vue wrappers now forward `onOpen`/`onClose`/`onSearch`/`onClear`/`onError` props (React) and `open`/`close`/`search`/`clear`/`error` emits (Vue), matching the full `ForgeSelectEvent` union instead of only `change`.
 
 ### Changed
 
+- The IIFE bundle (`dist/index.global.js`, the CDN/`<script>` build) is now minified — the ESM/CJS builds are unaffected.
+- CI: added `concurrency` groups to `ci.yml`/`release.yml` so superseded runs don't queue redundantly, added an explicit `permissions: contents: read` block to `ci.yml`, and restructured steps so `dist/`/workspace builds run once per job instead of up to 3×.
 - React/Vue controlled values now synchronize silently; callbacks and model events are reserved for user changes.
 - Internal selection, native-select parsing, and remote normalization helpers are split into focused, directly tested modules.
 - Site version badges are sourced from `package.json`, and generated local links are checked in CI.
@@ -26,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Display name is now "Forge Select"** (with a space) everywhere it's used as a marketing/brand name — page titles, headings, meta tags, JSON-LD `name` fields, and prose across the site, `README.md`, and `docs/`. Code identifiers (`ForgeSelect` the TypeScript class, `ForgeSelectOptions`/`ForgeSelectPlugin` types, `forge-select`/`forge-select-react`/`forge-select-vue` npm package names, `.forge-select__*` CSS classes) and the `cmm-cmm/ForgeSelect` GitHub repository name are unaffected — those are technical identifiers, not the display name.
 - **SEO/GEO pass on every site page** (informed by another KonexForge site's setup): added `keywords`, `robots`, `author`, `og:locale`, `og:image:alt`, and an explicit `<link rel="sitemap">` tag; homepage JSON-LD reorganized into a linked `WebSite` + `SoftwareApplication` graph (via matching `@id`/`isPartOf`) with a `featureList`, `applicationSubCategory`, `softwareHelp`, and `screenshot`; `llms.txt` generation now includes the version number.
 - **Real PNG social-preview image**: `og-banner.svg` is now rasterized to a 1200×630 PNG at build time (new `sharp` dev dependency, not committed — generated fresh into `_site/assets/` on every build) and used for `og:image`/`twitter:image`/`apple-touch-icon` in place of the SVG, with `twitter:card` upgraded from `summary` to `summary_large_image`. Resolves the SVG-preview-inconsistency limitation noted in the 0.2.0 entry below (Twitter/X and LinkedIn don't render SVG `og:image` reliably).
-- **Version badge**: the site header now shows the current version next to the brand name (e.g. "Forge Select v0.2.0") on every page, plus a "v0.2.0" eyebrow line on the homepage hero — sourced from `package.json` at build time for the templated `docs/*.html` pages, hardcoded (like the rest of their metadata) on the hand-authored `site/index.html`/`demo/index.html`/`site/playground/index.html`/`site/theme-builder/index.html` pages, so it needs a manual bump at release time (see `CONTRIBUTING.md`).
+- **Version badge**: the site header now shows the current version next to the brand name (e.g. "Forge Select v0.2.0") on every page, plus a version eyebrow line on the homepage hero — sourced from `package.json` at build time everywhere, including the hand-authored `site/index.html`/`demo/index.html`/`site/playground/index.html`/`site/theme-builder/index.html` pages, via a `{{FORGE_SELECT_VERSION}}` placeholder that `scripts/build-site.mjs` replaces at build time, so no manual bump is needed at release time (see `CONTRIBUTING.md`).
 
 ### Removed
 
@@ -37,6 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Abort and ignore stale AJAX responses immediately when a new debounced query is scheduled; reject unsuccessful HTTP responses.
 - Preserve native selected/disabled/display state, inherited optgroup disabling, external changes, and form resets.
 - Repair generated React/Vue changelog links and update the supported security version.
+- `ajax.url` as a function now receives the current page number as a second argument, so `pagination: true` works with function-based URLs (it previously always fetched page 0).
+- Pressing `ArrowUp` as the very first navigation keypress now highlights the last item, not the second-to-last.
+- Selecting/deselecting a tree parent in multi-select mode no longer cascades onto disabled descendants — they were unreachable through the UI (excluded from keyboard/click navigation) and could get stuck permanently selected.
+- `ajax.transform` returning a value that isn't an array or `{ options, hasMore }` now throws a clear error instead of silently producing a broken options list.
+- The custom combobox control now forwards an accessible name from the original element's `aria-label`/`aria-labelledby`, or from an existing `<label for>` pointing at it — previously that association was lost once the original `<select>`/element became `display:none`.
 
 ## [0.2.0] - 2026-07-14
 

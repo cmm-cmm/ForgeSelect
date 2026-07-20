@@ -40,6 +40,10 @@ function CountryPicker() {
 
 - `value` — controlled value (`string | string[] | null`), kept in sync via `.setValue()` whenever it changes.
 - `onChange` — called with the new value on the underlying `change` event.
+- `onOpen` / `onClose` — called when the dropdown opens/closes.
+- `onSearch` — called with the current search query on every keystroke.
+- `onClear` — called when the clear button empties the selection.
+- `onError` — called with the `Error` when an `ajax` request fails.
 - `className` — applied to the wrapper `<div>` Forge Select mounts into.
 
 Updating `value` synchronizes the widget silently; `onChange` is reserved for user-initiated changes.
