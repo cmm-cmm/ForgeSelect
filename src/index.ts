@@ -9,5 +9,6 @@ export type {
   ForgeSelectValue,
   Option,
   OptionGroup,
+  SetValueOptions,
   TemplateFn,
 } from "./types";

@@ -9,12 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Quality gates: ESLint, Prettier, 80% V8 coverage thresholds, generated-site/package validation, and Playwright coverage across Chromium, Firefox, and WebKit.
+- Additive `setValue(value, { emitChange: false })` API and an `error` event/localized row for remote-load failures.
+- Keyboard-operable tree navigation with `ArrowRight`/`ArrowLeft` and `aria-expanded` state.
 - **Cloudflare deploy**: the site now deploys to Cloudflare (Workers with static assets, project `forge-select`) on every push to `main`, via a Workers Builds project connected directly to this repo through the Cloudflare Dashboard's Git integration (not a GitHub Actions workflow), configured by the new `wrangler.jsonc` at the repo root; see "Deploying the site" in `CONTRIBUTING.md`. Adds a `wrangler` dev dependency and a `deploy:cloudflare` script for manual/local deploys.
 - **Drag & Drop Ordering**: `sortable: true` (multi-select only) lets users reorder selected tags by dragging with mouse/touch/pen (Pointer Events), or via `Alt+Left`/`Alt+Right` when a tag has keyboard focus. Fully opt-in — multi-select behavior, markup, and events are unchanged when `sortable` is left at its default `false`. When mounted on a native `<select multiple>`, the underlying `<option>` elements are also reordered to match, so a plain `<form>` submission serializes values in the dragged order.
 - Live demo: new "Rich items — 1,000 users (multiple)" card showing the built-in `avatar`/`description` rich-item rendering combined with `multiple` + tags on a 1,000-item virtualized list.
 
 ### Changed
 
+- React/Vue controlled values now synchronize silently; callbacks and model events are reserved for user changes.
+- Internal selection, native-select parsing, and remote normalization helpers are split into focused, directly tested modules.
+- Site version badges are sourced from `package.json`, and generated local links are checked in CI.
 - Site FAQ (landing page + JSON-LD) and docs no longer say React/Vue/Angular/Svelte wrappers are "on the roadmap but not yet available" — `forge-select-react` and `forge-select-vue` are published and documented in `docs/examples.md` and `docs/api-reference.md`; the live demo intro links to both.
 - **Cloudflare is now the canonical live site**, at a custom domain: `https://forgeselect.konexforge.com/`. `homepage` in `package.json` (root + both wrapper packages) and every hardcoded canonical/OG/JSON-LD URL across `site/`, `demo/`, `README.md`, and `docs/` now point there instead of the old GitHub Pages URL.
 - **Display name is now "Forge Select"** (with a space) everywhere it's used as a marketing/brand name — page titles, headings, meta tags, JSON-LD `name` fields, and prose across the site, `README.md`, and `docs/`. Code identifiers (`ForgeSelect` the TypeScript class, `ForgeSelectOptions`/`ForgeSelectPlugin` types, `forge-select`/`forge-select-react`/`forge-select-vue` npm package names, `.forge-select__*` CSS classes) and the `cmm-cmm/ForgeSelect` GitHub repository name are unaffected — those are technical identifiers, not the display name.
@@ -25,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **GitHub Pages deployment** (`.github/workflows/pages.yml`) — retired now that Cloudflare is canonical. If a `gh-pages` branch and the GitHub Pages site are still active in this repo's Settings, they should be cleaned up manually (not something a workflow change can do).
+
+### Fixed
+
+- Abort and ignore stale AJAX responses immediately when a new debounced query is scheduled; reject unsuccessful HTTP responses.
+- Preserve native selected/disabled/display state, inherited optgroup disabling, external changes, and form resets.
+- Repair generated React/Vue changelog links and update the supported security version.
 
 ## [0.2.0] - 2026-07-14
 
@@ -50,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Playground stylesheet order so site accent overrides apply to Forge Select widgets.
-- Virtual scroll rendering a mostly-blank window after scrolling: the viewport height was read from `list.clientHeight` *after* the list's children were cleared, at which point the list (no explicit `height`, only `max-height`) collapses to its padding (~8px) instead of the real box height. This under-provisioned the rendered row window on every scroll-triggered re-render, leaving a visible blank gap at the bottom of the dropdown for any scroll position other than the very top.
+- Virtual scroll rendering a mostly-blank window after scrolling: the viewport height was read from `list.clientHeight` _after_ the list's children were cleared, at which point the list (no explicit `height`, only `max-height`) collapses to its padding (~8px) instead of the real box height. This under-provisioned the rendered row window on every scroll-triggered re-render, leaving a visible blank gap at the bottom of the dropdown for any scroll position other than the very top.
 
 ## [0.1.0] - 2026-07-12
 

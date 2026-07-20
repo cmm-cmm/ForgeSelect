@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createApp, defineComponent, h, nextTick, ref } from "vue";
 import ForgeSelectVue from "../src/index";
 
-function mountOnBody(component: ReturnType<typeof defineComponent> | typeof ForgeSelectVue, props: Record<string, unknown>) {
+function mountOnBody(
+  component: ReturnType<typeof defineComponent> | typeof ForgeSelectVue,
+  props: Record<string, unknown>,
+) {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const app = createApp({ render: () => h(component, props) });
@@ -11,6 +14,11 @@ function mountOnBody(component: ReturnType<typeof defineComponent> | typeof Forg
 }
 
 describe("ForgeSelectVue", () => {
+  it("mounts with default options", () => {
+    const { container } = mountOnBody(ForgeSelectVue, {});
+    expect(container.querySelector(".forge-select")).not.toBeNull();
+  });
+
   it("mounts a ForgeSelect instance inside the container", () => {
     const { container } = mountOnBody(ForgeSelectVue, {
       options: { placeholder: "Pick one", data: [{ value: "a", label: "A" }] },
@@ -64,6 +72,33 @@ describe("ForgeSelectVue", () => {
     modelValue.value = "b";
     await nextTick();
     expect(container.querySelector(".forge-select__single-value")?.textContent).toBe("B");
+  });
+
+  it("does not emit changes while synchronizing modelValue", async () => {
+    const modelValue = ref("a");
+    const onUpdate = vi.fn();
+    const onChange = vi.fn();
+    const Wrapper = defineComponent({
+      setup() {
+        return () =>
+          h(ForgeSelectVue, {
+            options: {
+              data: [
+                { value: "a", label: "A" },
+                { value: "b", label: "B" },
+              ],
+            },
+            modelValue: modelValue.value,
+            "onUpdate:modelValue": onUpdate,
+            onChange,
+          });
+      },
+    });
+    mountOnBody(Wrapper, {});
+    modelValue.value = "b";
+    await nextTick();
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("destroys the instance on unmount", () => {

@@ -18,14 +18,14 @@ Benchmarks will compare Forge Select against Select2 (and, where relevant, other
 
 Once a release exists, results will be recorded here in this format:
 
-| Metric | Select2 | Forge Select | Notes |
-|---|---|---|---|
-| Bundle size (min+gzip) | _TBD_ | _TBD_ | Zero-dependency vs. requires jQuery. |
-| Init time (1 instance) | _TBD_ | _TBD_ | Cold render, ms. |
-| Init time (50 instances) | _TBD_ | _TBD_ | Cold render, ms. |
-| Search latency (10,000 options) | _TBD_ | _TBD_ | Keystroke to render, ms. |
-| Scroll frame time (10,000 options) | _TBD_ | _TBD_ | With `virtualScroll: true`. |
-| Memory after 100 mount/destroy cycles | _TBD_ | _TBD_ | Heap delta, MB. |
+| Metric                                | Select2 | Forge Select | Notes                                |
+| ------------------------------------- | ------- | ------------ | ------------------------------------ |
+| Bundle size (min+gzip)                | _TBD_   | _TBD_        | Zero-dependency vs. requires jQuery. |
+| Init time (1 instance)                | _TBD_   | _TBD_        | Cold render, ms.                     |
+| Init time (50 instances)              | _TBD_   | _TBD_        | Cold render, ms.                     |
+| Search latency (10,000 options)       | _TBD_   | _TBD_        | Keystroke to render, ms.             |
+| Scroll frame time (10,000 options)    | _TBD_   | _TBD_        | With `virtualScroll: true`.          |
+| Memory after 100 mount/destroy cycles | _TBD_   | _TBD_        | Heap delta, MB.                      |
 
 ## Running benchmarks locally (once available)
 

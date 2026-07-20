@@ -22,11 +22,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm test
+      - name: Test with coverage
+        run: npm run test:coverage
 
       - name: Build
         run: npm run build
@@ -34,8 +40,23 @@ jobs:
       - name: Typecheck workspaces (React/Vue wrappers)
         run: npm run typecheck --workspaces --if-present
 
-      - name: Test workspaces (React/Vue wrappers)
-        run: npm test --workspaces --if-present
+      - name: Test workspaces with coverage (React/Vue wrappers)
+        run: npm run test:coverage --workspaces --if-present
 
       - name: Build workspaces (React/Vue wrappers)
         run: npm run build --workspaces --if-present
+
+      - name: Validate generated site
+        run: npm run check:site
+
+      - name: Validate npm package contents
+        run: npm run check:package
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Browser tests
+        run: npm run test:browser

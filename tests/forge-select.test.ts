@@ -47,6 +47,36 @@ describe("initialization", () => {
     expect(select.getValue()).toBe("b");
   });
 
+  it("picks up a native option selected programmatically before mount", () => {
+    const el = mountSelect();
+    el.value = "jp";
+    const select = new ForgeSelect(el);
+    expect(select.getValue()).toBe("jp");
+  });
+
+  it("inherits disabled state from the native select and disabled optgroups", () => {
+    const el = mountSelect(`<optgroup label="Blocked" disabled><option value="a">A</option></optgroup>`);
+    el.disabled = true;
+    const select = new ForgeSelect(el);
+    select.open();
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")?.hidden).toBe(true);
+    select.enable();
+    select.open();
+    expect(optionEls()[0].getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it("synchronizes external native changes and form resets", async () => {
+    document.body.innerHTML = `<form><select id="country"><option value="a" selected>A</option><option value="b">B</option></select></form>`;
+    const el = document.querySelector<HTMLSelectElement>("#country")!;
+    const select = new ForgeSelect(el);
+    el.value = "b";
+    el.dispatchEvent(new Event("change"));
+    expect(select.getValue()).toBe("b");
+    el.form!.reset();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(select.getValue()).toBe("a");
+  });
+
   it("applies the theme attribute", () => {
     mountSelect();
     new ForgeSelect("#country", { theme: "dark" });
@@ -116,6 +146,20 @@ describe("selection", () => {
     select.on("change", changed);
     select.setValue("vn");
     expect(changed).not.toHaveBeenCalled();
+  });
+
+  it("can set a value without emitting the Forge Select change event", () => {
+    const el = mountSelect();
+    const select = new ForgeSelect("#country");
+    const changed = vi.fn();
+    const nativeChanged = vi.fn();
+    select.on("change", changed);
+    el.addEventListener("change", nativeChanged);
+    select.setValue("jp", { emitChange: false });
+    expect(select.getValue()).toBe("jp");
+    expect(el.value).toBe("jp");
+    expect(changed).not.toHaveBeenCalled();
+    expect(nativeChanged).not.toHaveBeenCalled();
   });
 
   it("toggles values in multiple mode and renders tags", () => {
@@ -317,9 +361,7 @@ describe("option groups", () => {
       ],
     });
     select.open();
-    const groups = Array.from(document.querySelectorAll(".forge-select__group-label")).map(
-      (el) => el.textContent,
-    );
+    const groups = Array.from(document.querySelectorAll(".forge-select__group-label")).map((el) => el.textContent);
     expect(groups).toEqual(["Asia", "Americas"]);
   });
 });
@@ -354,9 +396,7 @@ describe("tree select", () => {
     mountSelect("");
     const select = new ForgeSelect("#country", { data: treeData() });
     select.open();
-    expect(optionEls().map(optionLabel)).toEqual(
-      expect.arrayContaining(["Fruits", "Vegetables"]),
-    );
+    expect(optionEls().map(optionLabel)).toEqual(expect.arrayContaining(["Fruits", "Vegetables"]));
     expect(optionEls()).toHaveLength(2);
   });
 
@@ -375,6 +415,23 @@ describe("tree select", () => {
     expect(optionEls()).toHaveLength(2);
   });
 
+  it("exposes expansion state and navigates the tree with ArrowRight/ArrowLeft", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: treeData() });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(optionEls()[0].getAttribute("aria-expanded")).toBe("false");
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    expect(optionEls()[0].getAttribute("aria-expanded")).toBe("true");
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    expect(document.querySelector(".forge-select__option--highlighted")?.textContent).toContain("Apple");
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+    expect(document.querySelector(".forge-select__option--highlighted")?.textContent).toContain("Fruits");
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+    expect(optionEls()).toHaveLength(2);
+  });
+
   it("shows matching descendants while searching and restores prior collapsed state after clearing the query", () => {
     mountSelect("");
     const select = new ForgeSelect("#country", { data: treeData() });
@@ -384,7 +441,7 @@ describe("tree select", () => {
     input.value = "apple";
     input.dispatchEvent(new Event("input"));
 
-    let labels = optionEls().map(optionLabel);
+    const labels = optionEls().map(optionLabel);
     expect(labels).toEqual(expect.arrayContaining(["Fruits", "Apple"]));
     expect(labels).not.toContain("Vegetables");
 
@@ -458,9 +515,7 @@ describe("keyboard navigation", () => {
   });
 
   it("skips disabled options", () => {
-    mountSelect(
-      `<option value="a">A</option><option value="b" disabled>B</option><option value="c">C</option>`,
-    );
+    mountSelect(`<option value="a">A</option><option value="b" disabled>B</option><option value="c">C</option>`);
     const select = new ForgeSelect("#country");
     select.open();
     const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
@@ -514,9 +569,7 @@ describe("i18n", () => {
     mountSelect("");
     const select = new ForgeSelect("#country", { language: "vi", data: [] });
     select.open();
-    expect(document.querySelector(".forge-select__empty")?.textContent).toBe(
-      "Không tìm thấy kết quả",
-    );
+    expect(document.querySelector(".forge-select__empty")?.textContent).toBe("Không tìm thấy kết quả");
   });
 });
 
@@ -566,11 +619,51 @@ describe("ajax", () => {
     expect(document.querySelector(".forge-select__loading")).not.toBeNull();
 
     await vi.advanceTimersByTimeAsync(150);
-    expect(fetchMock).toHaveBeenCalledWith("/api/users?q=");
+    expect(fetchMock).toHaveBeenCalledWith("/api/users?q=", expect.objectContaining({ signal: expect.anything() }));
     expect(optionEls().map((li) => li.textContent)).toEqual(["Ada"]);
 
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it("invalidates an in-flight response as soon as a debounced query is scheduled", async () => {
+    vi.useFakeTimers();
+    let resolveFirst!: (value: unknown) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve;
+          }),
+      ),
+    );
+    mountSelect("");
+    const select = new ForgeSelect("#country", { ajax: { url: "/api", debounce: 100 } });
+    select.open();
+    await vi.advanceTimersByTimeAsync(0);
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "new";
+    input.dispatchEvent(new Event("input"));
+    resolveFirst({ json: () => Promise.resolve([{ value: "old", label: "Old" }]) });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(document.querySelector(".forge-select__loading")).not.toBeNull();
+    select.destroy();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("renders and emits an error for an unsuccessful HTTP response", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503 }));
+    mountSelect("");
+    const select = new ForgeSelect("#country", { ajax: { url: "/api" } });
+    const onError = vi.fn();
+    select.on("error", onError);
+    select.open();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(document.querySelector(".forge-select__error")?.textContent).toBe("Could not load options");
+    expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    vi.unstubAllGlobals();
   });
 });
 
@@ -587,8 +680,14 @@ describe("ajax pagination", () => {
       const page = url.includes("page=1") ? 1 : 0;
       const items: Item[] =
         page === 0
-          ? [{ id: "a", name: "Alpha" }, { id: "b", name: "Beta" }]
-          : [{ id: "c", name: "Gamma" }, { id: "d", name: "Delta" }];
+          ? [
+              { id: "a", name: "Alpha" },
+              { id: "b", name: "Beta" },
+            ]
+          : [
+              { id: "c", name: "Gamma" },
+              { id: "d", name: "Delta" },
+            ];
       return Promise.resolve({ json: () => Promise.resolve({ items, hasMore: page === 0 }) });
     });
   }
@@ -737,9 +836,7 @@ describe("rich items", () => {
     const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
     input.value = "bao@";
     input.dispatchEvent(new Event("input"));
-    const labels = optionEls().map(
-      (li) => li.querySelector(".forge-select__option-label")?.textContent,
-    );
+    const labels = optionEls().map((li) => li.querySelector(".forge-select__option-label")?.textContent);
     expect(labels).toEqual(["Bảo Lê"]);
   });
 
@@ -755,8 +852,7 @@ describe("rich items", () => {
 });
 
 describe("virtual scrolling", () => {
-  const bigData = (n: number) =>
-    Array.from({ length: n }, (_, i) => ({ value: String(i), label: `Item ${i}` }));
+  const bigData = (n: number) => Array.from({ length: n }, (_, i) => ({ value: String(i), label: `Item ${i}` }));
 
   it("renders a window with spacers for large lists", () => {
     mountSelect("");
@@ -789,8 +885,7 @@ describe("virtual scrolling", () => {
     const select = new ForgeSelect("#country", { itemHeight: 52, data: bigData(1000) });
     select.open();
     const spacers = document.querySelectorAll<HTMLElement>(".forge-select__spacer");
-    const total =
-      parseInt(spacers[0].style.height) + parseInt(spacers[1].style.height);
+    const total = parseInt(spacers[0].style.height) + parseInt(spacers[1].style.height);
     expect(total % 52).toBe(0);
     expect(total).toBeGreaterThan(52 * 900);
   });
@@ -868,9 +963,12 @@ describe("virtual scrolling", () => {
 describe("destroy", () => {
   it("removes the widget and restores the native select", () => {
     const el = mountSelect();
+    el.style.display = "inline-block";
+    el.disabled = true;
     const select = new ForgeSelect("#country");
     select.destroy();
     expect(document.querySelector(".forge-select")).toBeNull();
-    expect(el.style.display).toBe("");
+    expect(el.style.display).toBe("inline-block");
+    expect(el.disabled).toBe(true);
   });
 });

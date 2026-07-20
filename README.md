@@ -77,9 +77,9 @@ pnpm add forge-select
 
 ```html
 <select id="country">
-    <option value="vn">Vietnam</option>
-    <option value="jp">Japan</option>
-    <option value="us">United States</option>
+  <option value="vn">Vietnam</option>
+  <option value="jp">Japan</option>
+  <option value="us">United States</option>
 </select>
 ```
 
@@ -94,12 +94,12 @@ new ForgeSelect("#country");
 
 ```js
 const select = new ForgeSelect("#country", {
-    placeholder: "Select a country",
-    searchable: true,
-    multiple: false,
-    clearable: true,
-    allowCreate: false,
-    theme: "default"
+  placeholder: "Select a country",
+  searchable: true,
+  multiple: false,
+  clearable: true,
+  allowCreate: false,
+  theme: "default",
 });
 ```
 
@@ -108,24 +108,27 @@ See the [API Reference](./docs/api-reference.md) for all options, including `dat
 ## Events
 
 ```js
-select.on("change", value => console.log(value));
+select.on("change", (value) => console.log(value));
 select.on("open", () => {});
 select.on("close", () => {});
-select.on("search", query => console.log("searching:", query));
+select.on("search", (query) => console.log("searching:", query));
 select.on("clear", () => {});
+select.on("error", (error) => console.error(error));
 ```
 
 Unsubscribe with `select.off(event, handler)`.
+
+Use `select.setValue(value, { emitChange: false })` to synchronize external controlled state without emitting `change`.
 
 ## Examples
 
 ```js
 new ForgeSelect("#users", {
-    ajax: {
-        url: query => `/api/users?q=${encodeURIComponent(query)}`,
-        debounce: 300,
-        transform: response => response.items.map(u => ({ value: u.id, label: u.name }))
-    }
+  ajax: {
+    url: (query) => `/api/users?q=${encodeURIComponent(query)}`,
+    debounce: 300,
+    transform: (response) => response.items.map((u) => ({ value: u.id, label: u.name })),
+  },
 });
 ```
 
@@ -137,12 +140,12 @@ Write and run Forge Select code in the browser at **<https://forgeselect.konexfo
 
 ## API Reference
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `placeholder` | `string` | `""` | Text shown when nothing is selected |
-| `searchable` | `boolean` | `true` | Show a search input in the dropdown |
-| `multiple` | `boolean` | `false` | Allow selecting more than one option |
-| `theme` | `string` | `"default"` | Named theme applied to the control |
+| Option        | Type      | Default     | Description                          |
+| ------------- | --------- | ----------- | ------------------------------------ |
+| `placeholder` | `string`  | `""`        | Text shown when nothing is selected  |
+| `searchable`  | `boolean` | `true`      | Show a search input in the dropdown  |
+| `multiple`    | `boolean` | `false`     | Allow selecting more than one option |
+| `theme`       | `string`  | `"default"` | Named theme applied to the control   |
 
 Full constructor signature, all options, instance methods, and events are documented in [`docs/api-reference.md`](./docs/api-reference.md).
 
@@ -156,8 +159,8 @@ new ForgeSelect("#country", { theme: "dark" });
 
 ```css
 .forge-select {
-    --fs-border-focus: #e11d48;
-    --fs-radius: 4px;
+  --fs-border-focus: #e11d48;
+  --fs-radius: 4px;
 }
 ```
 

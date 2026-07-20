@@ -84,4 +84,9 @@ export interface ForgeSelectOptions {
 
 export type ForgeSelectValue = string | string[] | null;
 
-export type ForgeSelectEvent = "change" | "open" | "close" | "search" | "clear";
+export interface SetValueOptions {
+  /** Emit Forge Select's `change` event after updating. Default true. */
+  emitChange?: boolean;
+}
+
+export type ForgeSelectEvent = "change" | "open" | "close" | "search" | "clear" | "error";

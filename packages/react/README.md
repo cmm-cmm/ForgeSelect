@@ -42,6 +42,8 @@ function CountryPicker() {
 - `onChange` — called with the new value on the underlying `change` event.
 - `className` — applied to the wrapper `<div>` Forge Select mounts into.
 
+Updating `value` synchronizes the widget silently; `onChange` is reserved for user-initiated changes.
+
 ## Important limitation
 
 Forge Select's own options (`data`, `templateResult`, `templateSelection`, `plugins`, etc.) are read once at construction time and are **not reactive** — the underlying instance is created once when the component mounts and only `value` is synced afterwards. To apply new `data`/templates/plugins, remount the component with a different `key` prop:

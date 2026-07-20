@@ -2,7 +2,7 @@
 
 > [Docs home](./README.md)
 
-Select2 has served the ecosystem well, but it depends on jQuery and predates modern accessibility and performance practices. Forge Select is designed as a drop-in-*concept* replacement: same core ideas (searchable dropdowns, tags, AJAX, templates), zero dependencies, and a smaller, framework-agnostic API.
+Select2 has served the ecosystem well, but it depends on jQuery and predates modern accessibility and performance practices. Forge Select is designed as a drop-in-_concept_ replacement: same core ideas (searchable dropdowns, tags, AJAX, templates), zero dependencies, and a smaller, framework-agnostic API.
 
 ## Why migrate?
 
@@ -13,41 +13,41 @@ Select2 has served the ecosystem well, but it depends on jQuery and predates mod
 
 ## Option mapping
 
-| Select2 option | Forge Select option | Notes |
-|---|---|---|
-| `placeholder` | `placeholder` | Same meaning. |
-| `multiple` (on the `<select>` element) | `multiple` | Forge Select takes it as an explicit option instead of relying on the native `multiple` attribute alone. |
-| `allowClear` | `clearable` | Same meaning. |
-| `tags: true` | `allowCreate: true` + `multiple: true` | Split into two explicit flags. |
-| `ajax` | `ajax` | Shape differs — see [API Reference](./api-reference.md#ajaxconfig-shape). |
-| `templateResult` | `templateResult` | Same purpose, may return a string or a DOM node. |
-| `templateSelection` | `templateSelection` | Same purpose. |
-| `theme` | `theme` | Forge Select ships CSS-variable-based themes instead of a bundled theme name registry. |
-| `language` | `language` | Accepts a locale code or a custom string table. |
-| `minimumInputLength` / `minimumResultsForSearch` | *(planned)* | Not yet available; track in the [Roadmap](../README.md#roadmap). |
+| Select2 option                                   | Forge Select option                    | Notes                                                                                                    |
+| ------------------------------------------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `placeholder`                                    | `placeholder`                          | Same meaning.                                                                                            |
+| `multiple` (on the `<select>` element)           | `multiple`                             | Forge Select takes it as an explicit option instead of relying on the native `multiple` attribute alone. |
+| `allowClear`                                     | `clearable`                            | Same meaning.                                                                                            |
+| `tags: true`                                     | `allowCreate: true` + `multiple: true` | Split into two explicit flags.                                                                           |
+| `ajax`                                           | `ajax`                                 | Shape differs — see [API Reference](./api-reference.md#ajaxconfig-shape).                                |
+| `templateResult`                                 | `templateResult`                       | Same purpose, may return a string or a DOM node.                                                         |
+| `templateSelection`                              | `templateSelection`                    | Same purpose.                                                                                            |
+| `theme`                                          | `theme`                                | Forge Select ships CSS-variable-based themes instead of a bundled theme name registry.                   |
+| `language`                                       | `language`                             | Accepts a locale code or a custom string table.                                                          |
+| `minimumInputLength` / `minimumResultsForSearch` | _(planned)_                            | Not yet available; track in the [Roadmap](../README.md#roadmap).                                         |
 
 ## Event mapping
 
-| Select2 event | Forge Select event |
-|---|---|
-| `select2:select` / `select2:unselect` | `change` |
-| `select2:open` | `open` |
-| `select2:close` | `close` |
-| *(no direct equivalent)* | `search` |
-| *(no direct equivalent)* | `clear` |
+| Select2 event                         | Forge Select event |
+| ------------------------------------- | ------------------ |
+| `select2:select` / `select2:unselect` | `change`           |
+| `select2:open`                        | `open`             |
+| `select2:close`                       | `close`            |
+| _(no direct equivalent)_              | `search`           |
+| _(no direct equivalent)_              | `clear`            |
 
 ## Method mapping
 
-| Select2 (jQuery) call | Forge Select call |
-|---|---|
-| `$('#el').select2(options)` | `new ForgeSelect('#el', options)` |
-| `$('#el').val(value).trigger('change')` | `select.setValue(value)` |
-| `$('#el').val()` | `select.getValue()` |
-| `$('#el').select2('open')` | `select.open()` |
-| `$('#el').select2('close')` | `select.close()` |
-| `$('#el').select2('destroy')` | `select.destroy()` |
-| `$('#el').prop('disabled', true)` | `select.disable()` |
-| `$('#el').on('select2:select', fn)` | `select.on('change', fn)` |
+| Select2 (jQuery) call                   | Forge Select call                 |
+| --------------------------------------- | --------------------------------- |
+| `$('#el').select2(options)`             | `new ForgeSelect('#el', options)` |
+| `$('#el').val(value).trigger('change')` | `select.setValue(value)`          |
+| `$('#el').val()`                        | `select.getValue()`               |
+| `$('#el').select2('open')`              | `select.open()`                   |
+| `$('#el').select2('close')`             | `select.close()`                  |
+| `$('#el').select2('destroy')`           | `select.destroy()`                |
+| `$('#el').prop('disabled', true)`       | `select.disable()`                |
+| `$('#el').on('select2:select', fn)`     | `select.on('change', fn)`         |
 
 ## Step-by-step migration checklist
 

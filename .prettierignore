@@ -1,0 +1,9 @@
+dist/
+_site/
+coverage/
+playwright-report/
+test-results/
+node_modules/
+site/**/*.html
+demo/**/*.html
+package-lock.json

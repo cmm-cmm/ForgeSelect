@@ -4,6 +4,6 @@
   "workers_dev": true,
   "preview_urls": true,
   "assets": {
-    "directory": "./_site"
-  }
+    "directory": "./_site",
+  },
 }
