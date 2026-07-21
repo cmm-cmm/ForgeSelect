@@ -337,6 +337,25 @@ describe("selection", () => {
     expect(document.querySelector(".forge-select__single-value")?.textContent).toBe("Japan");
   });
 
+  it("re-renders only visible rows on a plain selection, without re-invoking filterOption", () => {
+    mountSelect(`<option value="a">A</option><option value="b">B</option>`);
+    const filterOption = vi.fn(() => true);
+    const select = new ForgeSelect("#country", { multiple: true, filterOption });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "x";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    const callsAfterSearch = filterOption.mock.calls.length;
+    expect(callsAfterSearch).toBeGreaterThan(0);
+
+    optionEls()[0].click();
+
+    // A plain (non-capped) selection doesn't change which rows match the
+    // current search, so it must not re-scan the dataset via filterOption.
+    expect(filterOption.mock.calls.length).toBe(callsAfterSearch);
+    expect(select.getValue()).toEqual(["a"]);
+  });
+
   it("setValue/getValue round-trips and syncs the native select", () => {
     const el = mountSelect();
     const select = new ForgeSelect("#country");
@@ -444,6 +463,24 @@ describe("closeOnSelect and maxSelections", () => {
     select.open();
     optionEls()[2].click();
     expect(select.getValue()).toEqual(["jp", "us"]);
+  });
+
+  it("re-scans the dataset when crossing maxSelections changes which rows are selectable", () => {
+    mountSelect(`<option value="a">A</option><option value="b">B</option>`);
+    const filterOption = vi.fn(() => true);
+    const select = new ForgeSelect("#country", { multiple: true, maxSelections: 1, filterOption });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "x";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    const callsAfterSearch = filterOption.mock.calls.length;
+
+    optionEls()[0].click(); // reaches the cap of 1
+
+    // Crossing maxSelections changes which rows are interactable/navigable,
+    // so navItems must be rebuilt via a full buildRows() re-scan.
+    expect(filterOption.mock.calls.length).toBeGreaterThan(callsAfterSearch);
+    expect(select.getValue()).toEqual(["a"]);
   });
 
   it("blocks creating a new tag via allowCreate once maxSelections is reached", () => {
@@ -631,6 +668,39 @@ describe("setData", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(optionEls().map((option) => option.textContent)).toEqual(["Manual"]);
     vi.unstubAllGlobals();
+  });
+
+  it("clears the measured row-height cache so offset math doesn't use a stale height after setData()", async () => {
+    mountSelect("");
+    let firstRowHeight = 20;
+    const getBoundingClientRect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const height = this.dataset?.optionValue === "0" ? firstRowHeight : 36;
+      return { height, top: 0, bottom: height, left: 0, right: 0, width: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+    });
+
+    const bigData = Array.from({ length: 300 }, (_, i) => ({ value: String(i), label: `Item ${i}` }));
+    const select = new ForgeSelect("#country", { itemHeight: "auto", data: bigData });
+    select.open(); // Row "0" renders near the top and is measured/cached at 20px.
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    Object.defineProperty(list, "clientHeight", { value: 260, configurable: true });
+    Object.defineProperty(list, "scrollTop", { value: 5000, configurable: true, writable: true });
+    list.dispatchEvent(new Event("scroll")); // Row "0" scrolls out of the rendered window.
+    await new Promise((r) => requestAnimationFrame(r));
+
+    firstRowHeight = 36; // Row "0"'s real height is now like everything else...
+    select.setData(bigData); // ...but it stays off-screen, so it's never re-measured here.
+
+    const spacerHeight = parseInt(document.querySelector<HTMLElement>(".forge-select__spacer")!.style.height);
+    // Every rendered or default-fallback row is 36px. A leftover stale 20px
+    // cache entry for row "0" (included in the top spacer's prefix sum, since
+    // it's before the current window) would make the total 16px short of a
+    // clean multiple of 36 — it must fall back to the default instead.
+    expect(spacerHeight % 36).toBe(0);
+
+    getBoundingClientRect.mockRestore();
   });
 });
 
@@ -856,6 +926,8 @@ describe("allowCreate (tags mode)", () => {
     createRow.click();
 
     expect(select.getValue()).toEqual(["Wakanda"]);
+    expect(document.querySelector(".forge-select__option--create")).toBeNull();
+    expect(optionEls().some((option) => option.textContent?.includes("Wakanda"))).toBe(true);
   });
 });
 
@@ -1205,6 +1277,105 @@ describe("keyboard navigation", () => {
     expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(true);
     expect(select.getValue()).toBeNull();
   });
+
+  it("Home/End jump to the first and last option", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBe("us");
+
+    select.open();
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBe("vn");
+  });
+
+  it("PageDown/PageUp jump by a page, clamped at the ends", () => {
+    const options = Array.from({ length: 30 }, (_, i) => `<option value="${i}">Item ${i}</option>`).join("");
+    mountSelect(options);
+    const select = new ForgeSelect("#country");
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBe("10");
+
+    select.open();
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBe("29"); // clamped at the last option
+
+    select.open();
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "PageUp", bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBe("0"); // clamped at the first option
+  });
+
+  it("typeahead jumps to the next option starting with the typed letter(s), cycling and resetting on a pause", () => {
+    mountSelect();
+    vi.useFakeTimers();
+    const select = new ForgeSelect("#country", { searchable: false });
+    select.open();
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "j", bubbles: true }));
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBe("jp");
+
+    // A pause beyond the reset window starts a fresh buffer instead of
+    // appending to the previous (now-stale) one.
+    vi.advanceTimersByTime(600);
+    select.open();
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "u", bubbles: true }));
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBe("us");
+
+    vi.advanceTimersByTime(600);
+    select.open();
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "v", bubbles: true }));
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBe("vn");
+    vi.useRealTimers();
+  });
+
+  it("cycles repeated typeahead letters, matches accents, and ignores typing in the search input", () => {
+    vi.useFakeTimers();
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      data: [
+        { value: "jp", label: "Japan" },
+        { value: "jo", label: "Jordan" },
+        { value: "dn", label: "Đà Nẵng" },
+      ],
+    });
+    select.open();
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "j", bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBeNull();
+
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "j", bubbles: true }));
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "j", bubbles: true }));
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBe("jo");
+
+    vi.advanceTimersByTime(600);
+    select.open();
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "d", bubbles: true }));
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(select.getValue()).toBe("dn");
+    vi.useRealTimers();
+  });
 });
 
 describe("dropdown positioning", () => {
@@ -1331,6 +1502,24 @@ describe("templates", () => {
     expect(document.querySelector(".forge-select__option em")?.textContent).toBe("Vietnam");
     select.setValue("jp");
     expect(document.querySelector(".forge-select__single-value")?.textContent).toBe("[Japan]");
+  });
+
+  it("does not re-run templateResult when the search query changes without changing the data", () => {
+    mountSelect();
+    const template = vi.fn((o: { label: string }) => `<em>${o.label}</em>`);
+    new ForgeSelect("#country", { templateResult: template }).open();
+    const callsAfterOpen = template.mock.calls.length;
+    expect(callsAfterOpen).toBeGreaterThan(0);
+
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "j";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.value = "";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+
+    // Filtering down and clearing back re-renders from the cache; content for
+    // already-seen options must not be re-built just because the query changed.
+    expect(template.mock.calls.length).toBe(callsAfterOpen);
   });
 });
 
@@ -1496,6 +1685,7 @@ describe("ajax pagination", () => {
     const list = document.querySelector<HTMLElement>(".forge-select__list")!;
     mockNearBottom(list);
     list.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => requestAnimationFrame(r));
     await new Promise((r) => setTimeout(r, 0));
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -1524,6 +1714,7 @@ describe("ajax pagination", () => {
     const list = document.querySelector<HTMLElement>(".forge-select__list")!;
     mockNearBottom(list);
     list.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => requestAnimationFrame(r));
     await new Promise((r) => setTimeout(r, 0));
 
     // Alpha/Beta must not be re-rendered via the template; only the 2 new options do.
@@ -1558,6 +1749,7 @@ describe("ajax pagination", () => {
     const list = document.querySelector<HTMLElement>(".forge-select__list")!;
     mockNearBottom(list);
     list.dispatchEvent(new Event("scroll")); // triggers the page=1 request, left pending
+    await new Promise((r) => requestAnimationFrame(r));
 
     const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
     input.value = "x";
@@ -1672,7 +1864,7 @@ describe("virtual scrolling", () => {
     expect(total).toBeGreaterThan(52 * 900);
   });
 
-  it("advances the window when scrolled, despite browser scrollTop clamping", () => {
+  it("advances the window when scrolled, despite browser scrollTop clamping", async () => {
     mountSelect("");
     const select = new ForgeSelect("#country", { data: bigData(1000) });
     select.open();
@@ -1690,6 +1882,7 @@ describe("virtual scrolling", () => {
 
     list.scrollTop = 36 * 500; // scroll to the middle
     list.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => requestAnimationFrame(r));
 
     const labels = optionEls().map((li) => li.textContent);
     expect(labels).not.toContain("Item 0");
@@ -1698,7 +1891,7 @@ describe("virtual scrolling", () => {
     expect(list.scrollTop).toBe(36 * 500);
   });
 
-  it("uses the real viewport height, not the collapsed height while the list is cleared", () => {
+  it("uses the real viewport height, not the collapsed height while the list is cleared", async () => {
     mountSelect("");
     const select = new ForgeSelect("#country", { data: bigData(1000) });
     select.open();
@@ -1713,6 +1906,7 @@ describe("virtual scrolling", () => {
 
     list.scrollTop = 36 * 500;
     list.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => requestAnimationFrame(r));
 
     // A 260px viewport at 36px rows needs ~8 visible rows plus buffers on both
     // sides (18 total); reading the collapsed 8px value instead would render
@@ -1720,7 +1914,7 @@ describe("virtual scrolling", () => {
     expect(optionEls().length).toBeGreaterThan(15);
   });
 
-  it("runs templates once per option, not once per scroll frame", () => {
+  it("runs templates once per option, not once per scroll frame", async () => {
     mountSelect("");
     const template = vi.fn((o: { label: string }) => `<em>${o.label}</em>`);
     const select = new ForgeSelect("#country", {
@@ -1733,12 +1927,45 @@ describe("virtual scrolling", () => {
     for (let i = 1; i <= 5; i++) {
       list.scrollTop = i * 100;
       list.dispatchEvent(new Event("scroll"));
+      await new Promise((r) => requestAnimationFrame(r));
     }
     // Scrolling re-renders rows from the cache; the template ran at most once per option.
     expect(template.mock.calls.length).toBeLessThanOrEqual(500);
     expect(template.mock.calls.length).toBeGreaterThanOrEqual(callsAfterOpen);
     const values = new Set(template.mock.calls.map(([o]) => (o as { value?: string }).value));
     expect(values.size).toBe(template.mock.calls.length);
+  });
+
+  it("coalesces rapid scroll events into a single render per animation frame", async () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: bigData(500) });
+    select.open();
+
+    const renderRows = vi.spyOn(ForgeSelect.prototype as unknown as { renderRows: () => void }, "renderRows");
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    for (let i = 1; i <= 5; i++) {
+      list.scrollTop = i * 100;
+      list.dispatchEvent(new Event("scroll"));
+    }
+    expect(renderRows).not.toHaveBeenCalled(); // deferred until the animation frame fires
+
+    await new Promise((r) => requestAnimationFrame(r));
+    expect(renderRows).toHaveBeenCalledTimes(1);
+
+    renderRows.mockRestore();
+  });
+
+  it("cancels a pending scroll render when the dropdown closes", async () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: bigData(500) });
+    select.open();
+    const renderRows = vi.spyOn(ForgeSelect.prototype as unknown as { renderRows: () => void }, "renderRows");
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    list.dispatchEvent(new Event("scroll"));
+    select.close();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(renderRows).not.toHaveBeenCalled();
+    renderRows.mockRestore();
   });
 });
 

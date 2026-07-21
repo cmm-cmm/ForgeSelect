@@ -83,6 +83,8 @@ const DEFAULT_ITEM_HEIGHT = 36;
 const VIRTUAL_BUFFER = 5;
 const VIRTUAL_THRESHOLD = 100;
 const ROW_CACHE_LIMIT = 2000;
+const PAGE_SIZE = 10;
+const TYPEAHEAD_RESET_MS = 500;
 
 let uidCounter = 0;
 
@@ -117,8 +119,13 @@ export default class ForgeSelect {
   private rows: Row[] = [];
   private navItems: NavItem[] = [];
   private highlightedIndex = -1;
+  private typeaheadBuffer = "";
+  private typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
   private rowContentCache = new Map<string, Node>();
   private rowHeightCache = new Map<string, number>();
+  private rowOffsetsCache: number[] | null = null;
+  private scrollRafId: number | null = null;
+  private ancestorScrollRafId: number | null = null;
   private searchIndex = new SearchIndex();
   private expandedValues = new Set<string>();
 
@@ -154,7 +161,14 @@ export default class ForgeSelect {
   };
 
   private onAncestorScroll = (): void => {
-    if (this.portalHost) this.positionDropdown();
+    if (!this.portalHost) return;
+    // Fires on every scroll anywhere in the document while a portaled
+    // dropdown is open; coalesce to at most one reposition per frame.
+    if (this.ancestorScrollRafId != null) return;
+    this.ancestorScrollRafId = requestAnimationFrame(() => {
+      this.ancestorScrollRafId = null;
+      this.positionDropdown();
+    });
   };
 
   private onNativeInvalid = (event: Event): void => {
@@ -296,6 +310,19 @@ export default class ForgeSelect {
     document.removeEventListener("mousedown", this.onDocumentMouseDown);
     window.removeEventListener("resize", this.onWindowResize);
     document.removeEventListener("scroll", this.onAncestorScroll, true);
+    if (this.ancestorScrollRafId != null) {
+      cancelAnimationFrame(this.ancestorScrollRafId);
+      this.ancestorScrollRafId = null;
+    }
+    if (this.scrollRafId != null) {
+      cancelAnimationFrame(this.scrollRafId);
+      this.scrollRafId = null;
+    }
+    if (this.typeaheadTimer) {
+      clearTimeout(this.typeaheadTimer);
+      this.typeaheadTimer = null;
+    }
+    this.typeaheadBuffer = "";
     this.highlightedIndex = -1;
     if (this.searchInput) {
       this.searchInput.value = "";
@@ -331,6 +358,8 @@ export default class ForgeSelect {
     this.destroyed = true;
     if (this.ajaxTimer) clearTimeout(this.ajaxTimer);
     this.ajaxController?.abort();
+    if (this.scrollRafId != null) cancelAnimationFrame(this.scrollRafId);
+    if (this.typeaheadTimer) clearTimeout(this.typeaheadTimer);
     this.nativeSelect?.removeEventListener("change", this.onNativeChange);
     this.nativeSelect?.removeEventListener("invalid", this.onNativeInvalid);
     this.nativeForm?.removeEventListener("reset", this.onFormReset);
@@ -423,6 +452,7 @@ export default class ForgeSelect {
     this.root.classList.toggle("forge-select--sortable", this.opts.sortable && this.opts.multiple);
     this.updateSearchVisibility();
     this.rowContentCache.clear();
+    this.rowHeightCache.clear();
     this.searchIndex.clear();
     this.renderValue();
     if (this.isOpen) this.renderList();
@@ -495,6 +525,7 @@ export default class ForgeSelect {
     this.opts.data = data;
     this.updateSearchVisibility();
     this.rowContentCache.clear();
+    this.rowHeightCache.clear();
     this.searchIndex.clear();
     this.highlightedIndex = -1;
     if (this.isOpen) this.renderList();
@@ -761,8 +792,14 @@ export default class ForgeSelect {
     });
 
     this.list.addEventListener("scroll", () => {
-      if (this.usesVirtualScroll()) this.renderRows();
-      this.maybeLoadNextPage();
+      // Coalesce rapid native scroll events (momentum scrolling can fire more
+      // of these than there are animation frames) into one render per frame.
+      if (this.scrollRafId != null) return;
+      this.scrollRafId = requestAnimationFrame(() => {
+        this.scrollRafId = null;
+        if (this.usesVirtualScroll()) this.renderRows();
+        this.maybeLoadNextPage();
+      });
     });
   }
 
@@ -771,7 +808,6 @@ export default class ForgeSelect {
     if (this.searchInput && this.searchInput.value !== query) this.searchInput.value = query;
     this.highlightedIndex = -1;
     this.list.scrollTop = 0;
-    this.rowContentCache.clear();
     if (emitSearch) this.emitter.emit("search", query);
     const trimmed = query.trim();
     const belowMinLength = trimmed !== "" && trimmed.length < this.opts.minSearchLength;
@@ -826,9 +862,76 @@ export default class ForgeSelect {
       case "ArrowLeft":
         if (this.isOpen && this.navigateTree("left")) event.preventDefault();
         break;
+      case "Home":
+        if (this.isOpen) {
+          event.preventDefault();
+          this.focusNavIndex(0);
+        }
+        break;
+      case "End":
+        if (this.isOpen) {
+          event.preventDefault();
+          this.focusNavIndex(this.navItems.length - 1);
+        }
+        break;
+      case "PageDown":
+        if (this.isOpen) {
+          event.preventDefault();
+          this.focusNavIndex(
+            Math.min(this.navItems.length - 1, (this.highlightedIndex === -1 ? 0 : this.highlightedIndex) + PAGE_SIZE),
+          );
+        }
+        break;
+      case "PageUp":
+        if (this.isOpen) {
+          event.preventDefault();
+          this.focusNavIndex(Math.max(0, (this.highlightedIndex === -1 ? 0 : this.highlightedIndex) - PAGE_SIZE));
+        }
+        break;
       case "Tab":
         this.close();
         break;
+      default:
+        if (
+          this.isOpen &&
+          event.target === this.control &&
+          event.key.length === 1 &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.altKey
+        ) {
+          this.handleTypeahead(event.key);
+        }
+        break;
+    }
+  }
+
+  /**
+   * Jumps the highlight to the next nav item (wrapping) whose label starts
+   * with the accumulated buffer, matching native <select> typeahead: rapid
+   * distinct keystrokes narrow the prefix, a pause resets it.
+   */
+  private handleTypeahead(char: string): void {
+    if (this.typeaheadTimer) clearTimeout(this.typeaheadTimer);
+    this.typeaheadBuffer += normalizeSearchText(char, this.opts.accentInsensitive);
+    this.typeaheadTimer = setTimeout(() => {
+      this.typeaheadBuffer = "";
+      this.typeaheadTimer = null;
+    }, TYPEAHEAD_RESET_MS);
+    const prefix = [...this.typeaheadBuffer].every((value) => value === this.typeaheadBuffer[0])
+      ? this.typeaheadBuffer[0]
+      : this.typeaheadBuffer;
+    const count = this.navItems.length;
+    for (let step = 1; step <= count; step += 1) {
+      const index = (this.highlightedIndex + step + count) % count;
+      const item = this.navItems[index];
+      if (
+        item.kind === "option" &&
+        normalizeSearchText(item.option.label, this.opts.accentInsensitive).startsWith(prefix)
+      ) {
+        this.focusNavIndex(index);
+        return;
+      }
     }
   }
 
@@ -931,7 +1034,15 @@ export default class ForgeSelect {
       this.control.classList.remove("forge-select__control--invalid");
       this.control.removeAttribute("aria-invalid");
     }
-    if (this.isOpen) this.renderList();
+    if (this.isOpen) {
+      // A plain selection doesn't change which rows match the current search,
+      // so a full buildRows() re-scan of the dataset is wasted work — unless
+      // maxSelections is set, in which case crossing the cap changes which
+      // rows are interactable/keyboard-navigable (navItems is only rebuilt by
+      // buildRows()), so the full rebuild is required in that case.
+      if (this.opts.maxSelections != null) this.renderList();
+      else this.renderRows();
+    }
     if (emitChange) this.emitter.emit("change", this.getValue());
   }
 
@@ -1027,6 +1138,7 @@ export default class ForgeSelect {
     if (result.created) this.emitter.emit("create", result.option);
     this.emitter.emit("select", result.option);
     if (!this.opts.multiple || this.opts.closeOnSelect) this.close();
+    else if (this.isOpen) this.renderList();
   }
 
   private activateNavItem(navIndex: number): void {
@@ -1214,6 +1326,7 @@ export default class ForgeSelect {
   private buildRows(): void {
     this.rows = [];
     this.navItems = [];
+    this.rowOffsetsCache = null;
     const trimmedQuery = this.query.trim();
     const query = normalizeSearchText(trimmedQuery, this.opts.accentInsensitive);
     const matches = (option: Option): boolean =>
@@ -1316,8 +1429,10 @@ export default class ForgeSelect {
   }
 
   private rowOffsets(): number[] {
+    if (this.rowOffsetsCache) return this.rowOffsetsCache;
     const offsets = [0];
     for (let i = 0; i < this.rows.length; i += 1) offsets.push(offsets[i] + this.measuredRowHeight(i));
+    this.rowOffsetsCache = offsets;
     return offsets;
   }
 
@@ -1377,12 +1492,26 @@ export default class ForgeSelect {
       this.list.append(topSpacer);
     }
 
+    // Append every row first, then measure afterward: interleaving writes
+    // (append) and reads (getBoundingClientRect) forces a synchronous layout
+    // flush on every iteration. Measuring in a separate pass still forces one
+    // flush overall (unavoidable — real heights are needed), but only once
+    // per renderRows() call instead of once per row.
+    const appended: HTMLLIElement[] = [];
     for (let i = start; i < end; i++) {
       const element = this.renderRow(this.rows[i]);
       this.list.append(element);
-      if (this.opts.variableItemHeight) {
+      appended.push(element);
+    }
+    if (this.opts.variableItemHeight) {
+      for (let i = start; i < end; i++) {
+        const element = appended[i - start];
         const measured = element.getBoundingClientRect().height || element.offsetHeight;
-        if (measured > 0) this.rowHeightCache.set(this.rowKey(this.rows[i], i), measured);
+        if (measured > 0) {
+          const key = this.rowKey(this.rows[i], i);
+          if (this.rowHeightCache.get(key) !== measured) this.rowOffsetsCache = null;
+          this.rowHeightCache.set(key, measured);
+        }
       }
     }
 
@@ -1557,6 +1686,7 @@ export default class ForgeSelect {
   }
 
   private focusNavIndex(next: number): void {
+    if (this.navItems.length === 0) return;
     this.highlightedIndex = next;
 
     if (this.usesVirtualScroll()) {
@@ -1744,6 +1874,7 @@ export default class ForgeSelect {
       } else {
         this.data = options;
         this.rowContentCache.clear();
+        this.rowHeightCache.clear();
       }
       this.page = page;
       this.hasMore = hasMore;
@@ -1755,6 +1886,7 @@ export default class ForgeSelect {
       if (!append) {
         this.data = [];
         this.rowContentCache.clear();
+        this.rowHeightCache.clear();
       }
       this.hasMore = false;
       this.loadError = error;

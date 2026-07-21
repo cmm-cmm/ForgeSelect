@@ -3,6 +3,8 @@ export interface RemoteCacheEntry<T> {
   expiresAt: number;
 }
 
+const REMOTE_CACHE_LIMIT = 50;
+
 export class RemoteCache<T> {
   private entries = new Map<string, RemoteCacheEntry<T>>();
 
@@ -17,7 +19,13 @@ export class RemoteCache<T> {
   }
 
   set(key: string, value: T, ttl: number, now = Date.now()): void {
-    if (ttl > 0) this.entries.set(key, { value, expiresAt: now + ttl });
+    if (ttl <= 0) return;
+    if (this.entries.size >= REMOTE_CACHE_LIMIT && !this.entries.has(key)) {
+      // FIFO eviction keeps memory bounded for long-lived searchable ajax selects.
+      const oldest = this.entries.keys().next().value as string;
+      this.entries.delete(oldest);
+    }
+    this.entries.set(key, { value, expiresAt: now + ttl });
   }
 
   clear(): void {

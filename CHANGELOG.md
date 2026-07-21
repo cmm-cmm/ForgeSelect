@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-21
+
+### Added
+
+- Fuller dropdown keyboard navigation: `Home`/`End` jump to the first/last option, `PageUp`/`PageDown` jump by a page, and typing a letter jumps to the next option starting with it (native `<select>`-style typeahead, with accent-insensitive matching and repeated-letter cycling).
+
+### Changed
+
+- Rendering and caching perf: search no longer clears the rendered-row content cache on every keystroke, a plain (non-capped) selection only re-renders visible rows instead of re-scanning the whole dataset, virtual-scroll row measurement no longer forces a synchronous reflow per row, `rowOffsets()` is memoized, and scroll-driven re-renders (including portal dropdown repositioning) are coalesced to one per animation frame. `RemoteCache` now bounds its size with FIFO eviction instead of growing unboundedly.
+
+### Fixed
+
+- The virtual-scroll measured row-height cache is now cleared alongside the render cache on `setData()`/`updateOptions()`/remote reloads, so it can no longer serve a stale height for a changed option.
+- Typeahead now runs only from the combobox control (not while typing into search), avoiding a conflict with the search box's own filtering; closing the dropdown also cancels any pending typeahead/scroll work.
+- Creating a tag while a multi-select stays open now rebuilds the filtered rows after clearing the query, avoiding a stale create row.
+
 ## [0.5.0] - 2026-07-21
 
 ### Added
@@ -144,7 +160,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.2.0...v0.3.0

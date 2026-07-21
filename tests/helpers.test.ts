@@ -185,4 +185,14 @@ describe("search and cache helpers", () => {
     expect(cache.get("q", 109)).toBe("value");
     expect(cache.get("q", 110)).toBeUndefined();
   });
+
+  it("bounds its size with FIFO eviction instead of growing unboundedly", () => {
+    const cache = new RemoteCache<string>();
+    for (let i = 0; i < 60; i += 1) cache.set(`q${i}`, `value${i}`, 60_000, 0);
+    // The oldest entries (q0..q9) were evicted to make room for the newest 50.
+    expect(cache.get("q0", 0)).toBeUndefined();
+    expect(cache.get("q9", 0)).toBeUndefined();
+    expect(cache.get("q10", 0)).toBe("value10");
+    expect(cache.get("q59", 0)).toBe("value59");
+  });
 });

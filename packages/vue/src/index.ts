@@ -45,9 +45,28 @@ export const ForgeSelectVue = defineComponent({
     "loading",
     "invalid",
   ],
-  setup(props, { emit }) {
+  setup(props, { emit, expose }) {
     const containerRef = ref<HTMLDivElement | null>(null);
     let instance: ForgeSelect | null = null;
+
+    // Escape hatch to the underlying ForgeSelect instance (e.g. for
+    // `.selectAll()`/`.reload()` called imperatively via a template ref),
+    // forwarding lazily so it stays correct across the instance's full
+    // lifecycle without needing to keep a method list in sync. Vue's own
+    // exposeProxy gates access with a `key in target` check before it will
+    // even call `get`, so a `has` trap forwarding to the live instance is
+    // required, not just `get`.
+    expose(
+      new Proxy({} as ForgeSelect, {
+        get(_target, prop) {
+          const value = instance ? Reflect.get(instance, prop, instance) : undefined;
+          return typeof value === "function" ? value.bind(instance) : value;
+        },
+        has(_target, prop) {
+          return instance ? Reflect.has(instance, prop) : false;
+        },
+      }),
+    );
 
     onMounted(() => {
       if (!containerRef.value) return;

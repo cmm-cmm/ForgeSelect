@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import ForgeSelect from "forge-select";
 import type { ForgeSelectOptions, ForgeSelectValue, MaximumSelectionEvent, Option } from "forge-select";
 
@@ -28,9 +28,12 @@ export interface ForgeSelectReactProps extends ForgeSelectOptions {
 /**
  * Mounts a real ForgeSelect instance once and keeps it alive for the
  * component's lifetime. Runtime-updateable options stay synchronized;
- * structural mode/plugin/portal changes require a remount.
+ * structural mode/plugin/portal changes require a remount. Pass a `ref` to
+ * get an escape hatch to the underlying `ForgeSelect` instance for calling
+ * methods the declarative prop surface doesn't cover (e.g. `.selectAll()`,
+ * `.reload()`).
  */
-export function ForgeSelectReact(props: ForgeSelectReactProps) {
+export const ForgeSelectReact = forwardRef<ForgeSelect, ForgeSelectReactProps>((props, ref) => {
   const {
     value,
     open,
@@ -188,8 +191,23 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     }
   }, [searchQuery]);
 
+  useImperativeHandle(
+    ref,
+    () =>
+      new Proxy({} as ForgeSelect, {
+        get(_target, prop) {
+          const instance = instanceRef.current;
+          const value = instance ? Reflect.get(instance, prop, instance) : undefined;
+          return typeof value === "function" ? value.bind(instance) : value;
+        },
+      }),
+    [],
+  );
+
   return <div ref={containerRef} className={className} />;
-}
+});
+
+ForgeSelectReact.displayName = "ForgeSelectReact";
 
 export default ForgeSelectReact;
 
