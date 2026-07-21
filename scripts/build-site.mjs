@@ -235,7 +235,7 @@ function layout({ title, description, canonicalPath, jsonLdBlocks, active, conte
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${SITE_URL}assets/og-banner.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2384cc16'/><stop offset='0.5' stop-color='%2322c55e'/><stop offset='1' stop-color='%2315803d'/></linearGradient></defs><path d='M4 3L12 9L20 3' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 12L12 18L20 12' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 21L12 27L20 21' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
-<link rel="apple-touch-icon" href="../assets/og-banner.png">
+<link rel="apple-touch-icon" href="../assets/app-icon.png">
 <link rel="stylesheet" href="../assets/site.css">
 <link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
 <link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
@@ -296,6 +296,13 @@ async function main() {
   // LinkedIn render svg og:image/twitter:image inconsistently, so a real
   // PNG is required for a reliable social preview.
   await sharp(path.join(out, "assets/og-banner.svg")).png().toFile(path.join(out, "assets/og-banner.png"));
+  // Separate square app icon for apple-touch-icon — the wide 1200x630
+  // og-banner is the wrong aspect ratio for a home-screen icon and gets
+  // squished/cropped on iOS.
+  await sharp(path.join(out, "assets/app-icon.svg"))
+    .resize(180, 180)
+    .png()
+    .toFile(path.join(out, "assets/app-icon.png"));
   await cp(path.join(root, "site/playground"), path.join(out, "playground"), { recursive: true });
   await cp(path.join(root, "site/theme-builder"), path.join(out, "theme-builder"), { recursive: true });
   await cp(path.join(root, "demo"), path.join(out, "demo"), { recursive: true });
