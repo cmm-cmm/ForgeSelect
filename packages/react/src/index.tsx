@@ -71,6 +71,7 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
   const onSearchChangeRef = useRef(onSearchChange);
   const onLoadingRef = useRef(onLoading);
   const onInvalidRef = useRef(onInvalid);
+  const optionsRef = useRef(options);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -156,7 +157,23 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
   }, [data]);
 
   useEffect(() => {
-    instanceRef.current?.updateOptions(options);
+    // The rest-spread `options` object is a new reference every render, so
+    // `[options]` alone would re-run this on every unrelated parent
+    // re-render — clearing render caches and, for a non-virtualized open
+    // dropdown, resetting its scroll position. Only call updateOptions()
+    // when a value actually changed.
+    const previous = optionsRef.current as Record<string, unknown>;
+    const next = options as Record<string, unknown>;
+    optionsRef.current = options;
+    const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
+    let changed = false;
+    for (const key of keys) {
+      if (!Object.is(previous[key], next[key])) {
+        changed = true;
+        break;
+      }
+    }
+    if (changed && instanceRef.current) instanceRef.current.updateOptions(options);
   }, [options]);
 
   useEffect(() => {

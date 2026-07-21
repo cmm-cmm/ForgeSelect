@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import ForgeSelect from "forge-select";
 import ForgeSelectReact from "../src/index";
 
 // Silences React's "not configured to support act(...)" warning under vitest.
@@ -29,6 +30,29 @@ describe("ForgeSelectReact", () => {
     expect(container.querySelector<HTMLElement>(".forge-select")?.dataset.theme).toBe("dark");
     expect(container.querySelector<HTMLElement>(".forge-select__dropdown")?.hidden).toBe(false);
     expect(container.querySelector<HTMLInputElement>(".forge-select__search")?.value).toBe("da");
+  });
+
+  it("does not call updateOptions on a re-render with unchanged option values", () => {
+    const updateOptionsSpy = vi.spyOn(ForgeSelect.prototype, "updateOptions");
+    const props = { data: [{ value: "a", label: "A" }], placeholder: "Same" };
+    const { root } = mount(props);
+    updateOptionsSpy.mockClear();
+
+    // A parent re-render passing an equivalent (but newly-allocated) props
+    // object must not trigger updateOptions() — it would otherwise clear
+    // render caches and reset an open dropdown's scroll position on every
+    // unrelated parent re-render.
+    act(() => {
+      root.render(createElement(ForgeSelectReact, { ...props }));
+    });
+    expect(updateOptionsSpy).not.toHaveBeenCalled();
+
+    act(() => {
+      root.render(createElement(ForgeSelectReact, { ...props, placeholder: "Changed" }));
+    });
+    expect(updateOptionsSpy).toHaveBeenCalledTimes(1);
+
+    updateOptionsSpy.mockRestore();
   });
 
   it("mounts a ForgeSelect instance inside the container", () => {

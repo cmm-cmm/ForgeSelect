@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Controlled `open`/`searchQuery`, change callbacks, loading/invalid callbacks, and reactive runtime options.
 
+### Fixed
+
+- The reactive runtime-options sync no longer calls `updateOptions()` on every parent re-render. The rest-spread options object is a new reference each render regardless of content, which previously cleared render caches and could reset an open, non-virtualized dropdown's scroll position on unrelated re-renders; it's now gated behind a shallow value comparison.
+
 ## [0.3.0] - 2026-07-21
 
 ### Added
