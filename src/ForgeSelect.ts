@@ -82,6 +82,7 @@ export default class ForgeSelect {
   private dropdown!: HTMLDivElement;
   private searchInput: HTMLInputElement | null = null;
   private list!: HTMLUListElement;
+  private liveRegion!: HTMLDivElement;
 
   private isOpen = false;
   private isDisabled = false;
@@ -359,7 +360,12 @@ export default class ForgeSelect {
     if (this.opts.multiple) this.list.setAttribute("aria-multiselectable", "true");
     this.dropdown.append(this.list);
 
-    this.root.append(this.control, this.dropdown);
+    this.liveRegion = document.createElement("div");
+    this.liveRegion.className = "forge-select__sr-only";
+    this.liveRegion.setAttribute("role", "status");
+    this.liveRegion.setAttribute("aria-live", "polite");
+
+    this.root.append(this.control, this.dropdown, this.liveRegion);
     this.el.style.display = "none";
     this.el.insertAdjacentElement("afterend", this.root);
 
@@ -828,6 +834,20 @@ export default class ForgeSelect {
   private renderList(): void {
     this.buildRows();
     this.renderRows();
+    this.announceStatus();
+  }
+
+  private announceStatus(): void {
+    const first = this.rows[0];
+    const message =
+      first?.kind === "loading"
+        ? this.strings.loading
+        : first?.kind === "error"
+          ? this.strings.errorLoading
+          : first?.kind === "empty"
+            ? this.strings.noResults
+            : "";
+    if (this.liveRegion.textContent !== message) this.liveRegion.textContent = message;
   }
 
   private renderRows(): void {
@@ -887,14 +907,23 @@ export default class ForgeSelect {
         break;
       case "empty":
         li.className = "forge-select__empty";
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-disabled", "true");
+        li.setAttribute("aria-selected", "false");
         li.textContent = this.strings.noResults;
         break;
       case "error":
         li.className = "forge-select__error";
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-disabled", "true");
+        li.setAttribute("aria-selected", "false");
         li.textContent = this.strings.errorLoading;
         break;
       case "loading":
         li.className = "forge-select__loading";
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-disabled", "true");
+        li.setAttribute("aria-selected", "false");
         li.textContent = this.strings.loading;
         break;
       case "loading-more":

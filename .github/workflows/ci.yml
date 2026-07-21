@@ -65,8 +65,24 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=moderate
 
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Install Playwright OS dependencies only
+        run: npx playwright install-deps chromium firefox webkit
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
 
       - name: Browser tests
         run: npx playwright test

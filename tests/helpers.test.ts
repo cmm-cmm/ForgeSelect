@@ -72,6 +72,12 @@ describe("native and remote helpers", () => {
     expect(data).toEqual([{ label: "Blocked", options: [{ value: "a", label: "A", disabled: true }] }]);
   });
 
+  it("parses a top-level option (no optgroup) with an empty label", () => {
+    document.body.innerHTML = '<select><option value="empty"></option></select>';
+    const data = parseNativeOptions(document.querySelector("select")!);
+    expect(data).toEqual([{ value: "empty", label: "", disabled: undefined }]);
+  });
+
   it("builds paginated URLs and normalizes response shapes", () => {
     const ajax = {
       url: "/api?kind=user",

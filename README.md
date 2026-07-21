@@ -140,12 +140,21 @@ Write and run Forge Select code in the browser at **<https://forgeselect.konexfo
 
 ## API Reference
 
-| Option        | Type      | Default     | Description                          |
-| ------------- | --------- | ----------- | ------------------------------------ |
-| `placeholder` | `string`  | `""`        | Text shown when nothing is selected  |
-| `searchable`  | `boolean` | `true`      | Show a search input in the dropdown  |
-| `multiple`    | `boolean` | `false`     | Allow selecting more than one option |
-| `theme`       | `string`  | `"default"` | Named theme applied to the control   |
+| Option          | Type                               | Default     | Description                                         |
+| --------------- | ---------------------------------- | ----------- | --------------------------------------------------- |
+| `placeholder`   | `string`                           | `""`        | Text shown when nothing is selected                 |
+| `searchable`    | `boolean`                          | `true`      | Show a search input in the dropdown                 |
+| `multiple`      | `boolean`                          | `false`     | Allow selecting more than one option                |
+| `clearable`     | `boolean`                          | `false`     | Show a button to clear the current selection        |
+| `allowCreate`   | `boolean`                          | `false`     | Let the user create a new option from free text     |
+| `sortable`      | `boolean`                          | `false`     | Multi-select: let the user reorder selected tags    |
+| `theme`         | `string`                           | `"default"` | Named theme applied to the control                  |
+| `data`          | `Array<Option \| OptionGroup>`     | `undefined` | Static options, used instead of `<option>` children |
+| `ajax`          | `AjaxConfig`                       | `undefined` | Remote data source config                           |
+| `virtualScroll` | `boolean`                          | _(auto)_    | Virtualize the list once it exceeds ~100 rows       |
+| `itemHeight`    | `number`                           | `36`        | Row height in px used by the virtual scroller       |
+| `language`      | `string \| Record<string, string>` | `"en"`      | Locale code or a custom string table for i18n       |
+| `plugins`       | `Array<ForgeSelectPlugin>`         | `[]`        | Plugins to register on this instance                |
 
 Full constructor signature, all options, instance methods, and events are documented in [`docs/api-reference.md`](./docs/api-reference.md).
 

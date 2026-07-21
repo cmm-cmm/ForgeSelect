@@ -59,10 +59,9 @@ appointed representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement through
-[GitHub private vulnerability reporting](https://github.com/cmm-cmm/ForgeSelect/security/advisories/new)
-or by opening a confidential issue with a maintainer. All complaints will be
-reviewed and investigated promptly and fairly.
+reported to the community leaders responsible for enforcement by contacting
+the maintainer directly through their [GitHub profile](https://github.com/cmm-cmm).
+All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
 reporter of any incident.

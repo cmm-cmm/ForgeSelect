@@ -74,6 +74,32 @@ describe("ForgeSelectVue", () => {
     expect(container.querySelector(".forge-select__single-value")?.textContent).toBe("B");
   });
 
+  it("ignores a modelValue change to undefined instead of clearing the selection", async () => {
+    const modelValue = ref<string | undefined>("a");
+    const Wrapper = defineComponent({
+      setup() {
+        return () =>
+          h(ForgeSelectVue, {
+            options: {
+              data: [
+                { value: "a", label: "A" },
+                { value: "b", label: "B" },
+              ],
+            },
+            modelValue: modelValue.value,
+          });
+      },
+    });
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    createApp(Wrapper).mount(container);
+    expect(container.querySelector(".forge-select__single-value")?.textContent).toBe("A");
+
+    modelValue.value = undefined;
+    await nextTick();
+    expect(container.querySelector(".forge-select__single-value")?.textContent).toBe("A");
+  });
+
   it("does not emit changes while synchronizing modelValue", async () => {
     const modelValue = ref("a");
     const onUpdate = vi.fn();

@@ -127,6 +127,24 @@ describe("open/close and events", () => {
     select.open();
     expect(handler).not.toHaveBeenCalled();
   });
+
+  it("supports multiple handlers for the same event", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    const first = vi.fn();
+    const second = vi.fn();
+    select.on("open", first);
+    select.on("open", second);
+    select.open();
+    expect(first).toHaveBeenCalledOnce();
+    expect(second).toHaveBeenCalledOnce();
+
+    select.off("open", first);
+    select.close();
+    select.open();
+    expect(first).toHaveBeenCalledOnce();
+    expect(second).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("selection", () => {
@@ -346,6 +364,7 @@ describe("search", () => {
     input.value = "zzz";
     input.dispatchEvent(new Event("input"));
     expect(document.querySelector(".forge-select__empty")).not.toBeNull();
+    expect(document.querySelector(".forge-select__sr-only")?.textContent).toBe("No results found");
   });
 });
 
@@ -629,6 +648,15 @@ describe("i18n", () => {
     select.open();
     expect(document.querySelector(".forge-select__empty")?.textContent).toBe("Không tìm thấy kết quả");
   });
+
+  it("merges a custom string table over the English defaults", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { language: { noResults: "Nothing here" }, data: [] });
+    select.open();
+    expect(document.querySelector(".forge-select__empty")?.textContent).toBe("Nothing here");
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    expect(input.getAttribute("aria-label")).toBe("Search");
+  });
 });
 
 describe("plugins", () => {
@@ -675,10 +703,12 @@ describe("ajax", () => {
 
     select.open();
     expect(document.querySelector(".forge-select__loading")).not.toBeNull();
+    expect(document.querySelector(".forge-select__sr-only")?.textContent).toBe("Loading…");
 
     await vi.advanceTimersByTimeAsync(150);
     expect(fetchMock).toHaveBeenCalledWith("/api/users?q=", expect.objectContaining({ signal: expect.anything() }));
     expect(optionEls().map((li) => li.textContent)).toEqual(["Ada"]);
+    expect(document.querySelector(".forge-select__sr-only")?.textContent).toBe("");
 
     vi.unstubAllGlobals();
     vi.useRealTimers();
@@ -720,6 +750,7 @@ describe("ajax", () => {
     select.open();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(document.querySelector(".forge-select__error")?.textContent).toBe("Could not load options");
+    expect(document.querySelector(".forge-select__sr-only")?.textContent).toBe("Could not load options");
     expect(onError).toHaveBeenCalledWith(expect.any(Error));
     vi.unstubAllGlobals();
   });
