@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 import path from "node:path";
 
 const bundlePath = path.resolve("dist/index.global.js");
@@ -26,6 +27,47 @@ async function loadForgeSelect(page: import("@playwright/test").Page, markup = '
   await page.addStyleTag({ path: stylePath });
   await page.addScriptTag({ path: bundlePath });
 }
+
+test("has no automatically detectable accessibility violations", async ({ page }) => {
+  await loadForgeSelect(
+    page,
+    '<label for="target">Country</label><select id="target"><option>Vietnam</option></select>',
+  );
+  await page.evaluate(() => {
+    const ForgeSelect = window.ForgeSelectBundle.default;
+    new ForgeSelect("#target", {
+      clearable: true,
+      data: [
+        { value: "vn", label: "Vietnam" },
+        { value: "th", label: "Thailand" },
+      ],
+    });
+  });
+  await page.locator(".forge-select__control").click();
+
+  const results = await new AxeBuilder({ page }).include(".forge-select").analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test("announces the empty state via the live region without introducing violations", async ({ page }) => {
+  await loadForgeSelect(page, '<label for="target">Country</label><select id="target"></select>');
+  await page.evaluate(() => {
+    const ForgeSelect = window.ForgeSelectBundle.default;
+    new ForgeSelect("#target", {
+      data: [
+        { value: "vn", label: "Vietnam" },
+        { value: "th", label: "Thailand" },
+      ],
+    });
+  });
+  await page.locator(".forge-select__control").click();
+  await page.locator(".forge-select__search").fill("zzz");
+
+  await expect(page.locator(".forge-select__sr-only")).toHaveText("No results found");
+
+  const results = await new AxeBuilder({ page }).include(".forge-select").analyze();
+  expect(results.violations).toEqual([]);
+});
 
 test("supports tree keyboard navigation and exposes expansion state", async ({ page }) => {
   await loadForgeSelect(page);

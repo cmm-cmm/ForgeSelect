@@ -14,9 +14,9 @@ npm run build:site      # build the library, then assemble _site/ (docs/demo/pla
 
 Run a single test file with `npx vitest run tests/forge-select.test.ts`, or filter by name with `npx vitest run -t "pattern"`.
 
-`npm run prepublishOnly` chains typecheck → test → build; CI (`.github/workflows/ci.yml`) runs the same three steps on every push/PR to `main` and must pass.
+`npm run prepublishOnly` runs `npm run verify`, which chains lint → format:check → typecheck → test:coverage → build. CI (`.github/workflows/ci.yml`) runs that same sequence on every push/PR to `main`, plus the React/Vue workspace builds, `check:site`, `check:package`, `npm audit`, and a Playwright browser suite, and all of it must pass.
 
-There is currently one test file: `tests/forge-select.test.ts`. jsdom cannot model real layout (e.g. `scrollTop` clamping during virtual scroll), so scroll/visual behavior needs manual verification in a real browser — don't trust jsdom results for that class of bug.
+Unit/integration tests live in `tests/forge-select.test.ts` (component behavior) and `tests/helpers.test.ts` (`selection.ts`/`native-select.ts`/`remote.ts` helpers); `tests/e2e/forge-select.spec.ts` runs Playwright across real browsers. jsdom cannot model real layout (e.g. `scrollTop` clamping during virtual scroll), so scroll/visual behavior needs manual verification in a real browser — don't trust jsdom results for that class of bug.
 
 ## Architecture
 

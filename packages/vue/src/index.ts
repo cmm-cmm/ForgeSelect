@@ -21,7 +21,7 @@ export const ForgeSelectVue = defineComponent({
       default: undefined,
     },
   },
-  emits: ["update:modelValue", "change"],
+  emits: ["update:modelValue", "change", "open", "close", "search", "clear", "error"],
   setup(props, { emit }) {
     const containerRef = ref<HTMLDivElement | null>(null);
     let instance: ForgeSelect | null = null;
@@ -36,6 +36,11 @@ export const ForgeSelectVue = defineComponent({
         emit("update:modelValue", value as ForgeSelectValue);
         emit("change", value as ForgeSelectValue);
       });
+      instance.on("open", () => emit("open"));
+      instance.on("close", () => emit("close"));
+      instance.on("search", (query) => emit("search", query as string));
+      instance.on("clear", () => emit("clear"));
+      instance.on("error", (error) => emit("error", error as Error));
     });
 
     onBeforeUnmount(() => {

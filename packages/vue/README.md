@@ -39,6 +39,10 @@ const options = {
 - `options` — a single object bundling every [`ForgeSelectOptions`](https://forgeselect.konexforge.com/docs/api-reference.html) field (`placeholder`, `data`, `multiple`, `ajax`, `templateResult`, `plugins`, ...).
 - `modelValue` / `v-model` — controlled value (`string | string[] | null`), kept in sync via `.setValue()` whenever it changes.
 - `change` event — also emitted alongside `update:modelValue`, carrying the same value, for consumers not using `v-model`.
+- `open` / `close` events — emitted when the dropdown opens/closes.
+- `search` event — emitted with the current search query on every keystroke.
+- `clear` event — emitted when the clear button empties the selection.
+- `error` event — emitted with the `Error` when an `ajax` request fails.
 
 Updating `modelValue` synchronizes the widget silently; `update:modelValue` and `change` are reserved for user-initiated changes.
 

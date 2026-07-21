@@ -1,6 +1,7 @@
 import { Emitter, type Handler } from "./emitter";
 import { format, getStrings, type Strings } from "./i18n";
 import { parseNativeOptions } from "./native-select";
+import { renderOptionContent } from "./option-renderer";
 import { buildUrl, normalizeRemoteResult } from "./remote";
 import {
   arraysEqual,
@@ -81,6 +82,7 @@ export default class ForgeSelect {
   private dropdown!: HTMLDivElement;
   private searchInput: HTMLInputElement | null = null;
   private list!: HTMLUListElement;
+  private liveRegion!: HTMLDivElement;
 
   private isOpen = false;
   private isDisabled = false;
@@ -281,6 +283,30 @@ export default class ForgeSelect {
 
   // ---------------------------------------------------------------- DOM setup
 
+  /**
+   * The original target (a hidden native <select> or a plain mount div) can
+   * carry an accessible name via aria-label/aria-labelledby, or via a
+   * <label for> pointing at its id — but once `this.el` is display:none it
+   * drops out of the accessibility tree, so any such association silently
+   * stops reaching assistive tech unless we forward it onto the visible,
+   * interactive `this.control` ourselves.
+   */
+  private applyAccessibleName(): void {
+    const ariaLabelledby = this.el.getAttribute("aria-labelledby");
+    const ariaLabel = this.el.getAttribute("aria-label");
+    if (ariaLabelledby) {
+      this.control.setAttribute("aria-labelledby", ariaLabelledby);
+    } else if (ariaLabel) {
+      this.control.setAttribute("aria-label", ariaLabel);
+    } else if (this.el.id) {
+      const label = Array.from(document.getElementsByTagName("label")).find((el) => el.htmlFor === this.el.id);
+      if (label) {
+        if (!label.id) label.id = `${this.uid}-label`;
+        this.control.setAttribute("aria-labelledby", label.id);
+      }
+    }
+  }
+
   private buildDom(): void {
     this.root = document.createElement("div");
     this.root.className = "forge-select";
@@ -295,6 +321,7 @@ export default class ForgeSelect {
     this.control.setAttribute("aria-expanded", "false");
     this.control.setAttribute("aria-controls", `${this.uid}-list`);
     this.control.tabIndex = 0;
+    this.applyAccessibleName();
 
     this.valueEl = document.createElement("div");
     this.valueEl.className = "forge-select__value";
@@ -333,7 +360,12 @@ export default class ForgeSelect {
     if (this.opts.multiple) this.list.setAttribute("aria-multiselectable", "true");
     this.dropdown.append(this.list);
 
-    this.root.append(this.control, this.dropdown);
+    this.liveRegion = document.createElement("div");
+    this.liveRegion.className = "forge-select__sr-only";
+    this.liveRegion.setAttribute("role", "status");
+    this.liveRegion.setAttribute("aria-live", "polite");
+
+    this.root.append(this.control, this.dropdown, this.liveRegion);
     this.el.style.display = "none";
     this.el.insertAdjacentElement("afterend", this.root);
 
@@ -590,7 +622,7 @@ export default class ForgeSelect {
         tag.className = "forge-select__tag";
         const label = document.createElement("span");
         label.className = "forge-select__tag-label";
-        this.renderTemplate(label, option, this.opts.templateSelection, "inline");
+        renderOptionContent(label, option, this.opts.templateSelection, "inline");
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "forge-select__tag-remove";
@@ -618,7 +650,7 @@ export default class ForgeSelect {
       };
       const span = document.createElement("span");
       span.className = "forge-select__single-value";
-      this.renderTemplate(span, option, this.opts.templateSelection, "inline");
+      renderOptionContent(span, option, this.opts.templateSelection, "inline");
       this.valueEl.append(span);
     }
   }
@@ -721,51 +753,6 @@ export default class ForgeSelect {
     }
   }
 
-  private renderTemplate(
-    container: HTMLElement,
-    option: Option,
-    template?: TemplateFn,
-    variant: "row" | "inline" = "row",
-  ): void {
-    if (template) {
-      const result = template(option);
-      if (typeof result === "string") container.innerHTML = result;
-      else container.append(result);
-      return;
-    }
-    if (!option.avatar && !option.description) {
-      container.textContent = option.label;
-      return;
-    }
-    // Built-in rich renderer: DOM built via textContent, so all fields are XSS-safe.
-    if (option.avatar) {
-      const avatar = document.createElement("img");
-      avatar.className = variant === "row" ? "forge-select__option-avatar" : "forge-select__inline-avatar";
-      avatar.src = option.avatar;
-      avatar.alt = "";
-      avatar.setAttribute("loading", "lazy");
-      avatar.setAttribute("decoding", "async");
-      container.append(avatar);
-    }
-    if (variant === "row" && option.description) {
-      const body = document.createElement("span");
-      body.className = "forge-select__option-body";
-      const label = document.createElement("span");
-      label.className = "forge-select__option-label";
-      label.textContent = option.label;
-      const desc = document.createElement("span");
-      desc.className = "forge-select__option-desc";
-      desc.textContent = option.description;
-      body.append(label, desc);
-      container.append(body);
-    } else {
-      const label = document.createElement("span");
-      label.className = "forge-select__option-label";
-      label.textContent = option.label;
-      container.append(label);
-    }
-  }
-
   private buildRows(): void {
     this.rows = [];
     this.navItems = [];
@@ -847,6 +834,20 @@ export default class ForgeSelect {
   private renderList(): void {
     this.buildRows();
     this.renderRows();
+    this.announceStatus();
+  }
+
+  private announceStatus(): void {
+    const first = this.rows[0];
+    const message =
+      first?.kind === "loading"
+        ? this.strings.loading
+        : first?.kind === "error"
+          ? this.strings.errorLoading
+          : first?.kind === "empty"
+            ? this.strings.noResults
+            : "";
+    if (this.liveRegion.textContent !== message) this.liveRegion.textContent = message;
   }
 
   private renderRows(): void {
@@ -906,14 +907,23 @@ export default class ForgeSelect {
         break;
       case "empty":
         li.className = "forge-select__empty";
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-disabled", "true");
+        li.setAttribute("aria-selected", "false");
         li.textContent = this.strings.noResults;
         break;
       case "error":
         li.className = "forge-select__error";
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-disabled", "true");
+        li.setAttribute("aria-selected", "false");
         li.textContent = this.strings.errorLoading;
         break;
       case "loading":
         li.className = "forge-select__loading";
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-disabled", "true");
+        li.setAttribute("aria-selected", "false");
         li.textContent = this.strings.loading;
         break;
       case "loading-more":
@@ -977,7 +987,7 @@ export default class ForgeSelect {
     if (!cached) {
       const holder = document.createElement("span");
       holder.className = "forge-select__option-content";
-      this.renderTemplate(holder, option, this.opts.templateResult);
+      renderOptionContent(holder, option, this.opts.templateResult);
       if (this.rowContentCache.size >= ROW_CACHE_LIMIT) {
         // FIFO eviction keeps memory bounded on very large lists.
         const oldest = this.rowContentCache.keys().next().value as string;
@@ -992,8 +1002,10 @@ export default class ForgeSelect {
   private moveHighlight(delta: number): void {
     if (this.navItems.length === 0) return;
     const next =
-      this.highlightedIndex === -1 && delta > 0
-        ? 0
+      this.highlightedIndex === -1
+        ? delta > 0
+          ? 0
+          : this.navItems.length - 1
         : (this.highlightedIndex + delta + this.navItems.length) % this.navItems.length;
     this.focusNavIndex(next);
   }

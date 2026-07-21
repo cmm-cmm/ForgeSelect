@@ -88,7 +88,7 @@ Custom templates (`templateResult`/`templateSelection`) receive the full option 
 
 ```ts
 interface AjaxConfig {
-  url: string | ((query: string) => string);
+  url: string | ((query: string, page: number) => string);
   params?: (query: string, page: number) => Record<string, unknown>;
   debounce?: number; // ms, default 250
   pagination?: boolean; // opt in to loading further pages on scroll; default false

@@ -2,9 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -46,17 +53,36 @@ jobs:
       - name: Build workspaces (React/Vue wrappers)
         run: npm run build --workspaces --if-present
 
+      - name: Assemble site
+        run: node scripts/build-site.mjs
+
       - name: Validate generated site
-        run: npm run check:site
+        run: node scripts/check-site.mjs
 
       - name: Validate npm package contents
-        run: npm run check:package
+        run: npm pack --dry-run --ignore-scripts && npm pack ./packages/react --dry-run --ignore-scripts && npm pack ./packages/vue --dry-run --ignore-scripts
 
       - name: Audit dependencies
         run: npm audit --audit-level=moderate
 
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Install Playwright OS dependencies only
+        run: npx playwright install-deps chromium firefox webkit
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
 
       - name: Browser tests
-        run: npm run test:browser
+        run: npx playwright test

@@ -1,6 +1,6 @@
 {
   "name": "forge-select-react",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React wrapper component for Forge Select.",
   "license": "MIT",
   "author": "KonexForge",
@@ -46,16 +46,16 @@
     "react-dom": ">=17"
   },
   "dependencies": {
-    "forge-select": "^0.2.0"
+    "forge-select": "^0.3.0"
   },
   "devDependencies": {
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
-    "jsdom": "^26.0.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "jsdom": "^29.1.1",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.0",
-    "vitest": "^3.0.0"
+    "vitest": "^4.1.10"
   }
 }

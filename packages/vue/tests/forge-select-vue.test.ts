@@ -74,6 +74,32 @@ describe("ForgeSelectVue", () => {
     expect(container.querySelector(".forge-select__single-value")?.textContent).toBe("B");
   });
 
+  it("ignores a modelValue change to undefined instead of clearing the selection", async () => {
+    const modelValue = ref<string | undefined>("a");
+    const Wrapper = defineComponent({
+      setup() {
+        return () =>
+          h(ForgeSelectVue, {
+            options: {
+              data: [
+                { value: "a", label: "A" },
+                { value: "b", label: "B" },
+              ],
+            },
+            modelValue: modelValue.value,
+          });
+      },
+    });
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    createApp(Wrapper).mount(container);
+    expect(container.querySelector(".forge-select__single-value")?.textContent).toBe("A");
+
+    modelValue.value = undefined;
+    await nextTick();
+    expect(container.querySelector(".forge-select__single-value")?.textContent).toBe("A");
+  });
+
   it("does not emit changes while synchronizing modelValue", async () => {
     const modelValue = ref("a");
     const onUpdate = vi.fn();
@@ -99,6 +125,35 @@ describe("ForgeSelectVue", () => {
     await nextTick();
     expect(onUpdate).not.toHaveBeenCalled();
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("emits open, close, search, and clear", () => {
+    const onOpen = vi.fn();
+    const onClose = vi.fn();
+    const onSearch = vi.fn();
+    const onClear = vi.fn();
+    const { container } = mountOnBody(ForgeSelectVue, {
+      options: { clearable: true, data: [{ value: "a", label: "A" }] },
+      modelValue: "a",
+      onOpen,
+      onClose,
+      onSearch,
+      onClear,
+    });
+
+    container.querySelector<HTMLElement>(".forge-select__control")!.click();
+    expect(onOpen).toHaveBeenCalledTimes(1);
+
+    const input = container.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "x";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(onSearch).toHaveBeenCalledWith("x");
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    container.querySelector<HTMLElement>(".forge-select__clear")!.click();
+    expect(onClear).toHaveBeenCalledTimes(1);
   });
 
   it("destroys the instance on unmount", () => {
