@@ -7,3 +7,4 @@ test-results/
 *.log
 .DS_Store
 .wrangler/
+.claude/settings.local.json

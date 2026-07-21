@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Published tarballs now include the project MIT license.
 - Controlled `value` updates no longer invoke `onChange`, and rerenders use the latest callback.
 
 ## [0.1.0] - 2026-07-14

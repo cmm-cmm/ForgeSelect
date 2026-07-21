@@ -52,6 +52,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "bench": "npm run build && node scripts/benchmark.mjs",
     "build:site": "npm run build && node scripts/build-site.mjs",
     "check:package": "npm run build && npm run build --workspaces --if-present && npm pack --dry-run --ignore-scripts && npm pack ./packages/react --dry-run --ignore-scripts && npm pack ./packages/vue --dry-run --ignore-scripts",
     "check:site": "npm run build:site && node scripts/check-site.mjs",
@@ -68,6 +69,7 @@
     "deploy:cloudflare": "wrangler deploy"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.61.1",
     "@types/node": "^26.1.1",

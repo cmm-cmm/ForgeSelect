@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Reproducible `npm run bench` baseline for bundle size, initialization, 10,000-option search, virtual-scroll frame timing, and rendered-row count.
+- Automated axe accessibility checks in the real-browser Playwright suite.
+- Repository-wide LF policy and CI coverage for direct pushes to the `dev` integration branch.
 - Quality gates: ESLint, Prettier, 80% V8 coverage thresholds, generated-site/package validation, and Playwright coverage across Chromium, Firefox, and WebKit.
 - Additive `setValue(value, { emitChange: false })` API and an `error` event/localized row for remote-load failures.
 - Keyboard-operable tree navigation with `ArrowRight`/`ArrowLeft` and `aria-expanded` state.
@@ -19,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Built-in and custom option rendering now lives in a focused internal module with direct XSS-safety and template tests; the public API is unchanged.
+- React and Vue package tarballs now include the project MIT license.
 - The IIFE bundle (`dist/index.global.js`, the CDN/`<script>` build) is now minified — the ESM/CJS builds are unaffected.
 - CI: added `concurrency` groups to `ci.yml`/`release.yml` so superseded runs don't queue redundantly, added an explicit `permissions: contents: read` block to `ci.yml`, and restructured steps so `dist/`/workspace builds run once per job instead of up to 3×.
 - React/Vue controlled values now synchronize silently; callbacks and model events are reserved for user changes.

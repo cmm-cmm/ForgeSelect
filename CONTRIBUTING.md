@@ -21,6 +21,7 @@ npm install
 | `npm run format:check`  | Check repository formatting with Prettier               |
 | `npm run test:coverage` | Run tests and enforce 80% coverage thresholds           |
 | `npm run test:browser`  | Run Playwright in Chromium, Firefox, and WebKit         |
+| `npm run bench`         | Measure bundle, initialization, search, and scrolling   |
 | `npm run check:site`    | Reject broken generated local links and assets          |
 | `npm run check:package` | Build and inspect all npm tarballs without publishing   |
 

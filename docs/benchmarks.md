@@ -2,41 +2,40 @@
 
 > [Docs home](./README.md)
 >
-> **Status: planned.** No formal benchmark suite has been run yet, so there are no real numbers to report. This page defines the methodology and the exact shape the results will be published in, so contributors can run and submit benchmarks as the library matures.
+> **Status: reproducible baseline available.** Run the included benchmark on the target machine before comparing releases. Timing values depend on hardware and browser load; bundle-size values are deterministic.
 
 ## Methodology
 
-Benchmarks will compare Forge Select against Select2 (and, where relevant, other popular alternatives) on:
+The current baseline measures Forge Select itself so release-to-release regressions can be detected without pulling third-party code into the zero-dependency repository:
 
 - **Bundle size** — minified and minified+gzip, zero-dependency build.
 - **Initialization time** — time to first render for a single instance, and for 50 instances on one page.
 - **Search latency** — time from keystroke to filtered list render, at 100 / 1,000 / 10,000 options.
 - **Scroll performance** — frame time while scrolling a large option list, with and without `virtualScroll`.
-- **Memory footprint** — heap usage after mounting and destroying N instances.
+- **Rendered row count** — verifies that a 10,000-option list stays virtualized.
 
-## Planned results table
+## Results
 
-Once a release exists, results will be recorded here in this format:
+`npm run bench` prints machine-readable JSON containing:
 
-| Metric                                | Select2 | Forge Select | Notes                                |
-| ------------------------------------- | ------- | ------------ | ------------------------------------ |
-| Bundle size (min+gzip)                | _TBD_   | _TBD_        | Zero-dependency vs. requires jQuery. |
-| Init time (1 instance)                | _TBD_   | _TBD_        | Cold render, ms.                     |
-| Init time (50 instances)              | _TBD_   | _TBD_        | Cold render, ms.                     |
-| Search latency (10,000 options)       | _TBD_   | _TBD_        | Keystroke to render, ms.             |
-| Scroll frame time (10,000 options)    | _TBD_   | _TBD_        | With `virtualScroll: true`.          |
-| Memory after 100 mount/destroy cycles | _TBD_   | _TBD_        | Heap delta, MB.                      |
+| Metric                             | JSON field                          | Interpretation                          |
+| ---------------------------------- | ----------------------------------- | --------------------------------------- |
+| Minified bundle size               | `bundle.minifiedBytes`              | CDN/IIFE output before gzip.            |
+| Minified+gzip bundle size          | `bundle.minifiedGzipBytes`          | Transfer-size approximation.            |
+| Init time (1 × 10,000-option list) | `timings.initOneMs`                 | Constructor duration.                   |
+| Init time (50 × 100-option lists)  | `timings.initFiftyMs`               | Multi-instance constructor duration.    |
+| Search latency (10,000 options)    | `timings.searchTenThousandMs`       | Input event through two painted frames. |
+| Mean virtual-scroll frame interval | `timings.scrollMeanFrameMs`         | Lower is better; ~16.7 ms is 60 fps.    |
+| Rows rendered after virtualization | `timings.renderedRowsAtTenThousand` | Must remain well below 10,000.          |
 
-## Running benchmarks locally (once available)
-
-There is no `bench` script yet — this section describes the intended workflow once the benchmark suite is added, not something you can run today.
+## Running benchmarks locally
 
 ```bash
 npm install
 npm run bench
 ```
 
-Results will be produced as JSON under `bench/results/` and summarized into the table above on each tagged release.
+Redirect stdout to retain a result for comparison, and record the reported Node, Chromium, platform, and headless fields alongside every result. Run at least three times on an otherwise idle machine and compare medians.
 
 ## See also
 

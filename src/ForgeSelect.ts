@@ -1,6 +1,7 @@
 import { Emitter, type Handler } from "./emitter";
 import { format, getStrings, type Strings } from "./i18n";
 import { parseNativeOptions } from "./native-select";
+import { renderOptionContent } from "./option-renderer";
 import { buildUrl, normalizeRemoteResult } from "./remote";
 import {
   arraysEqual,
@@ -615,7 +616,7 @@ export default class ForgeSelect {
         tag.className = "forge-select__tag";
         const label = document.createElement("span");
         label.className = "forge-select__tag-label";
-        this.renderTemplate(label, option, this.opts.templateSelection, "inline");
+        renderOptionContent(label, option, this.opts.templateSelection, "inline");
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "forge-select__tag-remove";
@@ -643,7 +644,7 @@ export default class ForgeSelect {
       };
       const span = document.createElement("span");
       span.className = "forge-select__single-value";
-      this.renderTemplate(span, option, this.opts.templateSelection, "inline");
+      renderOptionContent(span, option, this.opts.templateSelection, "inline");
       this.valueEl.append(span);
     }
   }
@@ -743,51 +744,6 @@ export default class ForgeSelect {
         tag.focus();
         return;
       }
-    }
-  }
-
-  private renderTemplate(
-    container: HTMLElement,
-    option: Option,
-    template?: TemplateFn,
-    variant: "row" | "inline" = "row",
-  ): void {
-    if (template) {
-      const result = template(option);
-      if (typeof result === "string") container.innerHTML = result;
-      else container.append(result);
-      return;
-    }
-    if (!option.avatar && !option.description) {
-      container.textContent = option.label;
-      return;
-    }
-    // Built-in rich renderer: DOM built via textContent, so all fields are XSS-safe.
-    if (option.avatar) {
-      const avatar = document.createElement("img");
-      avatar.className = variant === "row" ? "forge-select__option-avatar" : "forge-select__inline-avatar";
-      avatar.src = option.avatar;
-      avatar.alt = "";
-      avatar.setAttribute("loading", "lazy");
-      avatar.setAttribute("decoding", "async");
-      container.append(avatar);
-    }
-    if (variant === "row" && option.description) {
-      const body = document.createElement("span");
-      body.className = "forge-select__option-body";
-      const label = document.createElement("span");
-      label.className = "forge-select__option-label";
-      label.textContent = option.label;
-      const desc = document.createElement("span");
-      desc.className = "forge-select__option-desc";
-      desc.textContent = option.description;
-      body.append(label, desc);
-      container.append(body);
-    } else {
-      const label = document.createElement("span");
-      label.className = "forge-select__option-label";
-      label.textContent = option.label;
-      container.append(label);
     }
   }
 
@@ -1002,7 +958,7 @@ export default class ForgeSelect {
     if (!cached) {
       const holder = document.createElement("span");
       holder.className = "forge-select__option-content";
-      this.renderTemplate(holder, option, this.opts.templateResult);
+      renderOptionContent(holder, option, this.opts.templateResult);
       if (this.rowContentCache.size >= ROW_CACHE_LIMIT) {
         // FIFO eviction keeps memory bounded on very large lists.
         const oldest = this.rowContentCache.keys().next().value as string;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseNativeOptions } from "../src/native-select";
+import { renderOptionContent } from "../src/option-renderer";
 import { buildUrl, normalizeRemoteResult } from "../src/remote";
 import {
   arraysEqual,
@@ -32,7 +33,10 @@ describe("selection helpers", () => {
     const withDisabled: Option = {
       value: "root",
       label: "Root",
-      children: [{ value: "a", label: "A" }, { value: "b", label: "B", disabled: true }],
+      children: [
+        { value: "a", label: "A" },
+        { value: "b", label: "B", disabled: true },
+      ],
     };
     // Disabled children can never be un-toggled through the UI (excluded
     // from navItems), so cascading selection must not sweep them in.
@@ -90,5 +94,31 @@ describe("native and remote helpers", () => {
   it("rejects a malformed ajax.transform result instead of returning a broken shape", () => {
     const ajax = { url: "/api", transform: () => ({ notOptions: [] }) as unknown as Option[] };
     expect(() => normalizeRemoteResult(ajax, {})).toThrow(/ajax\.transform must return/);
+  });
+});
+
+describe("option renderer", () => {
+  it("renders built-in rich content without interpreting text as HTML", () => {
+    const container = document.createElement("div");
+    renderOptionContent(container, {
+      value: "safe",
+      label: '<img src=x onerror="alert(1)">',
+      description: "Description",
+      avatar: "/avatar.png",
+    });
+    expect(container.querySelectorAll("img")).toHaveLength(1);
+    expect(container.querySelector(".forge-select__option-label")?.textContent).toContain("<img");
+  });
+
+  it("supports Node and string custom templates", () => {
+    const nodeContainer = document.createElement("div");
+    const node = document.createElement("strong");
+    node.textContent = "Node";
+    renderOptionContent(nodeContainer, tree, () => node);
+    expect(nodeContainer.firstElementChild).toBe(node);
+
+    const htmlContainer = document.createElement("div");
+    renderOptionContent(htmlContainer, tree, () => "<strong>HTML</strong>");
+    expect(htmlContainer.querySelector("strong")?.textContent).toBe("HTML");
   });
 });

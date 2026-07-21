@@ -20,4 +20,9 @@ export default tseslint.config(
     files: ["site/**/*.js", "demo/**/*.js", "tests/e2e/**/*.ts"],
     languageOptions: { globals: { ...globals.browser, ForgeSelectBundle: "readonly" } },
   },
+  {
+    // The benchmark is a Node script whose page.evaluate callback executes in a browser.
+    files: ["scripts/benchmark.mjs"],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
 );

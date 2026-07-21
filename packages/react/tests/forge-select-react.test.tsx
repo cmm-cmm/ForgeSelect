@@ -103,9 +103,9 @@ describe("ForgeSelectReact", () => {
     expect(onSearch).toHaveBeenCalledWith("x");
 
     act(() => {
-      container.querySelector<HTMLInputElement>(".forge-select__search")!.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-      );
+      container
+        .querySelector<HTMLInputElement>(".forge-select__search")!
+        .dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     });
     expect(onClose).toHaveBeenCalledTimes(1);
 

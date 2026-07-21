@@ -35,7 +35,7 @@ Browse the documentation website at **<https://forgeselect.konexforge.com/docs/>
 - [Examples](./docs/examples.md) — copy-pasteable snippets for every feature and framework
 - [Playground](./docs/playground.md) — [live demo](https://forgeselect.konexforge.com/demo/)
 - [Migration from Select2](./docs/migration-from-select2.md) — option/event/method mapping and a migration checklist
-- [Benchmarks](./docs/benchmarks.md) — performance methodology and results (planned)
+- [Benchmarks](./docs/benchmarks.md) — reproducible bundle, initialization, search, and scrolling baseline
 - [Plugin Development Guide](./docs/plugin-development.md) — write and register your own plugins
 
 ## Features
@@ -191,7 +191,7 @@ Forge Select is designed as a drop-in-concept replacement for Select2: no jQuery
 
 ## Benchmarks
 
-Performance benchmarking (bundle size, init time, search latency, virtual scroll performance) against Select2 is planned but not yet run. Methodology and the results format are documented in [`docs/benchmarks.md`](./docs/benchmarks.md).
+Run `npm run bench` for a reproducible JSON baseline covering bundle size, initialization, 10,000-option search latency, and virtual-scroll performance. The methodology and result fields are documented in [`docs/benchmarks.md`](./docs/benchmarks.md).
 
 ## Roadmap
 
