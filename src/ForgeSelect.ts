@@ -1,4 +1,5 @@
 import { Emitter, type Handler } from "./emitter";
+import { computeDropdownPlacement } from "./dropdown-position";
 import { format, getStrings, type Strings } from "./i18n";
 import { parseNativeOptions } from "./native-select";
 import { renderOptionContent } from "./option-renderer";
@@ -16,6 +17,7 @@ import type {
   AjaxConfig,
   DataItem,
   ForgeSelectEvent,
+  ForgeSelectEventHandler,
   ForgeSelectOptions,
   ForgeSelectPlugin,
   ForgeSelectValue,
@@ -31,9 +33,11 @@ type Row =
   | { kind: "empty" }
   | { kind: "error" }
   | { kind: "loading" }
-  | { kind: "loading-more" };
+  | { kind: "loading-more" }
+  | { kind: "min-length" };
 
 type NavItem = { kind: "option"; option: Option; parentValue?: string } | { kind: "create" };
+type TagCreation = { option: Option; created: boolean };
 
 interface ResolvedOptions {
   placeholder: string;
@@ -42,16 +46,25 @@ interface ResolvedOptions {
   clearable: boolean;
   allowCreate: boolean;
   sortable: boolean;
+  closeOnSelect: boolean;
+  maxSelections?: number;
   theme: string;
   disabled: boolean;
+  required: boolean;
   data?: DataItem[];
   ajax?: AjaxConfig;
   templateResult?: TemplateFn;
   templateSelection?: TemplateFn;
+  filterOption?: (option: Option, query: string) => boolean;
+  minSearchLength: number;
+  isOptionDisabled?: (option: Option) => boolean;
+  minResultsForSearch: number;
   virtualScroll: boolean | undefined;
   itemHeight: number;
   language: string | Record<string, string>;
   plugins: ForgeSelectPlugin[];
+  openOnFocus: boolean;
+  dropdownParent?: HTMLElement | string;
 }
 
 const DEFAULT_ITEM_HEIGHT = 36;
@@ -83,6 +96,7 @@ export default class ForgeSelect {
   private searchInput: HTMLInputElement | null = null;
   private list!: HTMLUListElement;
   private liveRegion!: HTMLDivElement;
+  private portalHost: HTMLDivElement | null = null;
 
   private isOpen = false;
   private isDisabled = false;
@@ -109,8 +123,31 @@ export default class ForgeSelect {
   private nativeForm: HTMLFormElement | null = null;
   private syncingNative = false;
 
+  /** Combines the static `disabled` field with the dynamic `isOptionDisabled` callback. */
+  private isOptionDisabled = (option: Option): boolean =>
+    option.disabled === true || (this.opts.isOptionDisabled?.(option) ?? false);
+
+  private pointerDownOnControl = false;
+
   private onDocumentMouseDown = (event: MouseEvent): void => {
-    if (!this.root.contains(event.target as Node)) this.close();
+    const target = event.target as Node;
+    if (!this.root.contains(target) && !this.portalHost?.contains(target)) this.close();
+  };
+
+  private onWindowResize = (): void => {
+    this.positionDropdown();
+  };
+
+  private onAncestorScroll = (): void => {
+    if (this.portalHost) this.positionDropdown();
+  };
+
+  private onNativeInvalid = (event: Event): void => {
+    event.preventDefault();
+    this.control.classList.add("forge-select__control--invalid");
+    this.control.setAttribute("aria-invalid", "true");
+    if (!this.isOpen) this.open();
+    this.control.focus();
   };
 
   private onNativeChange = (): void => {
@@ -154,19 +191,32 @@ export default class ForgeSelect {
       clearable: options.clearable ?? false,
       allowCreate: options.allowCreate ?? false,
       sortable: options.sortable ?? false,
+      closeOnSelect: options.closeOnSelect ?? false,
+      maxSelections:
+        options.maxSelections == null || !Number.isFinite(options.maxSelections)
+          ? undefined
+          : Math.max(0, Math.floor(options.maxSelections)),
       theme: options.theme ?? "default",
       disabled: options.disabled ?? nativeSelect?.disabled ?? false,
+      required: options.required ?? nativeSelect?.required ?? false,
       data: options.data,
       ajax: options.ajax,
       templateResult: options.templateResult,
       templateSelection: options.templateSelection,
+      filterOption: options.filterOption,
+      minSearchLength: Math.max(0, Math.floor(options.minSearchLength ?? 0)),
+      minResultsForSearch: Math.max(0, Math.floor(options.minResultsForSearch ?? 0)),
+      isOptionDisabled: options.isOptionDisabled,
       virtualScroll: options.virtualScroll,
       itemHeight: options.itemHeight ?? DEFAULT_ITEM_HEIGHT,
       language: options.language ?? "en",
       plugins: options.plugins ?? [],
+      openOnFocus: options.openOnFocus ?? false,
+      dropdownParent: options.dropdownParent,
     };
     this.strings = getStrings(this.opts.language);
     this.plugins = this.opts.plugins;
+    if (nativeSelect) nativeSelect.required = this.opts.required;
 
     this.data = this.opts.data ?? (nativeSelect ? parseNativeOptions(nativeSelect) : []);
     if (nativeSelect && !this.opts.data) {
@@ -184,6 +234,7 @@ export default class ForgeSelect {
     this.renderValue();
     if (this.opts.disabled) this.disable();
     nativeSelect?.addEventListener("change", this.onNativeChange);
+    nativeSelect?.addEventListener("invalid", this.onNativeInvalid);
     this.nativeForm?.addEventListener("reset", this.onFormReset);
 
     for (const plugin of this.plugins) plugin.onInit?.(this);
@@ -203,7 +254,10 @@ export default class ForgeSelect {
       this.scheduleRemoteLoad(this.query, 0);
     }
     this.renderList();
-    if (this.searchInput) this.searchInput.focus();
+    this.positionDropdown();
+    window.addEventListener("resize", this.onWindowResize);
+    document.addEventListener("scroll", this.onAncestorScroll, true);
+    if (this.searchInput && !this.searchInput.hidden) this.searchInput.focus();
 
     this.emitter.emit("open");
     for (const plugin of this.plugins) plugin.onOpen?.(this);
@@ -214,8 +268,11 @@ export default class ForgeSelect {
     this.isOpen = false;
     this.dropdown.hidden = true;
     this.root.classList.remove("forge-select--open");
+    this.root.classList.remove("forge-select--drop-up");
     this.control.setAttribute("aria-expanded", "false");
     document.removeEventListener("mousedown", this.onDocumentMouseDown);
+    window.removeEventListener("resize", this.onWindowResize);
+    document.removeEventListener("scroll", this.onAncestorScroll, true);
     this.highlightedIndex = -1;
     if (this.searchInput) {
       this.searchInput.value = "";
@@ -226,6 +283,24 @@ export default class ForgeSelect {
     for (const plugin of this.plugins) plugin.onClose?.(this);
   }
 
+  /**
+   * Flips the dropdown above the control when there isn't enough room below
+   * but there is above. Recomputed on open() and on window resize — the
+   * dropdown is positioned absolutely inside the relatively-positioned root,
+   * so it already tracks the control correctly on page scroll without
+   * needing a scroll listener.
+   */
+  private positionDropdown(): void {
+    const controlRect = this.control.getBoundingClientRect();
+    const placement = computeDropdownPlacement(controlRect, this.dropdown.offsetHeight, window.innerHeight);
+    this.root.classList.toggle("forge-select--drop-up", placement.dropUp);
+    if (this.portalHost) {
+      this.portalHost.style.top = `${placement.top}px`;
+      this.portalHost.style.left = `${controlRect.left}px`;
+      this.portalHost.style.width = `${controlRect.width}px`;
+    }
+  }
+
   destroy(): void {
     if (this.destroyed) return;
     this.close();
@@ -234,8 +309,10 @@ export default class ForgeSelect {
     if (this.ajaxTimer) clearTimeout(this.ajaxTimer);
     this.ajaxController?.abort();
     this.nativeSelect?.removeEventListener("change", this.onNativeChange);
+    this.nativeSelect?.removeEventListener("invalid", this.onNativeInvalid);
     this.nativeForm?.removeEventListener("reset", this.onFormReset);
     this.rowContentCache.clear();
+    this.portalHost?.remove();
     this.root.remove();
     this.el.style.display = this.originalDisplay;
     if (this.nativeSelect) this.nativeSelect.disabled = this.originalDisabled;
@@ -256,6 +333,55 @@ export default class ForgeSelect {
     this.afterSelectionChange(options.emitChange ?? true);
   }
 
+  /**
+   * Replaces the option list after construction. An open dropdown re-renders
+   * immediately; a selection whose value isn't in the new data stays
+   * selected (rendered via the already-selected option's own label/avatar,
+   * the same fallback used for values selected from a stale ajax page).
+   */
+  setData(data: DataItem[]): void {
+    if (this.ajaxTimer) {
+      clearTimeout(this.ajaxTimer);
+      this.ajaxTimer = null;
+    }
+    this.ajaxController?.abort();
+    this.ajaxController = null;
+    this.ajaxRequestId += 1;
+    this.loading = false;
+    this.loadingMore = false;
+    this.loadError = null;
+    this.remoteLoaded = true;
+    this.page = 0;
+    this.hasMore = false;
+    this.data = data;
+    this.opts.data = data;
+    this.updateSearchVisibility();
+    this.rowContentCache.clear();
+    this.highlightedIndex = -1;
+    if (this.isOpen) this.renderList();
+  }
+
+  /**
+   * Multi-select only: selects every currently non-disabled option, including
+   * nested tree descendants and options inside groups. If `maxSelections` is
+   * set, stops once the cap is reached rather than exceeding it. A no-op for
+   * single-select.
+   */
+  selectAll(): void {
+    if (!this.opts.multiple) return;
+    this.selected = [];
+    for (const value of this.allSelectableValues()) {
+      const option = this.findOption(value);
+      if (option && this.canSelectOption(option)) this.selectValue(value, false);
+    }
+    this.afterSelectionChange();
+  }
+
+  /** Clears every selection. Equivalent to `setValue(null)`. */
+  clearAll(): void {
+    this.clearSelection();
+  }
+
   enable(): void {
     this.isDisabled = false;
     this.root.classList.remove("forge-select--disabled");
@@ -273,12 +399,12 @@ export default class ForgeSelect {
     if (this.nativeSelect) this.nativeSelect.disabled = true;
   }
 
-  on(event: ForgeSelectEvent, handler: Handler): void {
-    this.emitter.on(event, handler);
+  on<E extends ForgeSelectEvent>(event: E, handler: ForgeSelectEventHandler<E>): void {
+    this.emitter.on(event, handler as Handler);
   }
 
-  off(event: ForgeSelectEvent, handler: Handler): void {
-    this.emitter.off(event, handler);
+  off<E extends ForgeSelectEvent>(event: E, handler: ForgeSelectEventHandler<E>): void {
+    this.emitter.off(event, handler as Handler);
   }
 
   // ---------------------------------------------------------------- DOM setup
@@ -307,7 +433,29 @@ export default class ForgeSelect {
     }
   }
 
+  private shouldShowSearch(): boolean {
+    return (
+      this.opts.searchable && (this.opts.ajax != null || collectValues(this.data).size >= this.opts.minResultsForSearch)
+    );
+  }
+
+  private updateSearchVisibility(): void {
+    if (!this.searchInput) return;
+    this.searchInput.hidden = !this.shouldShowSearch();
+    if (this.searchInput.hidden) {
+      this.searchInput.value = "";
+      this.query = "";
+    }
+  }
+
   private buildDom(): void {
+    const portalParent =
+      typeof this.opts.dropdownParent === "string"
+        ? document.querySelector<HTMLElement>(this.opts.dropdownParent)
+        : this.opts.dropdownParent;
+    if (this.opts.dropdownParent && !portalParent) {
+      throw new Error(`ForgeSelect: dropdown parent not found: ${String(this.opts.dropdownParent)}`);
+    }
     this.root = document.createElement("div");
     this.root.className = "forge-select";
     this.root.dataset.theme = this.opts.theme;
@@ -320,6 +468,7 @@ export default class ForgeSelect {
     this.control.setAttribute("aria-haspopup", "listbox");
     this.control.setAttribute("aria-expanded", "false");
     this.control.setAttribute("aria-controls", `${this.uid}-list`);
+    if (this.opts.required) this.control.setAttribute("aria-required", "true");
     this.control.tabIndex = 0;
     this.applyAccessibleName();
 
@@ -350,6 +499,7 @@ export default class ForgeSelect {
       this.searchInput.setAttribute("aria-label", this.strings.search);
       this.searchInput.setAttribute("aria-autocomplete", "list");
       this.searchInput.setAttribute("aria-controls", `${this.uid}-list`);
+      this.searchInput.hidden = !this.shouldShowSearch();
       this.dropdown.append(this.searchInput);
     }
 
@@ -365,9 +515,19 @@ export default class ForgeSelect {
     this.liveRegion.setAttribute("role", "status");
     this.liveRegion.setAttribute("aria-live", "polite");
 
-    this.root.append(this.control, this.dropdown, this.liveRegion);
+    this.root.append(this.control, this.liveRegion);
+    if (!portalParent) this.root.append(this.dropdown);
     this.el.style.display = "none";
     this.el.insertAdjacentElement("afterend", this.root);
+
+    if (portalParent) {
+      this.portalHost = document.createElement("div");
+      this.portalHost.className = "forge-select forge-select--portal-host";
+      this.portalHost.dataset.theme = this.opts.theme;
+      this.portalHost.style.setProperty("--fs-item-height", `${this.opts.itemHeight}px`);
+      this.portalHost.append(this.dropdown);
+      portalParent.append(this.portalHost);
+    }
 
     this.bindEvents();
   }
@@ -386,6 +546,23 @@ export default class ForgeSelect {
 
     this.control.addEventListener("keydown", (event) => this.handleKeydown(event));
 
+    // A mouse click fires mousedown -> focus -> click, in that order. Without
+    // tracking pointerDownOnControl, openOnFocus would open the dropdown
+    // during the focus phase, and the click handler above would then
+    // immediately close it again via its own open/close toggle. Tracking
+    // whether a mousedown preceded this focus distinguishes "focused via
+    // mouse click" (skip auto-open, let the click handler's toggle run) from
+    // "focused via keyboard Tab" (auto-open).
+    this.control.addEventListener("mousedown", () => {
+      this.pointerDownOnControl = true;
+    });
+    this.control.addEventListener("focus", () => {
+      if (this.opts.openOnFocus && !this.pointerDownOnControl && !this.isOpen && !this.isDisabled) {
+        this.open();
+      }
+      this.pointerDownOnControl = false;
+    });
+
     this.clearBtn.addEventListener("click", (event) => {
       event.stopPropagation();
       this.clearSelection();
@@ -397,13 +574,48 @@ export default class ForgeSelect {
         this.highlightedIndex = -1;
         this.list.scrollTop = 0;
         this.emitter.emit("search", this.query);
-        if (this.opts.ajax) {
+        const trimmed = this.query.trim();
+        const belowMinLength = trimmed !== "" && trimmed.length < this.opts.minSearchLength;
+        if (this.opts.ajax && !belowMinLength) {
           this.scheduleRemoteLoad(this.query, this.opts.ajax.debounce ?? 250);
         } else {
+          if (belowMinLength) {
+            if (this.ajaxTimer) {
+              clearTimeout(this.ajaxTimer);
+              this.ajaxTimer = null;
+            }
+            this.ajaxController?.abort();
+            this.loading = false;
+          }
           this.renderList();
         }
       });
       this.searchInput.addEventListener("keydown", (event) => this.handleKeydown(event));
+      this.searchInput.addEventListener("paste", (event) => {
+        if (!this.opts.multiple || !this.opts.allowCreate) return;
+        const text = event.clipboardData?.getData("text") ?? "";
+        const labels = text
+          .split(/[,\n]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (labels.length < 2) return;
+        event.preventDefault();
+        const created: TagCreation[] = [];
+        for (const label of labels) {
+          const result = this.createTag(label);
+          if (result) created.push(result);
+        }
+        if (created.length === 0) return;
+        this.searchInput!.value = "";
+        this.query = "";
+        this.afterSelectionChange();
+        for (const result of created) {
+          if (result.created) this.emitter.emit("create", result.option);
+          this.emitter.emit("select", result.option);
+        }
+        if (this.opts.closeOnSelect) this.close();
+        else this.renderList();
+      });
     }
 
     this.list.addEventListener("click", (event) => {
@@ -417,7 +629,12 @@ export default class ForgeSelect {
         return;
       }
       const li = target.closest<HTMLLIElement>("li[data-nav-index]");
-      if (!li) return;
+      if (!li) {
+        const optionRow = target.closest<HTMLLIElement>("li[data-option-value]");
+        const option = optionRow ? this.findOption(optionRow.dataset.optionValue!) : undefined;
+        if (option && this.hasReachedMaximum() && !this.selected.includes(option.value)) this.announceMaximum(option);
+        return;
+      }
       const navIndex = Number(li.dataset.navIndex);
       this.activateNavItem(navIndex);
     });
@@ -472,6 +689,28 @@ export default class ForgeSelect {
 
   // ---------------------------------------------------------------- selection
 
+  private canSelectOption(option: Option): boolean {
+    if (this.opts.maxSelections == null) return true;
+    const projected = [...this.selected];
+    if (!projected.includes(option.value)) projected.push(option.value);
+    for (const value of collectDescendantValues(option, this.isOptionDisabled)) {
+      if (!projected.includes(value)) projected.push(value);
+    }
+    syncDataTreeAncestors(this.data, projected, this.isOptionDisabled);
+    return projected.length <= this.opts.maxSelections;
+  }
+
+  private hasReachedMaximum(): boolean {
+    return this.opts.maxSelections != null && this.selected.length >= this.opts.maxSelections;
+  }
+
+  private announceMaximum(option: Option): void {
+    const limit = this.opts.maxSelections;
+    if (limit == null) return;
+    this.liveRegion.textContent = format(this.strings.maximumSelected, { count: String(limit) });
+    this.emitter.emit("maximum", { limit, option });
+  }
+
   private selectValue(value: string, notify: boolean): void {
     if (this.selected.includes(value)) return;
     const option = this.findOption(value) ?? this.selectedOptions.get(value) ?? { value, label: value };
@@ -480,31 +719,37 @@ export default class ForgeSelect {
       this.selected.push(value);
       // Selecting a tree node cascades to its descendants too; for a plain
       // option (no children) this is a no-op.
-      for (const v of collectDescendantValues(option)) {
+      for (const v of collectDescendantValues(option, this.isOptionDisabled)) {
         if (!this.selected.includes(v)) this.selected.push(v);
       }
       this.syncTreeAncestors();
     } else {
       this.selected = [value];
     }
-    if (notify) this.afterSelectionChange();
+    if (notify) {
+      this.afterSelectionChange();
+      this.emitter.emit("select", option);
+    }
   }
 
   private deselectValue(value: string, notify: boolean): void {
     const index = this.selected.indexOf(value);
     if (index === -1) return;
+    const option = this.findOption(value) ?? this.selectedOptions.get(value);
     this.selected.splice(index, 1);
     if (this.opts.multiple) {
-      const option = this.findOption(value) ?? this.selectedOptions.get(value);
       if (option) {
-        for (const v of collectDescendantValues(option)) {
+        for (const v of collectDescendantValues(option, this.isOptionDisabled)) {
           const i = this.selected.indexOf(v);
           if (i !== -1) this.selected.splice(i, 1);
         }
       }
       this.syncTreeAncestors();
     }
-    if (notify) this.afterSelectionChange();
+    if (notify) {
+      this.afterSelectionChange();
+      this.emitter.emit("unselect", option ?? { value, label: value });
+    }
   }
 
   /**
@@ -514,7 +759,7 @@ export default class ForgeSelect {
    * No-op for data with no `children` anywhere.
    */
   private syncTreeAncestors(): void {
-    syncDataTreeAncestors(this.data, this.selected);
+    syncDataTreeAncestors(this.data, this.selected, this.isOptionDisabled);
   }
 
   private clearSelection(): void {
@@ -524,9 +769,23 @@ export default class ForgeSelect {
     this.afterSelectionChange();
   }
 
+  private allSelectableValues(): string[] {
+    const values: string[] = [];
+    const visit = (option: Option): void => {
+      if (!this.isOptionDisabled(option)) values.push(option.value);
+      option.children?.forEach(visit);
+    };
+    for (const item of this.data) (isGroup(item) ? item.options : [item]).forEach(visit);
+    return values;
+  }
+
   private afterSelectionChange(emitChange = true): void {
     this.renderValue();
     this.syncNativeSelect(emitChange);
+    if (!this.opts.required || this.selected.length > 0) {
+      this.control.classList.remove("forge-select__control--invalid");
+      this.control.removeAttribute("aria-invalid");
+    }
     if (this.isOpen) this.renderList();
     if (emitChange) this.emitter.emit("change", this.getValue());
   }
@@ -569,17 +828,60 @@ export default class ForgeSelect {
     return findDataOption(this.data, value);
   }
 
+  private findOptionByLabel(label: string): Option | undefined {
+    const lower = label.toLowerCase();
+    const search = (options: Option[]): Option | undefined => {
+      for (const option of options) {
+        if (option.label.toLowerCase() === lower) return option;
+        const found = option.children ? search(option.children) : undefined;
+        if (found) return found;
+      }
+      return undefined;
+    };
+    for (const item of this.data) {
+      const found = search(isGroup(item) ? item.options : [item]);
+      if (found) return found;
+    }
+    return undefined;
+  }
+
+  /** Selects an existing option matching `label` exactly, or creates and selects a new one. */
+  private createTag(label: string): TagCreation | undefined {
+    const trimmed = label.trim();
+    if (!trimmed) return undefined;
+    const existing = this.findOptionByLabel(trimmed);
+    if (existing) {
+      if (this.selected.includes(existing.value)) return undefined;
+      if (this.opts.multiple && !this.canSelectOption(existing)) {
+        this.announceMaximum(existing);
+        return undefined;
+      }
+      this.selectValue(existing.value, false);
+      return { option: existing, created: false };
+    }
+    const option: Option = { value: trimmed, label: trimmed };
+    if (this.opts.multiple && !this.canSelectOption(option)) {
+      this.announceMaximum(option);
+      return undefined;
+    }
+    this.data.push(option);
+    this.selectValue(option.value, false);
+    return { option, created: true };
+  }
+
   private createFromQuery(): void {
     const label = this.query.trim();
     if (!label) return;
-    const option: Option = { value: label, label };
-    this.data.push(option);
+    const result = this.createTag(label);
+    if (!result) return;
     if (this.searchInput) {
       this.searchInput.value = "";
       this.query = "";
     }
-    this.selectValue(option.value, true);
-    if (!this.opts.multiple) this.close();
+    this.afterSelectionChange();
+    if (result.created) this.emitter.emit("create", result.option);
+    this.emitter.emit("select", result.option);
+    if (!this.opts.multiple || this.opts.closeOnSelect) this.close();
   }
 
   private activateNavItem(navIndex: number): void {
@@ -591,8 +893,17 @@ export default class ForgeSelect {
     }
     const { value } = item.option;
     if (this.opts.multiple) {
-      if (this.selected.includes(value)) this.deselectValue(value, true);
-      else this.selectValue(value, true);
+      let changed = false;
+      if (this.selected.includes(value)) {
+        this.deselectValue(value, true);
+        changed = true;
+      } else if (this.canSelectOption(item.option)) {
+        this.selectValue(value, true);
+        changed = true;
+      } else {
+        this.announceMaximum(item.option);
+      }
+      if (changed && this.opts.closeOnSelect) this.close();
     } else {
       this.selectValue(value, true);
       this.close();
@@ -716,6 +1027,7 @@ export default class ForgeSelect {
       this.selected = order;
       this.suppressNextTagClick = true;
       this.afterSelectionChange();
+      this.emitter.emit("reorder", [...this.selected]);
     };
 
     tag.addEventListener("pointerdown", (event) => {
@@ -741,6 +1053,7 @@ export default class ForgeSelect {
     [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
     this.selected = next;
     this.afterSelectionChange();
+    this.emitter.emit("reorder", [...this.selected]);
     this.focusTagByValue(value);
   }
 
@@ -756,11 +1069,13 @@ export default class ForgeSelect {
   private buildRows(): void {
     this.rows = [];
     this.navItems = [];
-    const query = this.query.trim().toLowerCase();
+    const trimmedQuery = this.query.trim();
+    const query = trimmedQuery.toLowerCase();
     const matches = (option: Option): boolean =>
       query === "" ||
-      option.label.toLowerCase().includes(query) ||
-      (option.description?.toLowerCase().includes(query) ?? false);
+      (this.opts.filterOption
+        ? this.opts.filterOption(option, trimmedQuery)
+        : option.label.toLowerCase().includes(query) || (option.description?.toLowerCase().includes(query) ?? false));
 
     // A tree node is visible while searching if it matches, or any descendant
     // does (leaf options with no children just reduce to `matches()`).
@@ -769,7 +1084,9 @@ export default class ForgeSelect {
 
     const pushOption = (option: Option, depth: number, parentValue?: string): void => {
       let navIndex = -1;
-      if (!option.disabled) {
+      const interactionDisabled =
+        this.isOptionDisabled(option) || (this.hasReachedMaximum() && !this.selected.includes(option.value));
+      if (!interactionDisabled) {
         navIndex = this.navItems.length;
         this.navItems.push({ kind: "option", option, parentValue });
       }
@@ -787,6 +1104,10 @@ export default class ForgeSelect {
       }
     };
 
+    if (trimmedQuery !== "" && trimmedQuery.length < this.opts.minSearchLength) {
+      this.rows.push({ kind: "min-length" });
+      return;
+    }
     if (this.loading) {
       this.rows.push({ kind: "loading" });
       return;
@@ -818,13 +1139,7 @@ export default class ForgeSelect {
   }
 
   private hasExactMatch(lowerQuery: string): boolean {
-    const matchesExactly = (option: Option): boolean =>
-      option.label.toLowerCase() === lowerQuery || (option.children ?? []).some(matchesExactly);
-    for (const item of this.data) {
-      const options = isGroup(item) ? item.options : [item];
-      if (options.some(matchesExactly)) return true;
-    }
-    return false;
+    return !!this.findOptionByLabel(lowerQuery);
   }
 
   private usesVirtualScroll(): boolean {
@@ -839,14 +1154,17 @@ export default class ForgeSelect {
 
   private announceStatus(): void {
     const first = this.rows[0];
-    const message =
-      first?.kind === "loading"
+    const message = this.hasReachedMaximum()
+      ? format(this.strings.maximumSelected, { count: String(this.opts.maxSelections) })
+      : first?.kind === "loading"
         ? this.strings.loading
         : first?.kind === "error"
           ? this.strings.errorLoading
           : first?.kind === "empty"
             ? this.strings.noResults
-            : "";
+            : first?.kind === "min-length"
+              ? format(this.strings.minSearchLength, { count: String(this.opts.minSearchLength) })
+              : "";
     if (this.liveRegion.textContent !== message) this.liveRegion.textContent = message;
   }
 
@@ -912,6 +1230,13 @@ export default class ForgeSelect {
         li.setAttribute("aria-selected", "false");
         li.textContent = this.strings.noResults;
         break;
+      case "min-length":
+        li.className = "forge-select__min-length";
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-disabled", "true");
+        li.setAttribute("aria-selected", "false");
+        li.textContent = format(this.strings.minSearchLength, { count: String(this.opts.minSearchLength) });
+        break;
       case "error":
         li.className = "forge-select__error";
         li.setAttribute("role", "option");
@@ -941,17 +1266,26 @@ export default class ForgeSelect {
         break;
       case "option": {
         li.className = "forge-select__option";
+        li.dataset.optionValue = row.option.value;
+        if (row.option.className) li.classList.add(...row.option.className.trim().split(/\s+/).filter(Boolean));
         li.setAttribute("role", "option");
         const isSelected = this.selected.includes(row.option.value);
         li.setAttribute("aria-selected", String(isSelected));
         if (isSelected) li.classList.add("forge-select__option--selected");
-        if (this.opts.multiple && row.hasChildren && computeCheckState(row.option, this.selected) === "some") {
+        if (
+          this.opts.multiple &&
+          row.hasChildren &&
+          computeCheckState(row.option, this.selected, this.isOptionDisabled) === "some"
+        ) {
           li.classList.add("forge-select__option--indeterminate");
         }
         if (row.depth > 0) {
           li.style.paddingLeft = `calc(12px + ${row.depth} * var(--fs-tree-indent, 18px))`;
         }
-        if (row.option.disabled) {
+        if (
+          this.isOptionDisabled(row.option) ||
+          (this.hasReachedMaximum() && !this.selected.includes(row.option.value))
+        ) {
           li.classList.add("forge-select__option--disabled");
           li.setAttribute("aria-disabled", "true");
         } else {
@@ -1128,10 +1462,15 @@ export default class ForgeSelect {
     this.ajaxController = controller;
     const page = append ? this.page + 1 : 0;
     try {
-      const url = buildUrl(ajax, query, page);
-      const response = await fetch(url, { signal: controller.signal });
-      if (response.ok === false) throw new Error(`ForgeSelect: remote request failed with HTTP ${response.status}`);
-      const json: unknown = await response.json();
+      let json: unknown;
+      if (ajax.request) {
+        json = await ajax.request(query, page, controller.signal);
+      } else {
+        const url = buildUrl(ajax, query, page);
+        const response = await fetch(url, { signal: controller.signal });
+        if (response.ok === false) throw new Error(`ForgeSelect: remote request failed with HTTP ${response.status}`);
+        json = await response.json();
+      }
       if (activeRequestId !== this.ajaxRequestId || this.destroyed) return;
       const { options, hasMore } = normalizeRemoteResult(ajax, json);
 

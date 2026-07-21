@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import ForgeSelect from "forge-select";
-import type { ForgeSelectOptions, ForgeSelectValue } from "forge-select";
+import type { ForgeSelectOptions, ForgeSelectValue, MaximumSelectionEvent, Option } from "forge-select";
 
 export interface ForgeSelectReactProps extends ForgeSelectOptions {
   /** Controlled value; synced into the instance via `.setValue()` on change. */
@@ -11,18 +11,37 @@ export interface ForgeSelectReactProps extends ForgeSelectOptions {
   onSearch?: (query: string) => void;
   onClear?: () => void;
   onError?: (error: Error) => void;
+  onSelect?: (option: Option) => void;
+  onUnselect?: (option: Option) => void;
+  onCreate?: (option: Option) => void;
+  onReorder?: (value: string[]) => void;
+  onMaximum?: (event: MaximumSelectionEvent) => void;
   className?: string;
 }
 
 /**
  * Mounts a real ForgeSelect instance once and keeps it alive for the
- * component's lifetime. ForgeSelect's own options (`data`, `templateResult`,
- * `plugins`, ...) are constructor-only and not reactive — to apply new
- * options, remount by changing this component's `key` prop. Only `value` is
- * kept in sync after mount.
+ * component's lifetime. `value` and `data` stay synchronized after mount;
+ * templates, plugins, and other constructor options require a remount.
  */
 export function ForgeSelectReact(props: ForgeSelectReactProps) {
-  const { value, onChange, onOpen, onClose, onSearch, onClear, onError, className, ...options } = props;
+  const {
+    value,
+    data,
+    onChange,
+    onOpen,
+    onClose,
+    onSearch,
+    onClear,
+    onError,
+    onSelect,
+    onUnselect,
+    onCreate,
+    onReorder,
+    onMaximum,
+    className,
+    ...options
+  } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<ForgeSelect | null>(null);
   const onChangeRef = useRef(onChange);
@@ -31,6 +50,11 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
   const onSearchRef = useRef(onSearch);
   const onClearRef = useRef(onClear);
   const onErrorRef = useRef(onError);
+  const onSelectRef = useRef(onSelect);
+  const onUnselectRef = useRef(onUnselect);
+  const onCreateRef = useRef(onCreate);
+  const onReorderRef = useRef(onReorder);
+  const onMaximumRef = useRef(onMaximum);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -39,14 +63,19 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     onSearchRef.current = onSearch;
     onClearRef.current = onClear;
     onErrorRef.current = onError;
-  }, [onChange, onOpen, onClose, onSearch, onClear, onError]);
+    onSelectRef.current = onSelect;
+    onUnselectRef.current = onUnselect;
+    onCreateRef.current = onCreate;
+    onReorderRef.current = onReorder;
+    onMaximumRef.current = onMaximum;
+  }, [onChange, onOpen, onClose, onSearch, onClear, onError, onSelect, onUnselect, onCreate, onReorder, onMaximum]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     const mountEl = document.createElement("select");
     container.appendChild(mountEl);
-    const instance = new ForgeSelect(mountEl, options);
+    const instance = new ForgeSelect(mountEl, { ...options, data });
     instanceRef.current = instance;
     if (value !== undefined) instance.setValue(value);
     instance.on("change", (v) => onChangeRef.current?.(v as ForgeSelectValue));
@@ -55,6 +84,11 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     instance.on("search", (q) => onSearchRef.current?.(q as string));
     instance.on("clear", () => onClearRef.current?.());
     instance.on("error", (e) => onErrorRef.current?.(e as Error));
+    instance.on("select", (option) => onSelectRef.current?.(option));
+    instance.on("unselect", (option) => onUnselectRef.current?.(option));
+    instance.on("create", (option) => onCreateRef.current?.(option));
+    instance.on("reorder", (next) => onReorderRef.current?.(next));
+    instance.on("maximum", (event) => onMaximumRef.current?.(event));
 
     return () => {
       instance.destroy();
@@ -70,6 +104,10 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     }
   }, [value]);
 
+  useEffect(() => {
+    if (instanceRef.current && data !== undefined) instanceRef.current.setData(data);
+  }, [data]);
+
   return <div ref={containerRef} className={className} />;
 }
 
@@ -79,9 +117,12 @@ export type {
   AjaxConfig,
   DataItem,
   ForgeSelectEvent,
+  ForgeSelectEventHandler,
+  ForgeSelectEventMap,
   ForgeSelectOptions,
   ForgeSelectPlugin,
   ForgeSelectValue,
+  MaximumSelectionEvent,
   Option,
   OptionGroup,
   SetValueOptions,

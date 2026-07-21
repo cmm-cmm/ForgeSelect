@@ -6,7 +6,7 @@ Core TypeScript lives in `src/`; its public entry point is `src/index.ts`. Compo
 
 ## Build, Test, and Development Commands
 
-Use Node.js 18 or newer and install dependencies with `npm install`.
+Use Node.js 20.19 or newer and install dependencies with `npm install`.
 
 - `npm run typecheck` — run strict TypeScript checks without emitting files.
 - `npm test` — run core Vitest tests once in jsdom.

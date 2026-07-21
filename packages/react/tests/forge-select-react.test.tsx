@@ -60,6 +60,31 @@ describe("ForgeSelectReact", () => {
     expect(container.querySelector(".forge-select__single-value")?.textContent).toBe("B");
   });
 
+  it("updates rendered options when the data prop changes", () => {
+    const { container, root } = mount({ data: [{ value: "a", label: "A" }] });
+    act(() => container.querySelector<HTMLElement>(".forge-select__control")!.click());
+    expect(container.querySelectorAll(".forge-select__option")).toHaveLength(1);
+    act(() => {
+      root.render(
+        createElement(ForgeSelectReact, {
+          data: [
+            { value: "b", label: "B" },
+            { value: "c", label: "C" },
+          ],
+        }),
+      );
+    });
+    expect(container.querySelectorAll(".forge-select__option")).toHaveLength(2);
+  });
+
+  it("forwards detailed selection callbacks", () => {
+    const onSelect = vi.fn();
+    const { container } = mount({ data: [{ value: "a", label: "A" }], onSelect });
+    act(() => container.querySelector<HTMLElement>(".forge-select__control")!.click());
+    act(() => container.querySelector<HTMLElement>(".forge-select__option")!.click());
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ value: "a" }));
+  });
+
   it("does not call onChange for prop synchronization and uses the latest callback", () => {
     const data = [
       { value: "a", label: "A" },

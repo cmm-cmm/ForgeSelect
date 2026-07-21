@@ -10,6 +10,8 @@ export interface Option {
   description?: string;
   /** Arbitrary payload for custom templates; ForgeSelect never reads it. */
   meta?: Record<string, unknown>;
+  /** Extra CSS class(es) applied to this option's rendered <li>. */
+  className?: string;
   /**
    * Nested options, making this a tree node. Purely additive: lists where
    * no option has `children` render and behave exactly as a flat list.
@@ -25,7 +27,13 @@ export interface OptionGroup {
 export type DataItem = Option | OptionGroup;
 
 export interface AjaxConfig {
-  url: string | ((query: string, page: number) => string);
+  /** GET endpoint. Optional when `request` supplies a custom transport. */
+  url?: string | ((query: string, page: number) => string);
+  /**
+   * Custom transport for POST/authenticated/GraphQL requests. Takes precedence
+   * over `url`; the returned payload is passed through `transform`.
+   */
+  request?: (query: string, page: number, signal: AbortSignal) => Promise<unknown>;
   params?: (query: string, page: number) => Record<string, unknown>;
   /** Debounce in milliseconds. Default 250. */
   debounce?: number;
@@ -65,12 +73,55 @@ export interface ForgeSelectOptions {
    * behavior and tag markup are unchanged when this is left off.
    */
   sortable?: boolean;
+  /**
+   * Multi-select only: close the dropdown immediately after each pick
+   * instead of staying open for further selections. Default false —
+   * existing multi-select behavior (stays open) is unchanged.
+   */
+  closeOnSelect?: boolean;
+  /**
+   * Multi-select only: caps the number of selected values. Once reached,
+   * further picks (including via allowCreate) are ignored until one is
+   * removed. Only gates interactive selection — setValue() is not clamped.
+   * Default undefined (no limit).
+   */
+  maxSelections?: number;
   theme?: string;
   disabled?: boolean;
+  /**
+   * Marks the field as required for native form validation. When mounted on
+   * a real <select>, an empty selection blocks form submission and shows
+   * inline invalid styling, mirroring native <select required> behavior.
+   * On a plain-element mount this only sets aria-required (no native form
+   * to hook into). Default false.
+   */
+  required?: boolean;
   data?: DataItem[];
   ajax?: AjaxConfig;
   templateResult?: TemplateFn;
   templateSelection?: TemplateFn;
+  /**
+   * Custom match predicate, replacing the built-in label/description
+   * substring match. Receives the trimmed (not lowercased) query.
+   */
+  filterOption?: (option: Option, query: string) => boolean;
+  /**
+   * Hides results (showing a hint row instead) until the trimmed search
+   * query reaches this length. Also delays ajax requests until the
+   * threshold is met. Default 0 (no gate).
+   */
+  minSearchLength?: number;
+  /**
+   * Hides the search field when a local list contains fewer options than
+   * this threshold. AJAX-backed lists always keep search visible. Default 0.
+   */
+  minResultsForSearch?: number;
+  /**
+   * Dynamically disables an option, in addition to its static `disabled`
+   * field. Re-evaluated on every render, so it can react to external state
+   * (e.g. a quota) without rebuilding `data` via setData().
+   */
+  isOptionDisabled?: (option: Option) => boolean;
   /**
    * false = never virtualize. true or unset = virtualize automatically
    * once the list exceeds ~100 rows.
@@ -80,6 +131,17 @@ export interface ForgeSelectOptions {
   itemHeight?: number;
   language?: string | Record<string, string>;
   plugins?: ForgeSelectPlugin[];
+  /**
+   * Opens the dropdown when the control receives keyboard focus (e.g. via
+   * Tab). Default false — focusing alone still requires Enter/Space/ArrowDown
+   * to open, matching existing behavior.
+   */
+  openOnFocus?: boolean;
+  /**
+   * Optional portal container for the dropdown, useful inside overflow-hidden
+   * modals and drawers. Accepts an element or selector. Default: the root.
+   */
+  dropdownParent?: HTMLElement | string;
 }
 
 export type ForgeSelectValue = string | string[] | null;
@@ -89,4 +151,26 @@ export interface SetValueOptions {
   emitChange?: boolean;
 }
 
-export type ForgeSelectEvent = "change" | "open" | "close" | "search" | "clear" | "error";
+export interface MaximumSelectionEvent {
+  limit: number;
+  option: Option;
+}
+
+export interface ForgeSelectEventMap {
+  change: ForgeSelectValue;
+  open: void;
+  close: void;
+  search: string;
+  clear: void;
+  error: Error;
+  select: Option;
+  unselect: Option;
+  create: Option;
+  reorder: string[];
+  maximum: MaximumSelectionEvent;
+}
+
+export type ForgeSelectEvent = keyof ForgeSelectEventMap;
+export type ForgeSelectEventHandler<E extends ForgeSelectEvent> = ForgeSelectEventMap[E] extends void
+  ? () => void
+  : (payload: ForgeSelectEventMap[E]) => void;

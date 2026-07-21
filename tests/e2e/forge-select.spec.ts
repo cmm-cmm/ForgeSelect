@@ -69,6 +69,56 @@ test("announces the empty state via the live region without introducing violatio
   expect(results.violations).toEqual([]);
 });
 
+test("flips the dropdown above the control when there isn't room below", async ({ page }) => {
+  await loadForgeSelect(
+    page,
+    '<div style="height: 1400px"></div><label for="target">Country</label><select id="target"></select>',
+  );
+  await page.evaluate(() => {
+    const ForgeSelect = window.ForgeSelectBundle.default;
+    new ForgeSelect("#target", {
+      data: [
+        { value: "vn", label: "Vietnam" },
+        { value: "th", label: "Thailand" },
+      ],
+    });
+  });
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+  const control = page.locator(".forge-select__control");
+  await control.click();
+
+  await expect(page.locator(".forge-select")).toHaveClass(/forge-select--drop-up/);
+  const controlBox = await control.boundingBox();
+  const dropdownBox = await page.locator(".forge-select__dropdown").boundingBox();
+  if (!controlBox || !dropdownBox) throw new Error("Geometry was unavailable");
+  expect(dropdownBox.y + dropdownBox.height).toBeLessThanOrEqual(controlBox.y + 1);
+
+  const results = await new AxeBuilder({ page }).include(".forge-select").analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test("portals the dropdown outside an overflow-hidden container", async ({ page }) => {
+  await loadForgeSelect(
+    page,
+    '<div style="height:60px;overflow:hidden"><label for="target">Country</label><select id="target"></select></div>',
+  );
+  await page.evaluate(() => {
+    const ForgeSelect = window.ForgeSelectBundle.default;
+    new ForgeSelect("#target", {
+      dropdownParent: document.body,
+      data: [
+        { value: "vn", label: "Vietnam" },
+        { value: "th", label: "Thailand" },
+      ],
+    });
+  });
+  await page.locator(".forge-select__control").click();
+  await expect(page.locator("body > .forge-select--portal-host .forge-select__dropdown")).toBeVisible();
+  await page.locator("body > .forge-select--portal-host .forge-select__option").first().click();
+  await expect(page.locator(".forge-select__single-value")).toHaveText("Vietnam");
+});
+
 test("supports tree keyboard navigation and exposes expansion state", async ({ page }) => {
   await loadForgeSelect(page);
   await page.evaluate(() => {

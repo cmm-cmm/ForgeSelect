@@ -11,6 +11,8 @@ const locales: Record<string, Strings> = {
     removeItem: "Remove {label}",
     search: "Search",
     reorderHint: "{label}. Press Alt+Left or Alt+Right to reorder.",
+    minSearchLength: "Type {count} or more characters to search",
+    maximumSelected: "Maximum of {count} selections reached",
   },
   vi: {
     noResults: "Không tìm thấy kết quả",
@@ -22,6 +24,8 @@ const locales: Record<string, Strings> = {
     removeItem: "Xóa {label}",
     search: "Tìm kiếm",
     reorderHint: "{label}. Nhấn Alt+Trái hoặc Alt+Phải để sắp xếp lại.",
+    minSearchLength: "Nhập thêm {count} ký tự để tìm kiếm",
+    maximumSelected: "Đã đạt tối đa {count} lựa chọn",
   },
 };
 

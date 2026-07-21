@@ -4,10 +4,8 @@ import type { ForgeSelectOptions, ForgeSelectValue } from "forge-select";
 
 /**
  * Mounts a real ForgeSelect instance once and keeps it alive for the
- * component's lifetime. ForgeSelect's own options (`data`, `templateResult`,
- * `plugins`, ...) are constructor-only and not reactive — to apply new
- * options, force a remount with a different `:key`. Only `modelValue` is
- * kept in sync after mount, following Vue 3's `v-model` convention.
+ * component's lifetime. `modelValue` and `options.data` stay synchronized;
+ * templates, plugins, and other constructor options require a remount.
  */
 export const ForgeSelectVue = defineComponent({
   name: "ForgeSelectVue",
@@ -21,7 +19,20 @@ export const ForgeSelectVue = defineComponent({
       default: undefined,
     },
   },
-  emits: ["update:modelValue", "change", "open", "close", "search", "clear", "error"],
+  emits: [
+    "update:modelValue",
+    "change",
+    "open",
+    "close",
+    "search",
+    "clear",
+    "error",
+    "select",
+    "unselect",
+    "create",
+    "reorder",
+    "maximum",
+  ],
   setup(props, { emit }) {
     const containerRef = ref<HTMLDivElement | null>(null);
     let instance: ForgeSelect | null = null;
@@ -41,6 +52,11 @@ export const ForgeSelectVue = defineComponent({
       instance.on("search", (query) => emit("search", query as string));
       instance.on("clear", () => emit("clear"));
       instance.on("error", (error) => emit("error", error as Error));
+      instance.on("select", (option) => emit("select", option));
+      instance.on("unselect", (option) => emit("unselect", option));
+      instance.on("create", (option) => emit("create", option));
+      instance.on("reorder", (value) => emit("reorder", value));
+      instance.on("maximum", (event) => emit("maximum", event));
     });
 
     onBeforeUnmount(() => {
@@ -55,6 +71,13 @@ export const ForgeSelectVue = defineComponent({
       },
     );
 
+    watch(
+      () => props.options.data,
+      (data) => {
+        if (instance && data !== undefined) instance.setData(data);
+      },
+    );
+
     return () => h("div", { ref: containerRef });
   },
 });
@@ -65,9 +88,12 @@ export type {
   AjaxConfig,
   DataItem,
   ForgeSelectEvent,
+  ForgeSelectEventHandler,
+  ForgeSelectEventMap,
   ForgeSelectOptions,
   ForgeSelectPlugin,
   ForgeSelectValue,
+  MaximumSelectionEvent,
   Option,
   OptionGroup,
   SetValueOptions,

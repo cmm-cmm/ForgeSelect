@@ -6,6 +6,7 @@
   --fs-muted: #6b7280;
   --fs-border: #d1d5db;
   --fs-border-focus: #6366f1;
+  --fs-border-invalid: #dc2626;
   --fs-radius: 8px;
   --fs-dropdown-bg: #ffffff;
   --fs-dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
@@ -30,6 +31,7 @@
   --fs-muted: #6b7280;
   --fs-border: #374151;
   --fs-border-focus: #818cf8;
+  --fs-border-invalid: #f87171;
   --fs-dropdown-bg: #111827;
   --fs-dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   --fs-option-hover-bg: #312e81;
@@ -56,6 +58,10 @@
   outline: none;
   border-color: var(--fs-border-focus);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--fs-border-focus) 25%, transparent);
+}
+
+.forge-select__control--invalid {
+  border-color: var(--fs-border-invalid);
 }
 
 .forge-select--disabled .forge-select__control {
@@ -144,6 +150,23 @@
   border-radius: var(--fs-radius);
   box-shadow: var(--fs-dropdown-shadow);
   overflow: hidden;
+}
+
+.forge-select--drop-up .forge-select__dropdown {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+.forge-select--portal-host {
+  position: fixed;
+  z-index: 1000;
+  min-width: 0;
+}
+
+.forge-select--portal-host .forge-select__dropdown {
+  top: 0;
+  right: 0;
+  bottom: auto;
 }
 
 .forge-select__search {
@@ -269,7 +292,8 @@
 .forge-select__empty,
 .forge-select__error,
 .forge-select__loading,
-.forge-select__loading-more {
+.forge-select__loading-more,
+.forge-select__min-length {
   padding: 10px 12px;
   color: var(--fs-muted);
   text-align: center;

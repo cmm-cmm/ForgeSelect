@@ -4,24 +4,36 @@ export function isGroup(item: DataItem): item is OptionGroup {
   return (item as OptionGroup).options !== undefined;
 }
 
+export type IsDisabled = (option: Option) => boolean;
+const defaultIsDisabled: IsDisabled = (option) => !!option.disabled;
+
 // Disabled descendants are excluded from `navItems` (see buildRows in
 // ForgeSelect.ts) and so can never be toggled back off by the user through
 // the UI — cascading a parent's (de)selection onto them would strand them
 // permanently selected. Their own children remain independently selectable
 // (only the disabled node itself is skipped), matching buildRows' rendering.
-export function collectDescendantValues(option: Option): string[] {
+// `isDisabled` defaults to the static `option.disabled` check so callers that
+// don't pass one keep today's exact behavior; ForgeSelect.ts passes a
+// predicate that also folds in the dynamic `isOptionDisabled` callback.
+export function collectDescendantValues(option: Option, isDisabled: IsDisabled = defaultIsDisabled): string[] {
   if (!option.children) return [];
   const values: string[] = [];
   for (const child of option.children) {
-    if (!child.disabled) values.push(child.value);
-    values.push(...collectDescendantValues(child));
+    if (!isDisabled(child)) values.push(child.value);
+    values.push(...collectDescendantValues(child, isDisabled));
   }
   return values;
 }
 
-export function computeCheckState(option: Option, selected: string[]): "none" | "some" | "all" {
+export function computeCheckState(
+  option: Option,
+  selected: string[],
+  isDisabled: IsDisabled = defaultIsDisabled,
+): "none" | "some" | "all" {
   if (!option.children?.length) return selected.includes(option.value) ? "all" : "none";
-  const states = option.children.filter((child) => !child.disabled).map((child) => computeCheckState(child, selected));
+  const states = option.children
+    .filter((child) => !isDisabled(child))
+    .map((child) => computeCheckState(child, selected, isDisabled));
   if (states.length === 0) return "none";
   if (states.every((state) => state === "all")) return "all";
   if (states.every((state) => state === "none")) return "none";
@@ -44,11 +56,15 @@ export function findOption(items: DataItem[], value: string): Option | undefined
   return undefined;
 }
 
-export function syncTreeAncestors(items: DataItem[], selected: string[]): void {
+export function syncTreeAncestors(
+  items: DataItem[],
+  selected: string[],
+  isDisabled: IsDisabled = defaultIsDisabled,
+): void {
   const sync = (option: Option): void => {
     if (!option.children?.length) return;
     for (const child of option.children) sync(child);
-    const state = computeCheckState(option, selected);
+    const state = computeCheckState(option, selected, isDisabled);
     const index = selected.indexOf(option.value);
     if (state === "all" && index === -1) selected.push(option.value);
     else if (state !== "all" && index !== -1) selected.splice(index, 1);

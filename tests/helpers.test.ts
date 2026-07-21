@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseNativeOptions } from "../src/native-select";
 import { renderOptionContent } from "../src/option-renderer";
+import { computeDropdownPlacement } from "../src/dropdown-position";
 import { buildUrl, normalizeRemoteResult } from "../src/remote";
 import {
   arraysEqual,
@@ -126,5 +127,12 @@ describe("option renderer", () => {
     const htmlContainer = document.createElement("div");
     renderOptionContent(htmlContainer, tree, () => "<strong>HTML</strong>");
     expect(htmlContainer.querySelector("strong")?.textContent).toBe("HTML");
+  });
+});
+
+describe("dropdown positioning", () => {
+  it("computes below and above placements from viewport geometry", () => {
+    expect(computeDropdownPlacement({ top: 10, bottom: 40 }, 200, 800)).toEqual({ dropUp: false, top: 44 });
+    expect(computeDropdownPlacement({ top: 700, bottom: 730 }, 200, 800)).toEqual({ dropUp: true, top: 496 });
   });
 });
