@@ -159,7 +159,7 @@ Write and run Forge Select code in the browser at **<https://forgeselect.konexfo
 | `minResultsForSearch` | `number`                           | `0`         | Hide local search below an option-count threshold   |
 | `isOptionDisabled`    | `(option) => boolean`              | `undefined` | Dynamically disable an option per render            |
 | `virtualScroll`       | `boolean`                          | _(auto)_    | Virtualize the list once it exceeds ~100 rows       |
-| `itemHeight`          | `number`                           | `36`        | Row height in px used by the virtual scroller       |
+| `itemHeight`          | `number \| "auto"`                 | `36`        | Fixed or measured variable-height virtual rows      |
 | `language`            | `string \| Record<string, string>` | `"en"`      | Locale code or a custom string table for i18n       |
 | `plugins`             | `Array<ForgeSelectPlugin>`         | `[]`        | Plugins to register on this instance                |
 | `openOnFocus`         | `boolean`                          | `false`     | Open the dropdown on keyboard focus                 |

@@ -119,6 +119,21 @@ test("portals the dropdown outside an overflow-hidden container", async ({ page 
   await expect(page.locator(".forge-select__single-value")).toHaveText("Vietnam");
 });
 
+test("searches without accents and safely highlights the match", async ({ page }) => {
+  await loadForgeSelect(page, '<select id="city"></select>');
+  await page.evaluate(() => {
+    const ForgeSelect = window.ForgeSelectBundle.default;
+    new ForgeSelect("#city", {
+      highlightSearch: true,
+      data: [{ value: "dn", label: "Đà Nẵng", description: "Thành phố biển" }],
+    });
+  });
+  await page.locator(".forge-select__control").click();
+  await page.locator(".forge-select__search").fill("da bien");
+  await expect(page.locator(".forge-select__option")).toContainText("Đà Nẵng");
+  await expect(page.locator(".forge-select__match")).toHaveText("Đà");
+});
+
 test("supports tree keyboard navigation and exposes expansion state", async ({ page }) => {
   await loadForgeSelect(page);
   await page.evaluate(() => {

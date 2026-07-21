@@ -4,8 +4,8 @@ import type { ForgeSelectOptions, ForgeSelectValue } from "forge-select";
 
 /**
  * Mounts a real ForgeSelect instance once and keeps it alive for the
- * component's lifetime. `modelValue` and `options.data` stay synchronized;
- * templates, plugins, and other constructor options require a remount.
+ * component's lifetime. Runtime-updateable options stay synchronized;
+ * structural mode/plugin/portal changes require a remount.
  */
 export const ForgeSelectVue = defineComponent({
   name: "ForgeSelectVue",
@@ -16,6 +16,14 @@ export const ForgeSelectVue = defineComponent({
     },
     modelValue: {
       type: [String, Array] as PropType<ForgeSelectValue>,
+      default: undefined,
+    },
+    open: {
+      type: Boolean as PropType<boolean | undefined>,
+      default: undefined,
+    },
+    searchQuery: {
+      type: String,
       default: undefined,
     },
   },
@@ -32,6 +40,10 @@ export const ForgeSelectVue = defineComponent({
     "create",
     "reorder",
     "maximum",
+    "update:open",
+    "update:searchQuery",
+    "loading",
+    "invalid",
   ],
   setup(props, { emit }) {
     const containerRef = ref<HTMLDivElement | null>(null);
@@ -43,13 +55,24 @@ export const ForgeSelectVue = defineComponent({
       containerRef.value.appendChild(mountEl);
       instance = new ForgeSelect(mountEl, props.options);
       if (props.modelValue !== undefined) instance.setValue(props.modelValue);
+      if (props.searchQuery !== undefined) instance.setSearchQuery(props.searchQuery, { emitSearch: false });
+      if (props.open) instance.open();
       instance.on("change", (value) => {
         emit("update:modelValue", value as ForgeSelectValue);
         emit("change", value as ForgeSelectValue);
       });
-      instance.on("open", () => emit("open"));
-      instance.on("close", () => emit("close"));
-      instance.on("search", (query) => emit("search", query as string));
+      instance.on("open", () => {
+        emit("open");
+        emit("update:open", true);
+      });
+      instance.on("close", () => {
+        emit("close");
+        emit("update:open", false);
+      });
+      instance.on("search", (query) => {
+        emit("search", query as string);
+        emit("update:searchQuery", query as string);
+      });
       instance.on("clear", () => emit("clear"));
       instance.on("error", (error) => emit("error", error as Error));
       instance.on("select", (option) => emit("select", option));
@@ -57,6 +80,8 @@ export const ForgeSelectVue = defineComponent({
       instance.on("create", (option) => emit("create", option));
       instance.on("reorder", (value) => emit("reorder", value));
       instance.on("maximum", (event) => emit("maximum", event));
+      instance.on("loading", (loading) => emit("loading", loading));
+      instance.on("invalid", (message) => emit("invalid", message));
     });
 
     onBeforeUnmount(() => {
@@ -72,9 +97,32 @@ export const ForgeSelectVue = defineComponent({
     );
 
     watch(
-      () => props.options.data,
-      (data) => {
-        if (instance && data !== undefined) instance.setData(data);
+      () => props.options,
+      (options) => {
+        if (!instance) return;
+        const { multiple, searchable, plugins, dropdownParent, ...updateable } = options;
+        void multiple;
+        void searchable;
+        void plugins;
+        void dropdownParent;
+        instance.updateOptions(updateable);
+      },
+      { deep: true },
+    );
+
+    watch(
+      () => props.open,
+      (open) => {
+        if (!instance || open === undefined) return;
+        if (open) instance.open();
+        else instance.close();
+      },
+    );
+
+    watch(
+      () => props.searchQuery,
+      (query) => {
+        if (instance && query !== undefined) instance.setSearchQuery(query, { emitSearch: false });
       },
     );
 
@@ -91,11 +139,15 @@ export type {
   ForgeSelectEventHandler,
   ForgeSelectEventMap,
   ForgeSelectOptions,
+  ForgeSelectUpdateOptions,
   ForgeSelectPlugin,
   ForgeSelectValue,
   MaximumSelectionEvent,
   Option,
   OptionGroup,
   SetValueOptions,
+  SetSearchQueryOptions,
+  SearchField,
+  SearchScorer,
   TemplateFn,
 } from "forge-select";

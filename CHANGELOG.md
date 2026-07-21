@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-21
+
+### Added
+
+- Runtime `.updateOptions()`, controlled search/open state APIs, and reactive wrapper synchronization.
+- Accent-insensitive token/metadata search, custom scoring, and optional safe match highlighting.
+- Remote query/page caching, retry backoff, prefetch, `loadOnOpen`, `.reload()`, `.clearRemoteCache()`, and `loading` events.
+- Public validation methods and the `invalid` event.
+- Variable-height virtual rows via `itemHeight: "auto"` and an explicit mixed-selection tree indicator.
+
+### Changed
+
+- Search and remote-cache logic now live in focused, directly tested internal modules.
+
 ## [0.4.0] - 2026-07-21
 
 ### Added
@@ -130,7 +144,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.1.0...v0.2.0

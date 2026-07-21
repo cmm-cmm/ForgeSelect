@@ -5,6 +5,8 @@ import type { ForgeSelectOptions, ForgeSelectValue, MaximumSelectionEvent, Optio
 export interface ForgeSelectReactProps extends ForgeSelectOptions {
   /** Controlled value; synced into the instance via `.setValue()` on change. */
   value?: ForgeSelectValue;
+  open?: boolean;
+  searchQuery?: string;
   onChange?: (value: ForgeSelectValue) => void;
   onOpen?: () => void;
   onClose?: () => void;
@@ -16,17 +18,23 @@ export interface ForgeSelectReactProps extends ForgeSelectOptions {
   onCreate?: (option: Option) => void;
   onReorder?: (value: string[]) => void;
   onMaximum?: (event: MaximumSelectionEvent) => void;
+  onOpenChange?: (open: boolean) => void;
+  onSearchChange?: (query: string) => void;
+  onLoading?: (loading: boolean) => void;
+  onInvalid?: (message: string) => void;
   className?: string;
 }
 
 /**
  * Mounts a real ForgeSelect instance once and keeps it alive for the
- * component's lifetime. `value` and `data` stay synchronized after mount;
- * templates, plugins, and other constructor options require a remount.
+ * component's lifetime. Runtime-updateable options stay synchronized;
+ * structural mode/plugin/portal changes require a remount.
  */
 export function ForgeSelectReact(props: ForgeSelectReactProps) {
   const {
     value,
+    open,
+    searchQuery,
     data,
     onChange,
     onOpen,
@@ -39,6 +47,10 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     onCreate,
     onReorder,
     onMaximum,
+    onOpenChange,
+    onSearchChange,
+    onLoading,
+    onInvalid,
     className,
     ...options
   } = props;
@@ -55,6 +67,11 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
   const onCreateRef = useRef(onCreate);
   const onReorderRef = useRef(onReorder);
   const onMaximumRef = useRef(onMaximum);
+  const onOpenChangeRef = useRef(onOpenChange);
+  const onSearchChangeRef = useRef(onSearchChange);
+  const onLoadingRef = useRef(onLoading);
+  const onInvalidRef = useRef(onInvalid);
+  const optionsRef = useRef(options);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -68,7 +85,27 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     onCreateRef.current = onCreate;
     onReorderRef.current = onReorder;
     onMaximumRef.current = onMaximum;
-  }, [onChange, onOpen, onClose, onSearch, onClear, onError, onSelect, onUnselect, onCreate, onReorder, onMaximum]);
+    onOpenChangeRef.current = onOpenChange;
+    onSearchChangeRef.current = onSearchChange;
+    onLoadingRef.current = onLoading;
+    onInvalidRef.current = onInvalid;
+  }, [
+    onChange,
+    onOpen,
+    onClose,
+    onSearch,
+    onClear,
+    onError,
+    onSelect,
+    onUnselect,
+    onCreate,
+    onReorder,
+    onMaximum,
+    onOpenChange,
+    onSearchChange,
+    onLoading,
+    onInvalid,
+  ]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -79,9 +116,18 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     instanceRef.current = instance;
     if (value !== undefined) instance.setValue(value);
     instance.on("change", (v) => onChangeRef.current?.(v as ForgeSelectValue));
-    instance.on("open", () => onOpenRef.current?.());
-    instance.on("close", () => onCloseRef.current?.());
-    instance.on("search", (q) => onSearchRef.current?.(q as string));
+    instance.on("open", () => {
+      onOpenRef.current?.();
+      onOpenChangeRef.current?.(true);
+    });
+    instance.on("close", () => {
+      onCloseRef.current?.();
+      onOpenChangeRef.current?.(false);
+    });
+    instance.on("search", (q) => {
+      onSearchRef.current?.(q as string);
+      onSearchChangeRef.current?.(q as string);
+    });
     instance.on("clear", () => onClearRef.current?.());
     instance.on("error", (e) => onErrorRef.current?.(e as Error));
     instance.on("select", (option) => onSelectRef.current?.(option));
@@ -89,6 +135,8 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     instance.on("create", (option) => onCreateRef.current?.(option));
     instance.on("reorder", (next) => onReorderRef.current?.(next));
     instance.on("maximum", (event) => onMaximumRef.current?.(event));
+    instance.on("loading", (loading) => onLoadingRef.current?.(loading));
+    instance.on("invalid", (message) => onInvalidRef.current?.(message));
 
     return () => {
       instance.destroy();
@@ -108,6 +156,38 @@ export function ForgeSelectReact(props: ForgeSelectReactProps) {
     if (instanceRef.current && data !== undefined) instanceRef.current.setData(data);
   }, [data]);
 
+  useEffect(() => {
+    // The rest-spread `options` object is a new reference every render, so
+    // `[options]` alone would re-run this on every unrelated parent
+    // re-render — clearing render caches and, for a non-virtualized open
+    // dropdown, resetting its scroll position. Only call updateOptions()
+    // when a value actually changed.
+    const previous = optionsRef.current as Record<string, unknown>;
+    const next = options as Record<string, unknown>;
+    optionsRef.current = options;
+    const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
+    let changed = false;
+    for (const key of keys) {
+      if (!Object.is(previous[key], next[key])) {
+        changed = true;
+        break;
+      }
+    }
+    if (changed && instanceRef.current) instanceRef.current.updateOptions(options);
+  }, [options]);
+
+  useEffect(() => {
+    if (!instanceRef.current || open === undefined) return;
+    if (open) instanceRef.current.open();
+    else instanceRef.current.close();
+  }, [open]);
+
+  useEffect(() => {
+    if (instanceRef.current && searchQuery !== undefined) {
+      instanceRef.current.setSearchQuery(searchQuery, { emitSearch: false });
+    }
+  }, [searchQuery]);
+
   return <div ref={containerRef} className={className} />;
 }
 
@@ -120,11 +200,15 @@ export type {
   ForgeSelectEventHandler,
   ForgeSelectEventMap,
   ForgeSelectOptions,
+  ForgeSelectUpdateOptions,
   ForgeSelectPlugin,
   ForgeSelectValue,
   MaximumSelectionEvent,
   Option,
   OptionGroup,
   SetValueOptions,
+  SetSearchQueryOptions,
+  SearchField,
+  SearchScorer,
   TemplateFn,
 } from "forge-select";

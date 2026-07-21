@@ -265,6 +265,18 @@
   background: color-mix(in srgb, var(--fs-option-selected-bg) 50%, transparent);
 }
 
+.forge-select__option--indeterminate::after {
+  content: "−";
+  margin-left: auto;
+  font-weight: 700;
+}
+
+.forge-select__match {
+  padding: 0;
+  color: inherit;
+  background: color-mix(in srgb, var(--fs-border-focus) 22%, transparent);
+}
+
 .forge-select__twisty {
   display: inline-block;
   width: 14px;

@@ -14,6 +14,26 @@ function mountOnBody(
 }
 
 describe("ForgeSelectVue", () => {
+  it("synchronizes runtime options and controlled open/search state", async () => {
+    const options = ref({ placeholder: "Before", theme: "default", data: [{ value: "dn", label: "Đà Nẵng" }] });
+    const open = ref(false);
+    const query = ref("");
+    const Wrapper = defineComponent({
+      setup() {
+        return () => h(ForgeSelectVue, { options: options.value, open: open.value, searchQuery: query.value });
+      },
+    });
+    const { container } = mountOnBody(Wrapper, {});
+    options.value = { ...options.value, placeholder: "After", theme: "dark" };
+    open.value = true;
+    query.value = "da";
+    await nextTick();
+    expect(container.querySelector(".forge-select__placeholder")?.textContent).toBe("After");
+    expect(container.querySelector<HTMLElement>(".forge-select")?.dataset.theme).toBe("dark");
+    expect(container.querySelector<HTMLElement>(".forge-select__dropdown")?.hidden).toBe(false);
+    expect(container.querySelector<HTMLInputElement>(".forge-select__search")?.value).toBe("da");
+  });
+
   it("mounts with default options", () => {
     const { container } = mountOnBody(ForgeSelectVue, {});
     expect(container.querySelector(".forge-select")).not.toBeNull();

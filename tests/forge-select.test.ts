@@ -23,6 +23,151 @@ beforeEach(() => {
   document.body.innerHTML = "";
 });
 
+describe("reactive, search, remote, and validation APIs", () => {
+  it("updates runtime options without remounting", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { placeholder: "Before" });
+    const root = document.querySelector<HTMLElement>(".forge-select")!;
+    select.updateOptions({ placeholder: "After", theme: "dark", disabled: true, required: true });
+    expect(document.querySelector(".forge-select__placeholder")?.textContent).toBe("After");
+    expect(root.dataset.theme).toBe("dark");
+    expect(document.querySelector(".forge-select__control")?.getAttribute("aria-disabled")).toBe("true");
+    expect(document.querySelector(".forge-select__control")?.getAttribute("aria-required")).toBe("true");
+    select.updateOptions({ disabled: false });
+    select.open();
+    expect(select.isDropdownOpen()).toBe(true);
+  });
+
+  it("updates every supported runtime option", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { multiple: true, data: [{ value: "a", label: "A" }] });
+    const template = (option: { label: string }) => option.label;
+    select.updateOptions({
+      data: [{ value: "b", label: "B", meta: { code: "bee" } }],
+      ajax: { request: async () => [] },
+      placeholder: "Choose",
+      clearable: true,
+      allowCreate: true,
+      sortable: true,
+      closeOnSelect: true,
+      maxSelections: 2.8,
+      templateResult: template,
+      templateSelection: template,
+      filterOption: (option) => option.value === "b",
+      searchFields: ["label", "meta.code"],
+      tokenSearch: false,
+      accentInsensitive: false,
+      searchScorer: () => 1,
+      highlightSearch: true,
+      minSearchLength: 2.8,
+      minResultsForSearch: 1.8,
+      isOptionDisabled: () => false,
+      virtualScroll: false,
+      itemHeight: "auto",
+      language: "vi",
+      openOnFocus: true,
+      required: true,
+      theme: "dark",
+    });
+    expect(document.querySelector(".forge-select")?.classList.contains("forge-select--sortable")).toBe(true);
+    expect(document.querySelector<HTMLInputElement>(".forge-select__search")?.getAttribute("aria-label")).toBe(
+      "Tìm kiếm",
+    );
+    select.updateOptions({ maxSelections: undefined, itemHeight: 48, ajax: undefined, required: false });
+    expect(document.querySelector(".forge-select__control")?.hasAttribute("aria-required")).toBe(false);
+    select.open();
+    expect(optionEls()[0].textContent).toContain("B");
+  });
+
+  it("controls the query and performs accent-insensitive token search with highlighting", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      data: [{ value: "dn", label: "Đà Nẵng", description: "Thành phố biển" }],
+      highlightSearch: true,
+    });
+    const onSearch = vi.fn();
+    select.on("search", onSearch);
+    select.open();
+    select.setSearchQuery("da bien");
+    expect(select.getSearchQuery()).toBe("da bien");
+    expect(onSearch).toHaveBeenCalledWith("da bien");
+    expect(optionEls()).toHaveLength(1);
+    expect(document.querySelector(".forge-select__match")?.textContent).toBe("Đà");
+  });
+
+  it("exposes mixed tree state in the rendered row", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      data: [
+        {
+          value: "root",
+          label: "Root",
+          children: [
+            { value: "a", label: "A" },
+            { value: "b", label: "B" },
+          ],
+        },
+      ],
+    });
+    select.setValue(["a"]);
+    select.open();
+    expect(document.querySelector('[data-option-value="root"]')?.getAttribute("data-selection-state")).toBe("mixed");
+  });
+
+  it("provides public required and custom validation", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { required: true, data: [{ value: "a", label: "A" }] });
+    const invalid = vi.fn();
+    select.on("invalid", invalid);
+    expect(select.validate()).toBe(false);
+    expect(select.reportValidity()).toBe(false);
+    expect(invalid).toHaveBeenCalled();
+    select.setValue("a");
+    select.setCustomValidity("Blocked");
+    expect(select.validate()).toBe(false);
+    select.setCustomValidity("");
+    expect(select.validate()).toBe(true);
+  });
+
+  it("caches remote results and reload bypasses the cache", async () => {
+    vi.useFakeTimers();
+    const request = vi.fn(async () => [{ value: "a", label: "A" }]);
+    mountSelect("");
+    const select = new ForgeSelect("#country", { ajax: { request, debounce: 0, cacheTtl: 10000 } });
+    select.open();
+    await vi.runAllTimersAsync();
+    select.setSearchQuery("cached");
+    await vi.runAllTimersAsync();
+    select.setSearchQuery("other");
+    await vi.runAllTimersAsync();
+    select.setSearchQuery("cached");
+    await vi.runAllTimersAsync();
+    expect(request).toHaveBeenCalledTimes(3);
+    select.reload();
+    await vi.runAllTimersAsync();
+    expect(request).toHaveBeenCalledTimes(4);
+    vi.useRealTimers();
+  });
+
+  it("retries failed remote requests and emits loading state", async () => {
+    vi.useFakeTimers();
+    const request = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("temporary"))
+      .mockResolvedValue([{ value: "a", label: "A" }]);
+    mountSelect("");
+    const select = new ForgeSelect("#country", { ajax: { request, retry: 1, retryDelay: 1 } });
+    const loading = vi.fn();
+    select.on("loading", loading);
+    select.open();
+    await vi.runAllTimersAsync();
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(loading).toHaveBeenLastCalledWith(false);
+    vi.useRealTimers();
+  });
+});
+
 describe("initialization", () => {
   it("mounts from a CSS selector and hides the native select", () => {
     const el = mountSelect();

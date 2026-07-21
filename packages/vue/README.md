@@ -45,12 +45,15 @@ const options = {
 - `search` event — emitted with the current search query on every keystroke.
 - `clear` event — emitted when the clear button empties the selection.
 - `error` event — emitted with the `Error` when an `ajax` request fails.
+- `open` / `v-model:open` — controlled dropdown state.
+- `searchQuery` / `v-model:searchQuery` — controlled search query.
+- `loading` / `invalid` — remote lifecycle and validation events.
 
 Updating `modelValue` synchronizes the widget silently; `update:modelValue` and `change` are reserved for user-initiated changes.
 
-## Important limitation
+## Reactive options
 
-`modelValue` and `options.data` are reactive and synchronize silently after mount. Templates, plugins, and other constructor-only options still require a remount with a different `:key`:
+Values, options, search, and open state synchronize after mount. Structural `multiple`, `searchable`, `plugins`, and `dropdownParent` changes require a remount:
 
 ```vue
 <ForgeSelectVue :key="datasetVersion" :options="options" v-model="value" />
