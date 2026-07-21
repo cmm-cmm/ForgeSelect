@@ -37,6 +37,16 @@ export interface AjaxConfig {
   params?: (query: string, page: number) => Record<string, unknown>;
   /** Debounce in milliseconds. Default 250. */
   debounce?: number;
+  /** Load the initial empty query when the dropdown opens. Default true. */
+  loadOnOpen?: boolean;
+  /** Cache successful pages for this many milliseconds. Set 0 to disable. Default 30000. */
+  cacheTtl?: number;
+  /** Number of retries after a failed request. Default 0. */
+  retry?: number;
+  /** Base delay for exponential retry backoff. Default 250ms. */
+  retryDelay?: number;
+  /** Queries to warm in the background after construction. */
+  prefetch?: string[];
   /**
    * Opt in to loading additional pages as the user scrolls near the bottom
    * of the dropdown, instead of only reloading on search. Default false.
@@ -59,6 +69,8 @@ export interface ForgeSelectPlugin {
 }
 
 export type TemplateFn = (option: Option) => string | Node;
+export type SearchField = "label" | "description" | `meta.${string}`;
+export type SearchScorer = (option: Option, query: string, normalizedQuery: string) => number;
 
 export interface ForgeSelectOptions {
   placeholder?: string;
@@ -105,6 +117,16 @@ export interface ForgeSelectOptions {
    * substring match. Receives the trimmed (not lowercased) query.
    */
   filterOption?: (option: Option, query: string) => boolean;
+  /** Fields used by built-in search. Default: label and description. */
+  searchFields?: SearchField[];
+  /** Split the query into tokens which may match across fields. Default true. */
+  tokenSearch?: boolean;
+  /** Match text without case or diacritics. Default true. */
+  accentInsensitive?: boolean;
+  /** Optional relevance scorer. Values <= 0 exclude an option. */
+  searchScorer?: SearchScorer;
+  /** Highlight built-in label matches with <mark>. Default false. */
+  highlightSearch?: boolean;
   /**
    * Hides results (showing a hint row instead) until the trimmed search
    * query reaches this length. Also delays ajax requests until the
@@ -127,8 +149,8 @@ export interface ForgeSelectOptions {
    * once the list exceeds ~100 rows.
    */
   virtualScroll?: boolean;
-  /** Row height in px used by the virtual scroller. Default 36; raise for rich items. */
-  itemHeight?: number;
+  /** Row height in px, or "auto" to measure variable-height rows. Default 36. */
+  itemHeight?: number | "auto";
   language?: string | Record<string, string>;
   plugins?: ForgeSelectPlugin[];
   /**
@@ -151,6 +173,17 @@ export interface SetValueOptions {
   emitChange?: boolean;
 }
 
+export interface SetSearchQueryOptions {
+  /** Emit the `search` event. Default true. */
+  emitSearch?: boolean;
+}
+
+/** Runtime-updateable options. Structural mode/plugin/portal changes still require remounting. */
+export type ForgeSelectUpdateOptions = Omit<
+  Partial<ForgeSelectOptions>,
+  "multiple" | "searchable" | "plugins" | "dropdownParent"
+>;
+
 export interface MaximumSelectionEvent {
   limit: number;
   option: Option;
@@ -163,6 +196,8 @@ export interface ForgeSelectEventMap {
   search: string;
   clear: void;
   error: Error;
+  loading: boolean;
+  invalid: string;
   select: Option;
   unselect: Option;
   create: Option;

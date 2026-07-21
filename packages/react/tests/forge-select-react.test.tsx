@@ -17,6 +17,20 @@ function mount(props: Record<string, unknown>): { container: HTMLDivElement; roo
 }
 
 describe("ForgeSelectReact", () => {
+  it("synchronizes runtime options and controlled open/search state", () => {
+    const data = [{ value: "dn", label: "Đà Nẵng" }];
+    const { container, root } = mount({ data, placeholder: "Before", open: false });
+    act(() => {
+      root.render(
+        createElement(ForgeSelectReact, { data, placeholder: "After", theme: "dark", open: true, searchQuery: "da" }),
+      );
+    });
+    expect(container.querySelector(".forge-select__placeholder")?.textContent).toBe("After");
+    expect(container.querySelector<HTMLElement>(".forge-select")?.dataset.theme).toBe("dark");
+    expect(container.querySelector<HTMLElement>(".forge-select__dropdown")?.hidden).toBe(false);
+    expect(container.querySelector<HTMLInputElement>(".forge-select__search")?.value).toBe("da");
+  });
+
   it("mounts a ForgeSelect instance inside the container", () => {
     const { container } = mount({
       placeholder: "Pick one",

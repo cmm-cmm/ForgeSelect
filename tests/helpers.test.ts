@@ -3,6 +3,8 @@ import { parseNativeOptions } from "../src/native-select";
 import { renderOptionContent } from "../src/option-renderer";
 import { computeDropdownPlacement } from "../src/dropdown-position";
 import { buildUrl, normalizeRemoteResult } from "../src/remote";
+import { RemoteCache } from "../src/remote-cache";
+import { findNormalizedRanges, getSearchField, normalizeSearchText, scoreOption, SearchIndex } from "../src/search";
 import {
   arraysEqual,
   collectDescendantValues,
@@ -134,5 +136,53 @@ describe("dropdown positioning", () => {
   it("computes below and above placements from viewport geometry", () => {
     expect(computeDropdownPlacement({ top: 10, bottom: 40 }, 200, 800)).toEqual({ dropUp: false, top: 44 });
     expect(computeDropdownPlacement({ top: 700, bottom: 730 }, 200, 800)).toEqual({ dropUp: true, top: 496 });
+  });
+});
+
+describe("search and cache helpers", () => {
+  it("normalizes accents and matches tokens across configured fields", () => {
+    const option: Option = {
+      value: "dn",
+      label: "Đà Nẵng",
+      description: "Thành phố biển",
+      meta: { team: { name: "Miền Trung" } },
+    };
+    expect(normalizeSearchText("Đà Nẵng")).toBe("da nang");
+    expect(getSearchField(option, "meta.team.name")).toBe("Miền Trung");
+    expect(
+      scoreOption(option, "da bien", {
+        fields: ["label", "description"],
+        tokenSearch: true,
+        accentInsensitive: true,
+      }),
+    ).toBeGreaterThan(0);
+    expect(findNormalizedRanges(option.label, "nang")).toEqual([[3, 7]]);
+    expect(normalizeSearchText("Á", false)).toBe("á");
+    expect(getSearchField(option, "label")).toBe("Đà Nẵng");
+    expect(getSearchField(option, "description")).toBe("Thành phố biển");
+    expect(getSearchField(option, "meta.missing.value")).toBe("");
+    expect(scoreOption(option, "", { fields: ["label"], tokenSearch: true, accentInsensitive: true })).toBe(1);
+    expect(
+      scoreOption(option, "anything", {
+        fields: ["label"],
+        tokenSearch: false,
+        accentInsensitive: true,
+        scorer: () => 7,
+      }),
+    ).toBe(7);
+    expect(scoreOption(option, "missing", { fields: ["label"], tokenSearch: false, accentInsensitive: true })).toBe(0);
+    expect(findNormalizedRanges(option.label, "")).toEqual([]);
+    const index = new SearchIndex();
+    const config = { fields: ["label"] as const, tokenSearch: true, accentInsensitive: true };
+    expect(index.score(option, "da", { ...config, fields: [...config.fields] })).toBeGreaterThan(0);
+    expect(index.score(option, "missing", { ...config, fields: [...config.fields] })).toBe(0);
+    index.clear();
+  });
+
+  it("expires cached remote pages", () => {
+    const cache = new RemoteCache<string>();
+    cache.set("q", "value", 10, 100);
+    expect(cache.get("q", 109)).toBe("value");
+    expect(cache.get("q", 110)).toBeUndefined();
   });
 });

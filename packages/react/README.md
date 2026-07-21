@@ -46,13 +46,16 @@ function CountryPicker() {
 - `onSearch` — called with the current search query on every keystroke.
 - `onClear` — called when the clear button empties the selection.
 - `onError` — called with the `Error` when an `ajax` request fails.
+- `open` / `onOpenChange` — controlled dropdown state.
+- `searchQuery` / `onSearchChange` — controlled search query.
+- `onLoading` / `onInvalid` — remote lifecycle and validation callbacks.
 - `className` — applied to the wrapper `<div>` Forge Select mounts into.
 
 Updating `value` synchronizes the widget silently; `onChange` is reserved for user-initiated changes.
 
-## Important limitation
+## Reactive options
 
-`value` and `data` are reactive and synchronize silently after mount. Templates, plugins, and other constructor-only options still require a remount with a different `key` prop:
+Values, data, search/open state, templates, theme, validation, search, and other runtime options synchronize after mount. Structural `multiple`, `searchable`, `plugins`, and `dropdownParent` changes require a remount:
 
 ```jsx
 <ForgeSelectReact key={datasetVersion} data={data} />

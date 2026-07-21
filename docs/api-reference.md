@@ -15,33 +15,38 @@ const select = new ForgeSelect(target, options);
 
 ## Options
 
-| Option                | Type                               | Default     | Description                                                                                                                               |
-| --------------------- | ---------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `placeholder`         | `string`                           | `""`        | Text shown when nothing is selected.                                                                                                      |
-| `searchable`          | `boolean`                          | `true`      | Show a search input inside the dropdown.                                                                                                  |
-| `multiple`            | `boolean`                          | `false`     | Allow selecting more than one option.                                                                                                     |
-| `clearable`           | `boolean`                          | `false`     | Show a button to clear the current selection.                                                                                             |
-| `allowCreate`         | `boolean`                          | `false`     | Let the user create a new option from free text (tags mode).                                                                              |
-| `sortable`            | `boolean`                          | `false`     | Multi-select only: let the user reorder selected tags by dragging (mouse/touch/pen), or with `Alt+Left`/`Alt+Right` when a tag has focus. |
-| `closeOnSelect`       | `boolean`                          | `false`     | Multi-select only: close the dropdown immediately after each pick instead of staying open.                                                |
-| `maxSelections`       | `number`                           | `undefined` | Multi-select only: caps the number of selected values; further picks (including `allowCreate`) are ignored once reached.                  |
-| `theme`               | `string`                           | `"default"` | Named theme applied via a `data-theme` attribute / CSS class.                                                                             |
-| `disabled`            | `boolean`                          | `false`     | Render the control as disabled.                                                                                                           |
-| `required`            | `boolean`                          | `false`     | Marks the field as required. On a native `<select>` mount, blocks form submission and shows invalid styling until a value is picked.      |
-| `data`                | `Array<Option \| OptionGroup>`     | `undefined` | Static options, used instead of `<option>` children.                                                                                      |
-| `ajax`                | `AjaxConfig`                       | `undefined` | Remote data source config (`url`, `params`, `debounce`, `pagination`, `transform`).                                                       |
-| `templateResult`      | `(option) => string \| Node`       | `undefined` | Custom renderer for dropdown list items.                                                                                                  |
-| `templateSelection`   | `(option) => string \| Node`       | `undefined` | Custom renderer for the selected value display.                                                                                           |
-| `filterOption`        | `(option, query) => boolean`       | `undefined` | Custom match predicate, replacing the built-in label/description substring match.                                                         |
-| `minSearchLength`     | `number`                           | `0`         | Hides results (with a hint row) until the trimmed query reaches this length; also delays ajax requests until then.                        |
-| `minResultsForSearch` | `number`                           | `0`         | Hides the local-list search field when fewer options exist; AJAX search remains visible.                                                  |
-| `isOptionDisabled`    | `(option) => boolean`              | `undefined` | Dynamically disables an option in addition to its static `disabled` field. Re-evaluated on every render.                                  |
-| `virtualScroll`       | `boolean`                          | _(auto)_    | `true`/unset = virtualize once the list exceeds ~100 rows; `false` = never virtualize.                                                    |
-| `itemHeight`          | `number`                           | `36`        | Row height in px used by the virtual scroller. Raise it (e.g. `52`) for rich items with avatars/descriptions.                             |
-| `language`            | `string \| Record<string, string>` | `"en"`      | Locale code or a custom string table for i18n.                                                                                            |
-| `plugins`             | `Array<ForgeSelectPlugin>`         | `[]`        | Plugins to register on this instance. See the [Plugin Development Guide](./plugin-development.md).                                        |
-| `openOnFocus`         | `boolean`                          | `false`     | Opens the dropdown when the control receives keyboard focus (e.g. via Tab).                                                               |
-| `dropdownParent`      | `HTMLElement \| string`            | `undefined` | Portals the dropdown into a container (commonly `document.body`) to escape overflow-hidden ancestors.                                     |
+| Option                | Type                                    | Default           | Description                                                                                                                               |
+| --------------------- | --------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `placeholder`         | `string`                                | `""`              | Text shown when nothing is selected.                                                                                                      |
+| `searchable`          | `boolean`                               | `true`            | Show a search input inside the dropdown.                                                                                                  |
+| `multiple`            | `boolean`                               | `false`           | Allow selecting more than one option.                                                                                                     |
+| `clearable`           | `boolean`                               | `false`           | Show a button to clear the current selection.                                                                                             |
+| `allowCreate`         | `boolean`                               | `false`           | Let the user create a new option from free text (tags mode).                                                                              |
+| `sortable`            | `boolean`                               | `false`           | Multi-select only: let the user reorder selected tags by dragging (mouse/touch/pen), or with `Alt+Left`/`Alt+Right` when a tag has focus. |
+| `closeOnSelect`       | `boolean`                               | `false`           | Multi-select only: close the dropdown immediately after each pick instead of staying open.                                                |
+| `maxSelections`       | `number`                                | `undefined`       | Multi-select only: caps the number of selected values; further picks (including `allowCreate`) are ignored once reached.                  |
+| `theme`               | `string`                                | `"default"`       | Named theme applied via a `data-theme` attribute / CSS class.                                                                             |
+| `disabled`            | `boolean`                               | `false`           | Render the control as disabled.                                                                                                           |
+| `required`            | `boolean`                               | `false`           | Marks the field as required. On a native `<select>` mount, blocks form submission and shows invalid styling until a value is picked.      |
+| `data`                | `Array<Option \| OptionGroup>`          | `undefined`       | Static options, used instead of `<option>` children.                                                                                      |
+| `ajax`                | `AjaxConfig`                            | `undefined`       | Remote data source config (`url`, `params`, `debounce`, `pagination`, `transform`).                                                       |
+| `templateResult`      | `(option) => string \| Node`            | `undefined`       | Custom renderer for dropdown list items.                                                                                                  |
+| `templateSelection`   | `(option) => string \| Node`            | `undefined`       | Custom renderer for the selected value display.                                                                                           |
+| `filterOption`        | `(option, query) => boolean`            | `undefined`       | Custom match predicate, replacing the built-in label/description substring match.                                                         |
+| `searchFields`        | `SearchField[]`                         | label/description | Fields searched by the built-in scorer, including `meta.*` paths.                                                                         |
+| `tokenSearch`         | `boolean`                               | `true`            | Allows query tokens to match across different fields.                                                                                     |
+| `accentInsensitive`   | `boolean`                               | `true`            | Ignores case and diacritics, including Vietnamese `đ`.                                                                                    |
+| `searchScorer`        | `(option, query, normalized) => number` | `undefined`       | Custom relevance scorer; non-positive values exclude an option.                                                                           |
+| `highlightSearch`     | `boolean`                               | `false`           | Highlights matching label tokens in the built-in renderer.                                                                                |
+| `minSearchLength`     | `number`                                | `0`               | Hides results (with a hint row) until the trimmed query reaches this length; also delays ajax requests until then.                        |
+| `minResultsForSearch` | `number`                                | `0`               | Hides the local-list search field when fewer options exist; AJAX search remains visible.                                                  |
+| `isOptionDisabled`    | `(option) => boolean`                   | `undefined`       | Dynamically disables an option in addition to its static `disabled` field. Re-evaluated on every render.                                  |
+| `virtualScroll`       | `boolean`                               | _(auto)_          | `true`/unset = virtualize once the list exceeds ~100 rows; `false` = never virtualize.                                                    |
+| `itemHeight`          | `number \| "auto"`                      | `36`              | Fixed row height, or measured variable-height virtual rows for rich/custom content.                                                       |
+| `language`            | `string \| Record<string, string>`      | `"en"`            | Locale code or a custom string table for i18n.                                                                                            |
+| `plugins`             | `Array<ForgeSelectPlugin>`              | `[]`              | Plugins to register on this instance. See the [Plugin Development Guide](./plugin-development.md).                                        |
+| `openOnFocus`         | `boolean`                               | `false`           | Opens the dropdown when the control receives keyboard focus (e.g. via Tab).                                                               |
+| `dropdownParent`      | `HTMLElement \| string`                 | `undefined`       | Portals the dropdown into a container (commonly `document.body`) to escape overflow-hidden ancestors.                                     |
 
 ### `Option` shape
 
@@ -126,6 +131,11 @@ interface AjaxConfig {
   request?: (query: string, page: number, signal: AbortSignal) => Promise<unknown>;
   params?: (query: string, page: number) => Record<string, unknown>;
   debounce?: number; // ms, default 250
+  loadOnOpen?: boolean; // default true
+  cacheTtl?: number; // ms, default 30000; 0 disables cache
+  retry?: number; // retries after the first attempt, default 0
+  retryDelay?: number; // exponential-backoff base, default 250ms
+  prefetch?: string[]; // warm query/page-0 cache in the background
   pagination?: boolean; // opt in to loading further pages on scroll; default false
   transform?: (response: unknown) => Option[] | { options: Option[]; hasMore: boolean };
 }
@@ -137,20 +147,29 @@ By default `ajax` replaces the whole list on every search (`transform` returns a
 
 ## Instance methods
 
-| Method                       | Returns                      | Description                                                                                                                              |
-| ---------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `.open()`                    | `void`                       | Opens the dropdown.                                                                                                                      |
-| `.close()`                   | `void`                       | Closes the dropdown.                                                                                                                     |
-| `.destroy()`                 | `void`                       | Removes Forge Select and restores the original element.                                                                                  |
-| `.getValue()`                | `string \| string[] \| null` | Returns the current value(s).                                                                                                            |
-| `.setValue(value, options?)` | `void`                       | Sets the value; `{ emitChange: false }` synchronizes silently.                                                                           |
-| `.setData(data)`             | `void`                       | Replaces the option list, cancels pending AJAX/pagination work, re-renders an open dropdown, and preserves existing selections.          |
-| `.selectAll()`               | `void`                       | Multi-select only: selects every non-disabled option (including tree descendants and grouped options), capped by `maxSelections` if set. |
-| `.clearAll()`                | `void`                       | Clears every selection. Equivalent to `setValue(null)`.                                                                                  |
-| `.enable()`                  | `void`                       | Enables the control.                                                                                                                     |
-| `.disable()`                 | `void`                       | Disables the control.                                                                                                                    |
-| `.on(event, handler)`        | `void`                       | Subscribes to an event (see below).                                                                                                      |
-| `.off(event, handler)`       | `void`                       | Unsubscribes a previously registered handler.                                                                                            |
+| Method                             | Returns                      | Description                                                                                                                              |
+| ---------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `.open()`                          | `void`                       | Opens the dropdown.                                                                                                                      |
+| `.close()`                         | `void`                       | Closes the dropdown.                                                                                                                     |
+| `.destroy()`                       | `void`                       | Removes Forge Select and restores the original element.                                                                                  |
+| `.getValue()`                      | `string \| string[] \| null` | Returns the current value(s).                                                                                                            |
+| `.setValue(value, options?)`       | `void`                       | Sets the value; `{ emitChange: false }` synchronizes silently.                                                                           |
+| `.setData(data)`                   | `void`                       | Replaces the option list, cancels pending AJAX/pagination work, re-renders an open dropdown, and preserves existing selections.          |
+| `.updateOptions(options)`          | `void`                       | Updates non-structural options without remounting or losing state.                                                                       |
+| `.getSearchQuery()`                | `string`                     | Returns the current search query.                                                                                                        |
+| `.setSearchQuery(query, options?)` | `void`                       | Controls search; `{ emitSearch: false }` synchronizes silently.                                                                          |
+| `.isDropdownOpen()`                | `boolean`                    | Returns the current dropdown state.                                                                                                      |
+| `.reload()`                        | `void`                       | Clears the remote cache and reloads the active query.                                                                                    |
+| `.clearRemoteCache()`              | `void`                       | Clears cached AJAX pages.                                                                                                                |
+| `.validate()`                      | `boolean`                    | Applies required/custom validity state and returns validity.                                                                             |
+| `.setCustomValidity(message)`      | `void`                       | Sets or clears a custom validation message.                                                                                              |
+| `.reportValidity()`                | `boolean`                    | Validates, emits `invalid`, and invokes native reporting when available.                                                                 |
+| `.selectAll()`                     | `void`                       | Multi-select only: selects every non-disabled option (including tree descendants and grouped options), capped by `maxSelections` if set. |
+| `.clearAll()`                      | `void`                       | Clears every selection. Equivalent to `setValue(null)`.                                                                                  |
+| `.enable()`                        | `void`                       | Enables the control.                                                                                                                     |
+| `.disable()`                       | `void`                       | Disables the control.                                                                                                                    |
+| `.on(event, handler)`              | `void`                       | Subscribes to an event (see below).                                                                                                      |
+| `.off(event, handler)`             | `void`                       | Unsubscribes a previously registered handler.                                                                                            |
 
 ## Events
 
@@ -167,6 +186,8 @@ By default `ajax` replaces the whole list on every search (`transform` returns a
 | `search`   | `string`                            | Search query changed.                       |
 | `clear`    | _(none)_                            | All selections were cleared through the UI. |
 | `error`    | `Error`                             | Remote loading failed.                      |
+| `loading`  | `boolean`                           | Remote loading state changed.               |
+| `invalid`  | `string`                            | Validation failed with this message.        |
 
 ```js
 select.on("change", (value) => console.log(value));
@@ -185,7 +206,7 @@ The constructor/options/methods/events above are the core `forge-select` API. Of
 | [`forge-select-react`](https://www.npmjs.com/package/forge-select-react) | React     | `value` prop + `onChange` |
 | [`forge-select-vue`](https://www.npmjs.com/package/forge-select-vue)     | Vue 3     | `v-model`                 |
 
-`value`/`modelValue` and `data` are reactive in both wrappers. Templates, plugins, and other constructor-only options require a remount with a different framework `key`; see each package README for details.
+Values, search query, open state, data, and every runtime-updateable option are reactive in both wrappers. Only structural `multiple`, `searchable`, `plugins`, and `dropdownParent` changes require a remount with a different framework `key`.
 
 ## See also
 
