@@ -40,6 +40,8 @@ function CountryPicker() {
 
 - `value` — controlled value (`string | string[] | null`), kept in sync via `.setValue()` whenever it changes.
 - `onChange` — called with the new value on the underlying `change` event.
+- `onSelect` / `onUnselect` / `onCreate` — detailed option-level callbacks.
+- `onReorder` / `onMaximum` — sortable-order and selection-limit callbacks.
 - `onOpen` / `onClose` — called when the dropdown opens/closes.
 - `onSearch` — called with the current search query on every keystroke.
 - `onClear` — called when the clear button empties the selection.
@@ -50,7 +52,7 @@ Updating `value` synchronizes the widget silently; `onChange` is reserved for us
 
 ## Important limitation
 
-Forge Select's own options (`data`, `templateResult`, `templateSelection`, `plugins`, etc.) are read once at construction time and are **not reactive** — the underlying instance is created once when the component mounts and only `value` is synced afterwards. To apply new `data`/templates/plugins, remount the component with a different `key` prop:
+`value` and `data` are reactive and synchronize silently after mount. Templates, plugins, and other constructor-only options still require a remount with a different `key` prop:
 
 ```jsx
 <ForgeSelectReact key={datasetVersion} data={data} />

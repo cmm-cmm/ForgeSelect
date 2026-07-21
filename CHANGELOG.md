@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-21
+
+### Added
+
+- The dropdown now automatically flips above the control when there isn't room below but there is above (recomputed on open and on window resize) — no configuration needed.
+- `.setData(data)` instance method to replace the option list after construction and re-render an already-open dropdown, without a full destroy/remount. A selection whose value isn't in the new data stays selected.
+- `closeOnSelect` and `maxSelections` options for multi-select: close the dropdown after each pick, and/or cap the number of selected values (including via `allowCreate`).
+- `filterOption` custom match predicate and `minSearchLength` to gate filtering/remote loads until a minimum query length is reached.
+- `required` option with native form validation integration: on a native `<select>` mount it blocks form submission and shows inline invalid styling until a value is picked, plus `aria-required`.
+- `isOptionDisabled` callback for dynamically disabling an option per render, and a `className` field on `Option` for custom row styling.
+- `.selectAll()` / `.clearAll()` instance methods for multi-select.
+- Pasting a comma/newline-separated string into the search box in tags mode (`allowCreate` + `multiple`) now creates one tag per value instead of a single tag containing the whole string.
+- `openOnFocus` option to open the dropdown when the control receives keyboard focus.
+- `minResultsForSearch` to hide the search input for small local data sets, and `dropdownParent` to portal the dropdown outside clipping containers.
+- A custom `ajax.request` transport for GraphQL, authenticated clients, and other non-URL remote sources.
+- Typed `select`, `unselect`, `create`, `reorder`, and `maximum` detail events.
+
+### Fixed
+
+- `maxSelections` now evaluates the complete tree cascade before interactive selection, so descendants/ancestors cannot push the result over the configured limit.
+- `setData()` now cancels and invalidates pending AJAX work and pagination state, preventing a stale response from overwriting manually supplied data.
+- `closeOnSelect` now closes after `allowCreate`, and stays open when a pick is rejected by `maxSelections`.
+- Reaching `maxSelections` now disables remaining options and announces the limit through the live region.
+
+### Changed
+
+- The supported Node.js runtime is now 20.19 or newer, matching the development toolchain requirements.
+- React and Vue `data` inputs now update existing instances without remounting.
+- Dropdown placement calculation is isolated in a directly tested internal module.
+- CI now verifies compatibility on Node.js 20.19 and 24 in addition to the primary Node.js 22 job.
+
 ## [0.3.0] - 2026-07-21
 
 ### Added
@@ -99,7 +130,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/cmm-cmm/ForgeSelect/releases/tag/v0.1.0

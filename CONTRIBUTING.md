@@ -4,6 +4,8 @@ Thanks for your interest in contributing! This guide covers everything you need 
 
 ## Development setup
 
+Development requires Node.js 20.19 or newer (matching Vitest, jsdom, and ESLint's supported runtime).
+
 ```bash
 git clone https://github.com/cmm-cmm/ForgeSelect.git
 cd ForgeSelect

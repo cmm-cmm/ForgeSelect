@@ -39,6 +39,8 @@ const options = {
 - `options` — a single object bundling every [`ForgeSelectOptions`](https://forgeselect.konexforge.com/docs/api-reference.html) field (`placeholder`, `data`, `multiple`, `ajax`, `templateResult`, `plugins`, ...).
 - `modelValue` / `v-model` — controlled value (`string | string[] | null`), kept in sync via `.setValue()` whenever it changes.
 - `change` event — also emitted alongside `update:modelValue`, carrying the same value, for consumers not using `v-model`.
+- `select` / `unselect` / `create` — detailed option-level events.
+- `reorder` / `maximum` — sortable-order and selection-limit events.
 - `open` / `close` events — emitted when the dropdown opens/closes.
 - `search` event — emitted with the current search query on every keystroke.
 - `clear` event — emitted when the clear button empties the selection.
@@ -48,7 +50,7 @@ Updating `modelValue` synchronizes the widget silently; `update:modelValue` and 
 
 ## Important limitation
 
-`options` is read once when the underlying Forge Select instance is created and is **not reactive** — changing `data`, `templateResult`, `plugins`, etc. after mount has no effect on the existing instance. To apply new options, force a remount with a different `:key`:
+`modelValue` and `options.data` are reactive and synchronize silently after mount. Templates, plugins, and other constructor-only options still require a remount with a different `:key`:
 
 ```vue
 <ForgeSelectVue :key="datasetVersion" :options="options" v-model="value" />

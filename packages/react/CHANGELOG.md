@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-21
+
+### Added
+
+- `onSelect`, `onUnselect`, `onCreate`, `onReorder`, and `onMaximum` detail callbacks.
+
+### Changed
+
+- The `data` prop now updates the existing Forge Select instance without remounting it. Requires `forge-select` 0.4.0 or newer (bumped the `forge-select` dependency accordingly).
+
 ## [0.2.0] - 2026-07-21
 
 ### Added
@@ -24,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `ForgeSelectReact` component wrapping the `forge-select` core library, with controlled `value`/`onChange` support.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.2.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.3.0...HEAD
+[0.3.0]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.2.0...react-v0.3.0
 [0.2.0]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.1.0...react-v0.2.0
 [0.1.0]: https://github.com/cmm-cmm/ForgeSelect/releases/tag/react-v0.1.0

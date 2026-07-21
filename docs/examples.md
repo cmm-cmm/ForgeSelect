@@ -83,6 +83,8 @@ new ForgeSelect("#skills", {
 });
 ```
 
+Pasting a comma- or newline-separated string into the search box (e.g. `"React, Vue, Svelte"`) creates one tag per value instead of a single tag containing the whole string. A pasted value that exactly matches an existing option's label selects that option rather than creating a duplicate. A single pasted value with no separator is unaffected and goes into the search box as usual.
+
 ## Custom templates
 
 ```js
@@ -223,7 +225,7 @@ function CountrySelect() {
 }
 ```
 
-`data`, `templateResult`, `plugins`, and other constructor-only options are read once at mount; remount with a different `key` to change them. See the [package README](https://github.com/cmm-cmm/ForgeSelect/blob/main/packages/react/README.md) for the full prop reference.
+`value` and `data` update reactively. Remount with a different `key` only when changing templates, plugins, or other constructor-only options. See the [package README](https://github.com/cmm-cmm/ForgeSelect/blob/main/packages/react/README.md) for the full prop reference.
 
 If you'd rather not add the extra dependency, mount the core library directly:
 
@@ -278,7 +280,7 @@ const options = {
 </template>
 ```
 
-`options` is read once when the instance is created; force a remount with a different `:key` to apply new `data`/templates/plugins. See the [package README](https://github.com/cmm-cmm/ForgeSelect/blob/main/packages/vue/README.md) for the full reference.
+`modelValue` and `options.data` update reactively. Force a remount with a different `:key` only for templates, plugins, or other constructor-only options. See the [package README](https://github.com/cmm-cmm/ForgeSelect/blob/main/packages/vue/README.md) for the full reference.
 
 If you'd rather not add the extra dependency, mount the core library directly:
 

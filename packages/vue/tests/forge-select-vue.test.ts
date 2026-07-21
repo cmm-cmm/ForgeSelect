@@ -74,6 +74,35 @@ describe("ForgeSelectVue", () => {
     expect(container.querySelector(".forge-select__single-value")?.textContent).toBe("B");
   });
 
+  it("updates rendered options when options.data changes", async () => {
+    const data = ref([{ value: "a", label: "A" }]);
+    const Wrapper = defineComponent({
+      setup() {
+        return () => h(ForgeSelectVue, { options: { data: data.value } });
+      },
+    });
+    const { container } = mountOnBody(Wrapper, {});
+    container.querySelector<HTMLElement>(".forge-select__control")!.click();
+    expect(container.querySelectorAll(".forge-select__option")).toHaveLength(1);
+    data.value = [
+      { value: "b", label: "B" },
+      { value: "c", label: "C" },
+    ];
+    await nextTick();
+    expect(container.querySelectorAll(".forge-select__option")).toHaveLength(2);
+  });
+
+  it("forwards detailed selection events", () => {
+    const onSelect = vi.fn();
+    const { container } = mountOnBody(ForgeSelectVue, {
+      options: { data: [{ value: "a", label: "A" }] },
+      onSelect,
+    });
+    container.querySelector<HTMLElement>(".forge-select__control")!.click();
+    container.querySelector<HTMLElement>(".forge-select__option")!.click();
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ value: "a" }));
+  });
+
   it("ignores a modelValue change to undefined instead of clearing the selection", async () => {
     const modelValue = ref<string | undefined>("a");
     const Wrapper = defineComponent({

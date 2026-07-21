@@ -1,6 +1,6 @@
 {
   "name": "forge-select",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A modern, lightweight, highly customizable replacement for Select2.",
   "keywords": [
     "select",
@@ -22,7 +22,7 @@
     "url": "git+https://github.com/cmm-cmm/ForgeSelect.git"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19"
   },
   "publishConfig": {
     "access": "public"

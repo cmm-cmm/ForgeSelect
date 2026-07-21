@@ -13,28 +13,30 @@ Select2 has served the ecosystem well, but it depends on jQuery and predates mod
 
 ## Option mapping
 
-| Select2 option                                   | Forge Select option                    | Notes                                                                                                    |
-| ------------------------------------------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `placeholder`                                    | `placeholder`                          | Same meaning.                                                                                            |
-| `multiple` (on the `<select>` element)           | `multiple`                             | Forge Select takes it as an explicit option instead of relying on the native `multiple` attribute alone. |
-| `allowClear`                                     | `clearable`                            | Same meaning.                                                                                            |
-| `tags: true`                                     | `allowCreate: true` + `multiple: true` | Split into two explicit flags.                                                                           |
-| `ajax`                                           | `ajax`                                 | Shape differs — see [API Reference](./api-reference.md#ajaxconfig-shape).                                |
-| `templateResult`                                 | `templateResult`                       | Same purpose, may return a string or a DOM node.                                                         |
-| `templateSelection`                              | `templateSelection`                    | Same purpose.                                                                                            |
-| `theme`                                          | `theme`                                | Forge Select ships CSS-variable-based themes instead of a bundled theme name registry.                   |
-| `language`                                       | `language`                             | Accepts a locale code or a custom string table.                                                          |
-| `minimumInputLength` / `minimumResultsForSearch` | _(planned)_                            | Not yet available; track in the [Roadmap](../README.md#roadmap).                                         |
+| Select2 option                         | Forge Select option                    | Notes                                                                                                    |
+| -------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `placeholder`                          | `placeholder`                          | Same meaning.                                                                                            |
+| `multiple` (on the `<select>` element) | `multiple`                             | Forge Select takes it as an explicit option instead of relying on the native `multiple` attribute alone. |
+| `allowClear`                           | `clearable`                            | Same meaning.                                                                                            |
+| `tags: true`                           | `allowCreate: true` + `multiple: true` | Split into two explicit flags.                                                                           |
+| `ajax`                                 | `ajax`                                 | Shape differs — see [API Reference](./api-reference.md#ajaxconfig-shape).                                |
+| `templateResult`                       | `templateResult`                       | Same purpose, may return a string or a DOM node.                                                         |
+| `templateSelection`                    | `templateSelection`                    | Same purpose.                                                                                            |
+| `theme`                                | `theme`                                | Forge Select ships CSS-variable-based themes instead of a bundled theme name registry.                   |
+| `language`                             | `language`                             | Accepts a locale code or a custom string table.                                                          |
+| `minimumInputLength`                   | `minSearchLength`                      | Gates local filtering and remote requests until the query is long enough.                                |
+| `minimumResultsForSearch`              | `minResultsForSearch`                  | Hides local search below an option-count threshold.                                                      |
 
 ## Event mapping
 
-| Select2 event                         | Forge Select event |
-| ------------------------------------- | ------------------ |
-| `select2:select` / `select2:unselect` | `change`           |
-| `select2:open`                        | `open`             |
-| `select2:close`                       | `close`            |
-| _(no direct equivalent)_              | `search`           |
-| _(no direct equivalent)_              | `clear`            |
+| Select2 event            | Forge Select event |
+| ------------------------ | ------------------ |
+| `select2:select`         | `select`           |
+| `select2:unselect`       | `unselect`         |
+| `select2:open`           | `open`             |
+| `select2:close`          | `close`            |
+| _(no direct equivalent)_ | `search`           |
+| _(no direct equivalent)_ | `clear`            |
 
 ## Method mapping
 

@@ -147,6 +147,34 @@ describe("open/close and events", () => {
   });
 });
 
+describe("openOnFocus", () => {
+  it("does not open on focus alone by default", () => {
+    mountSelect();
+    new ForgeSelect("#country");
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    control.dispatchEvent(new FocusEvent("focus"));
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(true);
+  });
+
+  it("opens the dropdown when focused via keyboard (no preceding mousedown)", () => {
+    mountSelect();
+    new ForgeSelect("#country", { openOnFocus: true });
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    control.dispatchEvent(new FocusEvent("focus"));
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(false);
+  });
+
+  it("does not double-toggle on a full mouse click (mousedown -> focus -> click)", () => {
+    mountSelect();
+    new ForgeSelect("#country", { openOnFocus: true });
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    control.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    control.dispatchEvent(new FocusEvent("focus"));
+    control.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(false);
+  });
+});
+
 describe("selection", () => {
   it("selects an option on click, closes, and emits change", () => {
     const el = mountSelect();
@@ -231,6 +259,233 @@ describe("selection", () => {
 
     expect(cleared).toHaveBeenCalledOnce();
     expect(select.getValue()).toBeNull();
+  });
+});
+
+describe("closeOnSelect and maxSelections", () => {
+  it("leaves the dropdown open after a pick by default", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true });
+    select.open();
+    optionEls()[0].click();
+    expect(select.getValue()).toEqual(["vn"]);
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(false);
+  });
+
+  it("closes the dropdown after each pick when closeOnSelect is true", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, closeOnSelect: true });
+    select.open();
+    optionEls()[0].click();
+    expect(select.getValue()).toEqual(["vn"]);
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(true);
+
+    select.open();
+    optionEls()[0].click();
+    expect(select.getValue()).toEqual([]);
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(true);
+  });
+
+  it("ignores further selections once maxSelections is reached, but allows removing a tag first", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, maxSelections: 2 });
+    select.open();
+    optionEls()[0].click();
+    optionEls()[1].click();
+    optionEls()[2].click();
+    expect(select.getValue()).toEqual(["vn", "jp"]);
+
+    document.querySelector<HTMLElement>(".forge-select__tag-remove")!.click();
+    select.open();
+    optionEls()[2].click();
+    expect(select.getValue()).toEqual(["jp", "us"]);
+  });
+
+  it("blocks creating a new tag via allowCreate once maxSelections is reached", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, allowCreate: true, maxSelections: 1 });
+    select.setValue(["vn"]);
+    select.open();
+    const search = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    search.value = "brand new";
+    search.dispatchEvent(new Event("input"));
+    const createRow = document.querySelector<HTMLElement>(".forge-select__option--create");
+    createRow?.click();
+    expect(select.getValue()).toEqual(["vn"]);
+  });
+
+  it("does not exceed maxSelections when a tree node cascades to descendants", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      maxSelections: 2,
+      data: [
+        {
+          value: "parent",
+          label: "Parent",
+          children: [
+            { value: "a", label: "A" },
+            { value: "b", label: "B" },
+          ],
+        },
+      ],
+    });
+    select.open();
+    optionEls()[0].click();
+    expect(select.getValue()).toEqual([]);
+  });
+
+  it("keeps the dropdown open when maxSelections rejects a pick", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, closeOnSelect: true, maxSelections: 1 });
+    select.setValue(["vn"]);
+    select.open();
+    optionEls()[1].click();
+    expect(select.getValue()).toEqual(["vn"]);
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(false);
+  });
+
+  it("closes after allowCreate creates a tag when closeOnSelect is true", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, allowCreate: true, closeOnSelect: true });
+    select.open();
+    const search = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    search.value = "brand new";
+    search.dispatchEvent(new Event("input"));
+    document.querySelector<HTMLElement>(".forge-select__option--create")!.click();
+    expect(select.getValue()).toEqual(["brand new"]);
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(true);
+  });
+});
+
+describe("selectAll and clearAll", () => {
+  it("selects every option in a flat multi-select list", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true });
+    select.selectAll();
+    expect(select.getValue()).toEqual(["vn", "jp", "us"]);
+  });
+
+  it("is a no-op on single-select", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    select.selectAll();
+    expect(select.getValue()).toBeNull();
+  });
+
+  it("skips a disabled descendant and marks the parent indeterminate rather than all", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      data: [
+        {
+          value: "fruits",
+          label: "Fruits",
+          children: [
+            { value: "apple", label: "Apple" },
+            { value: "banana", label: "Banana", disabled: true },
+          ],
+        },
+      ],
+    });
+    select.selectAll();
+    expect(select.getValue()).toEqual(["fruits", "apple"]);
+  });
+
+  it("stops at the maxSelections cap", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, maxSelections: 2 });
+    select.selectAll();
+    expect(select.getValue()).toHaveLength(2);
+  });
+
+  it("clearAll empties the value and emits change", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true });
+    select.setValue(["vn", "jp"]);
+    const changed = vi.fn();
+    select.on("change", changed);
+    select.clearAll();
+    expect(select.getValue()).toEqual([]);
+    expect(changed).toHaveBeenCalledWith([]);
+  });
+});
+
+describe("setData", () => {
+  it("replaces the option list; opening afterward shows only the new data", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    select.setData([{ value: "x", label: "Xylophone" }]);
+    select.open();
+    expect(optionEls()).toHaveLength(1);
+    expect(optionEls()[0].textContent).toContain("Xylophone");
+  });
+
+  it("re-renders an already-open dropdown immediately", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    select.open();
+    expect(optionEls()).toHaveLength(3);
+    select.setData([{ value: "x", label: "Xylophone" }]);
+    expect(optionEls()).toHaveLength(1);
+  });
+
+  it("keeps a selection whose value is no longer in the new data", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    select.setValue("jp");
+    select.setData([{ value: "x", label: "Xylophone" }]);
+    expect(select.getValue()).toBe("jp");
+    expect(document.querySelector(".forge-select__single-value")?.textContent).toBe("Japan");
+  });
+
+  it("does not emit change or open a closed dropdown", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    const changed = vi.fn();
+    select.on("change", changed);
+    select.setData([{ value: "x", label: "Xylophone" }]);
+    expect(changed).not.toHaveBeenCalled();
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(true);
+  });
+
+  it("prevents a pending ajax response from overwriting manually supplied data", async () => {
+    vi.useFakeTimers();
+    let resolveFetch!: (response: { ok: boolean; json: () => Promise<unknown> }) => void;
+    const fetchMock = vi.fn(
+      () =>
+        new Promise<{ ok: boolean; json: () => Promise<unknown> }>((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    mountSelect();
+    const select = new ForgeSelect("#country", { ajax: { url: "/api", debounce: 0 } });
+    select.open();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchMock).toHaveBeenCalledOnce();
+
+    select.setData([{ value: "manual", label: "Manual" }]);
+    resolveFetch({ ok: true, json: async () => [{ value: "remote", label: "Remote" }] });
+    await vi.runAllTimersAsync();
+    await Promise.resolve();
+
+    expect(optionEls().map((option) => option.textContent)).toEqual(["Manual"]);
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("treats setData as loaded data instead of fetching on the next open", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    mountSelect();
+    const select = new ForgeSelect("#country", { ajax: { url: "/api", debounce: 0 } });
+    select.setData([{ value: "manual", label: "Manual" }]);
+    select.open();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(optionEls().map((option) => option.textContent)).toEqual(["Manual"]);
+    vi.unstubAllGlobals();
   });
 });
 
@@ -368,6 +623,79 @@ describe("search", () => {
   });
 });
 
+describe("filterOption and minSearchLength", () => {
+  it("uses a custom match predicate instead of the built-in label/description match", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      data: [
+        { value: "a", label: "Alpha", meta: { tag: "fruit" } },
+        { value: "b", label: "Beta", meta: { tag: "veg" } },
+      ],
+      filterOption: (option, query) => option.meta?.tag === query,
+    });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "fruit";
+    input.dispatchEvent(new Event("input"));
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha"]);
+  });
+
+  it("shows a hint row and skips filtering below minSearchLength", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { minSearchLength: 3 });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "ja";
+    input.dispatchEvent(new Event("input"));
+    expect(document.querySelector(".forge-select__min-length")?.textContent).toBe(
+      "Type 3 or more characters to search",
+    );
+    expect(document.querySelector(".forge-select__sr-only")?.textContent).toBe("Type 3 or more characters to search");
+
+    input.value = "jap";
+    input.dispatchEvent(new Event("input"));
+    expect(document.querySelector(".forge-select__min-length")).toBeNull();
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Japan"]);
+  });
+
+  it("does not call ajax below minSearchLength, and aborts an in-flight request when backing under it", async () => {
+    vi.useFakeTimers();
+    let aborted = false;
+    const fetchMock = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
+      init?.signal?.addEventListener("abort", () => {
+        aborted = true;
+      });
+      return new Promise(() => {});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    mountSelect("");
+    new ForgeSelect("#country", {
+      minSearchLength: 3,
+      ajax: { url: "/api", debounce: 0 },
+    });
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    document.querySelector<HTMLElement>(".forge-select__control")!.click();
+
+    input.value = "ja";
+    input.dispatchEvent(new Event("input"));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    input.value = "jap";
+    input.dispatchEvent(new Event("input"));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchMock).toHaveBeenCalledOnce();
+
+    input.value = "ja";
+    input.dispatchEvent(new Event("input"));
+    expect(aborted).toBe(true);
+
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+});
+
 describe("allowCreate (tags mode)", () => {
   it("creates a new option from the query", () => {
     mountSelect();
@@ -383,6 +711,66 @@ describe("allowCreate (tags mode)", () => {
     createRow.click();
 
     expect(select.getValue()).toEqual(["Wakanda"]);
+  });
+});
+
+describe("paste-splitting tags", () => {
+  function pasteText(input: HTMLInputElement, text: string): void {
+    const event = new Event("paste", { cancelable: true, bubbles: true });
+    Object.defineProperty(event, "clipboardData", { value: { getData: () => text } });
+    input.dispatchEvent(event);
+  }
+
+  it("splits a comma-separated paste into multiple tags", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, allowCreate: true });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    pasteText(input, "a, b, c");
+    expect(select.getValue()).toEqual(["a", "b", "c"]);
+  });
+
+  it("splits newline-separated values too", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, allowCreate: true });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    pasteText(input, "a\nb");
+    expect(select.getValue()).toEqual(["a", "b"]);
+  });
+
+  it("does not intercept a single pasted value", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, allowCreate: true });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    const event = new Event("paste", { cancelable: true, bubbles: true });
+    Object.defineProperty(event, "clipboardData", { value: { getData: () => "solo" } });
+    input.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+    expect(select.getValue()).toEqual([]);
+  });
+
+  it("selects an existing option instead of creating a duplicate when the label matches exactly", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      allowCreate: true,
+      data: [{ value: "vn", label: "Vietnam" }],
+    });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    pasteText(input, "Vietnam, Laos");
+    expect(select.getValue()).toEqual(["vn", "Laos"]);
+  });
+
+  it("respects maxSelections mid-paste", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, allowCreate: true, maxSelections: 2 });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    pasteText(input, "a, b, c");
+    expect(select.getValue()).toEqual(["a", "b"]);
   });
 });
 
@@ -565,6 +953,66 @@ describe("tree select", () => {
   });
 });
 
+describe("isOptionDisabled and className", () => {
+  it("prevents selecting a dynamically-disabled option and skips it in keyboard nav", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", {
+      isOptionDisabled: (option) => option.value === "jp",
+    });
+    select.open();
+
+    const jpLi = optionEls().find((li) => li.textContent === "Japan")!;
+    expect(jpLi.classList.contains("forge-select__option--disabled")).toBe(true);
+    jpLi.click();
+    expect(select.getValue()).toBeNull();
+
+    const search = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    search.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(document.querySelector(".forge-select__option--highlighted")?.textContent).toBe("Vietnam");
+    search.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    // Japan is skipped entirely (excluded from nav items), landing straight on United States.
+    expect(document.querySelector(".forge-select__option--highlighted")?.textContent).toBe("United States");
+  });
+
+  it("does not cascade-select a dynamically-disabled tree descendant", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      isOptionDisabled: (option) => option.value === "banana",
+      data: [
+        {
+          value: "fruits",
+          label: "Fruits",
+          children: [
+            { value: "apple", label: "Apple" },
+            { value: "banana", label: "Banana" },
+          ],
+        },
+      ],
+    });
+    select.open();
+
+    const fruitsLi = optionEls().find((li) => li.textContent?.includes("Fruits"))!;
+    fruitsLi.click();
+    expect(select.getValue()).toEqual(["fruits", "apple"]);
+    const fruitsLiAfter = optionEls().find((li) => li.textContent?.includes("Fruits"))!;
+    expect(fruitsLiAfter.classList.contains("forge-select__option--indeterminate")).toBe(false);
+    expect(fruitsLiAfter.classList.contains("forge-select__option--selected")).toBe(true);
+  });
+
+  it("renders a custom className on the option's <li>", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      data: [{ value: "a", label: "A", className: "custom-row highlight" }],
+    });
+    select.open();
+    const li = optionEls()[0];
+    expect(li.classList.contains("custom-row")).toBe(true);
+    expect(li.classList.contains("highlight")).toBe(true);
+    expect(li.classList.contains("forge-select__option")).toBe(true);
+  });
+});
+
 describe("keyboard navigation", () => {
   it("navigates with arrows and selects with Enter", () => {
     mountSelect();
@@ -614,6 +1062,73 @@ describe("keyboard navigation", () => {
   });
 });
 
+describe("dropdown positioning", () => {
+  function rect(top: number, bottom: number): DOMRect {
+    return {
+      top,
+      bottom,
+      left: 0,
+      right: 200,
+      width: 200,
+      height: bottom - top,
+      x: 0,
+      y: top,
+      toJSON() {},
+    } as DOMRect;
+  }
+
+  function stubLayout(controlRect: DOMRect, dropdownHeight: number, innerHeight = 768): HTMLElement {
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    const dropdown = document.querySelector<HTMLElement>(".forge-select__dropdown")!;
+    control.getBoundingClientRect = () => controlRect;
+    Object.defineProperty(dropdown, "offsetHeight", { value: dropdownHeight, configurable: true });
+    Object.defineProperty(window, "innerHeight", { value: innerHeight, configurable: true, writable: true });
+    return control;
+  }
+
+  function isFlipped(): boolean {
+    return !!document.querySelector(".forge-select")?.classList.contains("forge-select--drop-up");
+  }
+
+  it("flips above the control when there isn't room below", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    stubLayout(rect(700, 730), 300);
+    select.open();
+    expect(isFlipped()).toBe(true);
+  });
+
+  it("leaves the dropdown below the control when there's ample room", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    stubLayout(rect(10, 40), 300);
+    select.open();
+    expect(isFlipped()).toBe(false);
+  });
+
+  it("recomputes the flip on window resize while open", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    const control = stubLayout(rect(700, 730), 300);
+    select.open();
+    expect(isFlipped()).toBe(true);
+
+    control.getBoundingClientRect = () => rect(10, 40);
+    window.dispatchEvent(new Event("resize"));
+    expect(isFlipped()).toBe(false);
+  });
+
+  it("removes the drop-up class on close", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country");
+    stubLayout(rect(700, 730), 300);
+    select.open();
+    expect(isFlipped()).toBe(true);
+    select.close();
+    expect(isFlipped()).toBe(false);
+  });
+});
+
 describe("enable/disable", () => {
   it("does not open while disabled and reopens after enable", () => {
     mountSelect();
@@ -624,6 +1139,39 @@ describe("enable/disable", () => {
     select.enable();
     select.open();
     expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(false);
+  });
+});
+
+describe("required", () => {
+  it("sets aria-required on the control", () => {
+    mountSelect();
+    new ForgeSelect("#country", { required: true });
+    expect(document.querySelector(".forge-select__control")?.getAttribute("aria-required")).toBe("true");
+  });
+
+  it("shows invalid styling and opens the dropdown when the native select fires invalid", () => {
+    const el = mountSelect();
+    el.required = true;
+    new ForgeSelect(el);
+    el.dispatchEvent(new Event("invalid", { cancelable: true }));
+
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    expect(control.classList.contains("forge-select__control--invalid")).toBe(true);
+    expect(control.getAttribute("aria-invalid")).toBe("true");
+    expect(document.querySelector<HTMLElement>(".forge-select__dropdown")!.hidden).toBe(false);
+  });
+
+  it("clears invalid styling once a valid selection is made", () => {
+    const el = mountSelect();
+    el.required = true;
+    const select = new ForgeSelect(el);
+    el.dispatchEvent(new Event("invalid", { cancelable: true }));
+
+    select.setValue("jp");
+
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    expect(control.classList.contains("forge-select__control--invalid")).toBe(false);
+    expect(control.hasAttribute("aria-invalid")).toBe(false);
   });
 });
 
@@ -1059,5 +1607,129 @@ describe("destroy", () => {
     expect(document.querySelector(".forge-select")).toBeNull();
     expect(el.style.display).toBe("inline-block");
     expect(el.disabled).toBe(true);
+  });
+});
+
+describe("advanced API integrations", () => {
+  it("keeps selectAll within maxSelections for cascading tree nodes", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      maxSelections: 2,
+      data: [
+        {
+          value: "parent",
+          label: "Parent",
+          children: [
+            { value: "a", label: "A" },
+            { value: "b", label: "B" },
+          ],
+        },
+      ],
+    });
+    select.selectAll();
+    expect((select.getValue() as string[]).length).toBeLessThanOrEqual(2);
+  });
+
+  it("disables remaining rows and announces/emits the maximum", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, maxSelections: 1 });
+    const maximum = vi.fn();
+    select.on("maximum", maximum);
+    select.open();
+    optionEls()[0].click();
+    expect(document.querySelector(".forge-select__sr-only")?.textContent).toContain("1");
+    const blocked = optionEls()[1];
+    expect(blocked.getAttribute("aria-disabled")).toBe("true");
+    blocked.click();
+    expect(maximum).toHaveBeenCalledWith(expect.objectContaining({ limit: 1 }));
+  });
+
+  it("normalizes fractional maxSelections and treats invalid numbers as unlimited", () => {
+    mountSelect();
+    const capped = new ForgeSelect("#country", { multiple: true, maxSelections: 1.9 });
+    capped.selectAll();
+    expect(capped.getValue()).toHaveLength(1);
+    capped.destroy();
+
+    const unlimited = new ForgeSelect("#country", { multiple: true, maxSelections: Number.NaN });
+    unlimited.selectAll();
+    expect(unlimited.getValue()).toHaveLength(3);
+  });
+
+  it("hides local search below minResultsForSearch and reacts to setData", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      minResultsForSearch: 3,
+      data: [
+        { value: "a", label: "A" },
+        { value: "b", label: "B" },
+      ],
+    });
+    expect(document.querySelector<HTMLInputElement>(".forge-select__search")!.hidden).toBe(true);
+    select.setData([
+      { value: "a", label: "A" },
+      { value: "b", label: "B" },
+      { value: "c", label: "C" },
+    ]);
+    expect(document.querySelector<HTMLInputElement>(".forge-select__search")!.hidden).toBe(false);
+  });
+
+  it("uses a custom ajax request transport instead of fetch", async () => {
+    vi.useFakeTimers();
+    const request = vi.fn(async () => [{ value: "custom", label: "Custom" }]);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    mountSelect("");
+    const select = new ForgeSelect("#country", { ajax: { request, debounce: 0 } });
+    select.open();
+    await vi.runAllTimersAsync();
+    expect(request).toHaveBeenCalledWith("", 0, expect.any(AbortSignal));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(optionEls()[0].textContent).toContain("Custom");
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("emits select, unselect, create, and reorder details", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { multiple: true, allowCreate: true, sortable: true });
+    const onSelect = vi.fn();
+    const onUnselect = vi.fn();
+    const onCreate = vi.fn();
+    const onReorder = vi.fn();
+    select.on("select", onSelect);
+    select.on("unselect", onUnselect);
+    select.on("create", onCreate);
+    select.on("reorder", onReorder);
+    select.open();
+    optionEls()[0].click();
+    optionEls()[1].click();
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    document
+      .querySelector<HTMLElement>('.forge-select__tag[data-value="vn"]')!
+      .dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", altKey: true, bubbles: true }));
+    expect(onReorder).toHaveBeenCalledWith(["jp", "vn"]);
+    document.querySelector<HTMLElement>(".forge-select__tag-remove")!.click();
+    expect(onUnselect).toHaveBeenCalled();
+
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "New";
+    input.dispatchEvent(new Event("input"));
+    document.querySelector<HTMLElement>(".forge-select__option--create")!.click();
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ value: "New" }));
+  });
+
+  it("portals the dropdown and removes the host on destroy", () => {
+    mountSelect();
+    const portal = document.createElement("div");
+    portal.id = "portal";
+    document.body.append(portal);
+    const select = new ForgeSelect("#country", { dropdownParent: "#portal" });
+    select.open();
+    expect(portal.querySelector(".forge-select--portal-host .forge-select__dropdown")).not.toBeNull();
+    select.destroy();
+    expect(portal.querySelector(".forge-select--portal-host")).toBeNull();
   });
 });
