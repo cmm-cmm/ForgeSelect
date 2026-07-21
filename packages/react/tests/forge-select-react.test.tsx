@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { act, createElement } from "react";
+import { act, createElement, createRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import ForgeSelect from "forge-select";
 import ForgeSelectReact from "../src/index";
@@ -274,5 +274,28 @@ describe("ForgeSelectReact", () => {
       root.unmount();
     });
     expect(container.querySelector(".forge-select")).toBeNull();
+  });
+
+  it("exposes the underlying ForgeSelect instance through a ref", () => {
+    const ref = createRef<ForgeSelect>();
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    act(() => {
+      root.render(
+        createElement(ForgeSelectReact, {
+          ref,
+          multiple: true,
+          data: [
+            { value: "a", label: "A" },
+            { value: "b", label: "B" },
+          ],
+        }),
+      );
+    });
+
+    act(() => ref.current?.selectAll());
+    expect(container.querySelector(".forge-select__single-value, .forge-select__tag")).not.toBeNull();
+    expect(ref.current?.getValue()).toEqual(["a", "b"]);
   });
 });

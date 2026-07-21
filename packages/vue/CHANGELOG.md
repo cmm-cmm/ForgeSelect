@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-21
+
+### Added
+
+- `ForgeSelectVue` now `expose()`s the underlying `ForgeSelect` instance through a template ref (e.g. `selectRef.value.selectAll()`, `.reload()`, `.validate()`), for the methods the declarative prop surface doesn't cover. Requires `forge-select` 0.6.0 or newer (bumped the `forge-select` dependency accordingly).
+
 ## [0.4.0] - 2026-07-21
 
 ### Added
@@ -40,7 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `ForgeSelectVue` component wrapping the `forge-select` core library, with `v-model` support via `modelValue`/`update:modelValue`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.4.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.5.0...HEAD
+[0.5.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.4.0...vue-v0.5.0
 [0.4.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.3.0...vue-v0.4.0
 [0.3.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.2.0...vue-v0.3.0
 [0.2.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.1.0...vue-v0.2.0

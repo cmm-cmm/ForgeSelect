@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createApp, defineComponent, h, nextTick, ref } from "vue";
+import type ForgeSelect from "forge-select";
 import ForgeSelectVue from "../src/index";
 
 function mountOnBody(
@@ -322,5 +323,29 @@ describe("ForgeSelectVue", () => {
 
     app.unmount();
     expect(container.querySelector(".forge-select")).toBeNull();
+  });
+
+  it("exposes the underlying ForgeSelect instance through a template ref", async () => {
+    const selectRef = ref<ForgeSelect | null>(null);
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const app = createApp({
+      render: () =>
+        h(ForgeSelectVue, {
+          ref: selectRef,
+          options: {
+            multiple: true,
+            data: [
+              { value: "a", label: "A" },
+              { value: "b", label: "B" },
+            ],
+          },
+        }),
+    });
+    app.mount(container);
+
+    selectRef.value?.selectAll();
+    await nextTick();
+    expect(selectRef.value?.getValue()).toEqual(["a", "b"]);
   });
 });

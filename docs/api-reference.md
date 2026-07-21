@@ -99,6 +99,10 @@ The dropdown renders below the control by default. If there isn't enough room be
 
 For modals, drawers, or containers that clip descendants, set `dropdownParent: document.body` (or a selector/element). The portalled dropdown follows the control on resize and ancestor scrolling, retains the selected theme, and is removed by `.destroy()`.
 
+### Keyboard navigation
+
+With the dropdown open: `ArrowUp`/`ArrowDown` move the highlight, `Enter` picks the highlighted row, `Home`/`End` jump to the first/last option, `PageUp`/`PageDown` jump by 10 rows (clamped at the ends), `ArrowLeft`/`ArrowRight` collapse/expand a tree node, and `Escape`/`Tab` close it. When focus is on the combobox control, typing a letter (or several in quick succession) jumps to the next option whose label starts with what was typed; repeating one letter cycles matching options, matching native `<select>` typeahead. A pause of half a second resets the buffer. Typing in the search input filters normally and does not also trigger typeahead.
+
 ### Native form validation (`required`)
 
 When mounted on a real `<select>`, `required: true` participates in the browser's Constraint Validation API exactly like a native `<select required>`: an empty selection blocks `<form>` submission, and Forge Select shows its own inline invalid styling (`forge-select__control--invalid`, `aria-invalid`) and opens the dropdown in response to the native `invalid` event, since the hidden native element can't display its own validation bubble. The styling clears as soon as a valid selection is made. On a plain-element mount (no native `<select>` to hook into), `required: true` only sets `aria-required` for assistive tech — there's no native form to participate in.
@@ -207,6 +211,25 @@ The constructor/options/methods/events above are the core `forge-select` API. Of
 | [`forge-select-vue`](https://www.npmjs.com/package/forge-select-vue)     | Vue 3     | `v-model`                 |
 
 Values, search query, open state, data, and every runtime-updateable option are reactive in both wrappers. Only structural `multiple`, `searchable`, `plugins`, and `dropdownParent` changes require a remount with a different framework `key`.
+
+Both wrappers also expose the underlying `ForgeSelect` instance for the methods the declarative prop surface doesn't cover (e.g. `.selectAll()`, `.reload()`, `.validate()`):
+
+```jsx
+// React
+const ref = useRef(null);
+<ForgeSelectReact ref={ref} multiple data={data} />;
+// Call from an event/effect after mount:
+ref.current?.selectAll();
+```
+
+```vue
+<!-- Vue -->
+<ForgeSelectVue ref="selectRef" :options="{ multiple: true, data }" />
+<script setup>
+const selectRef = ref(null);
+selectRef.value.selectAll();
+</script>
+```
 
 ## See also
 

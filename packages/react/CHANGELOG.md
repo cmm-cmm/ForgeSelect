@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-21
+
+### Added
+
+- `ForgeSelectReact` now forwards `ref` to the underlying `ForgeSelect` instance (e.g. `ref.current.selectAll()`, `.reload()`, `.validate()`), for the methods the declarative prop surface doesn't cover. Requires `forge-select` 0.6.0 or newer (bumped the `forge-select` dependency accordingly).
+
 ## [0.4.1] - 2026-07-21
 
 ### Fixed
@@ -46,7 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `ForgeSelectReact` component wrapping the `forge-select` core library, with controlled `value`/`onChange` support.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.4.1...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.5.0...HEAD
+[0.5.0]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.4.1...react-v0.5.0
 [0.4.1]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.4.0...react-v0.4.1
 [0.4.0]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.3.0...react-v0.4.0
 [0.3.0]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.2.0...react-v0.3.0
