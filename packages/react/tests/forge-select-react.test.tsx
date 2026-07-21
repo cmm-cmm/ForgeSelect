@@ -123,6 +123,96 @@ describe("ForgeSelectReact", () => {
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ value: "a" }));
   });
 
+  it("forwards onUnselect when a tag is removed", () => {
+    const onUnselect = vi.fn();
+    const { container } = mount({
+      multiple: true,
+      data: [{ value: "a", label: "A" }],
+      value: ["a"],
+      onUnselect,
+    });
+    act(() => container.querySelector<HTMLElement>(".forge-select__tag-remove")!.click());
+    expect(onUnselect).toHaveBeenCalledWith(expect.objectContaining({ value: "a" }));
+  });
+
+  it("forwards onCreate when a new tag is created via allowCreate", () => {
+    const onCreate = vi.fn();
+    const { container } = mount({ multiple: true, allowCreate: true, onCreate });
+    act(() => container.querySelector<HTMLElement>(".forge-select__control")!.click());
+    act(() => {
+      const input = container.querySelector<HTMLInputElement>(".forge-select__search")!;
+      input.value = "Wakanda";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    act(() => container.querySelector<HTMLElement>(".forge-select__option--create")!.click());
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ value: "Wakanda" }));
+  });
+
+  it("forwards onReorder when a focused tag is moved via Alt+ArrowRight", () => {
+    const onReorder = vi.fn();
+    const { container } = mount({
+      multiple: true,
+      sortable: true,
+      data: [
+        { value: "a", label: "A" },
+        { value: "b", label: "B" },
+      ],
+      value: ["a", "b"],
+      onReorder,
+    });
+    const tag = container.querySelector<HTMLElement>(".forge-select__tag")!;
+    act(() => {
+      tag.focus();
+      tag.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", altKey: true, bubbles: true }));
+    });
+    expect(onReorder).toHaveBeenCalledWith(["b", "a"]);
+  });
+
+  it("forwards onMaximum when a pick is rejected by maxSelections", () => {
+    const onMaximum = vi.fn();
+    const { container } = mount({
+      multiple: true,
+      maxSelections: 1,
+      data: [
+        { value: "a", label: "A" },
+        { value: "b", label: "B" },
+      ],
+      value: ["a"],
+      onMaximum,
+    });
+    act(() => container.querySelector<HTMLElement>(".forge-select__control")!.click());
+    const rejected = Array.from(container.querySelectorAll<HTMLElement>(".forge-select__option")).find(
+      (li) => li.textContent === "B",
+    )!;
+    act(() => rejected.click());
+    expect(onMaximum).toHaveBeenCalledWith(expect.objectContaining({ limit: 1 }));
+  });
+
+  it("forwards onInvalid when the underlying required select fails validation", () => {
+    const onInvalid = vi.fn();
+    const { container } = mount({ required: true, onInvalid });
+    const nativeSelect = container.querySelector<HTMLSelectElement>("select")!;
+    act(() => {
+      nativeSelect.dispatchEvent(new Event("invalid", { cancelable: true }));
+    });
+    expect(onInvalid).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it("forwards onError and onLoading for a failed ajax request", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+    const onError = vi.fn();
+    const onLoading = vi.fn();
+    const { container } = mount({ ajax: { url: "/api", debounce: 0 }, onError, onLoading });
+    act(() => container.querySelector<HTMLElement>(".forge-select__control")!.click());
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    expect(onLoading).toHaveBeenCalledWith(true);
+    expect(onLoading).toHaveBeenCalledWith(false);
+    expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    vi.unstubAllGlobals();
+  });
+
   it("does not call onChange for prop synchronization and uses the latest callback", () => {
     const data = [
       { value: "a", label: "A" },
