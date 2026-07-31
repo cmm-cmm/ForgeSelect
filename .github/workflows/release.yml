@@ -39,7 +39,9 @@ jobs:
           package-manager-cache: false
 
       - name: Use an npm CLI with Trusted Publishing support
-        run: npm install --global npm@^11.15.0
+        run: |
+          npm install --global npm@^11.15.0
+          npm --version
 
       - name: Determine target package
         id: target
@@ -95,7 +97,7 @@ jobs:
           PKG: ${{ steps.target.outputs.package }}
         run: |
           if [ "$PKG" = "core" ]; then
-            npm publish
+            npm publish --provenance --access public
           else
-            npm publish --workspace=packages/$PKG
+            npm publish --workspace=packages/$PKG --provenance --access public
           fi
