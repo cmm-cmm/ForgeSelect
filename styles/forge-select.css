@@ -143,8 +143,7 @@
   position: absolute;
   z-index: 1000;
   top: calc(100% + 4px);
-  left: 0;
-  right: 0;
+  inset-inline: 0;
   background: var(--fs-dropdown-bg);
   border: 1px solid var(--fs-border);
   border-radius: var(--fs-radius);
@@ -165,7 +164,7 @@
 
 .forge-select--portal-host .forge-select__dropdown {
   top: 0;
-  right: 0;
+  inset-inline-end: 0;
   bottom: auto;
 }
 
@@ -219,7 +218,7 @@
   object-fit: cover;
   flex-shrink: 0;
   vertical-align: -4px;
-  margin-right: 5px;
+  margin-inline-end: 5px;
 }
 
 .forge-select__option-body {
@@ -267,7 +266,7 @@
 
 .forge-select__option--indeterminate::after {
   content: "−";
-  margin-left: auto;
+  margin-inline-start: auto;
   font-weight: 700;
 }
 

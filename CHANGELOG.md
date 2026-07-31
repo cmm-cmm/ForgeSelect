@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-31
+
+### Added
+
+- IME-safe search/tag input, cancellable selection/creation guards, asynchronous `createOption`, configurable missing-selection and duplicate-value policies, cursor-based remote pagination, and a sanitizer hook for string templates.
+- Benchmark median/p95 reporting, destroy lifecycle checks, bundle/virtual-row budgets, and CI enforcement.
+
+### Changed
+
+- Option lookup is indexed by value/normalized label, tree-search results are memoized per render, variable-height virtualization uses binary search for its starting row, and virtual rows recycle bounded `<li>` elements across scroll renders.
+- Portalled dropdowns now follow `visualViewport` resize/scroll changes on mobile. Remote prefetch is aborted during teardown.
+- Updated `sharp` and `wrangler`; the dependency audit is clean.
+
+### Fixed
+
+- The website header navigation now stays on one horizontally scrollable line at mobile widths instead of wrapping link labels and increasing the sticky header height.
+
 ## [0.6.0] - 2026-07-21
 
 ### Added

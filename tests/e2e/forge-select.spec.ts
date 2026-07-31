@@ -69,6 +69,29 @@ test("announces the empty state via the live region without introducing violatio
   expect(results.violations).toEqual([]);
 });
 
+test("keeps a portalled RTL dropdown inside a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 700 });
+  await loadForgeSelect(
+    page,
+    '<main dir="rtl" style="padding:16px"><label for="target">Country</label><select id="target"></select></main>',
+  );
+  await page.evaluate(() => {
+    const ForgeSelect = window.ForgeSelectBundle.default;
+    new ForgeSelect("#target", {
+      dropdownParent: document.body,
+      data: [
+        { value: "vn", label: "Vietnam" },
+        { value: "th", label: "Thailand" },
+      ],
+    });
+  });
+  await page.locator(".forge-select__control").click();
+  const box = await page.locator(".forge-select--portal-host").boundingBox();
+  if (!box) throw new Error("Portal geometry was unavailable");
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(390);
+});
+
 test("flips the dropdown above the control when there isn't room below", async ({ page }) => {
   await loadForgeSelect(
     page,

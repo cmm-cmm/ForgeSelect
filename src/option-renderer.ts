@@ -1,4 +1,4 @@
-import type { Option, TemplateFn } from "./types";
+import type { Option, TemplateFn, TemplateSanitizer } from "./types";
 
 export type OptionRenderVariant = "row" | "inline";
 
@@ -8,10 +8,11 @@ export function renderOptionContent(
   option: Option,
   template?: TemplateFn,
   variant: OptionRenderVariant = "row",
+  sanitizeTemplate?: TemplateSanitizer,
 ): void {
   if (template) {
     const result = template(option);
-    if (typeof result === "string") container.innerHTML = result;
+    if (typeof result === "string") container.innerHTML = sanitizeTemplate ? sanitizeTemplate(result, option) : result;
     else container.append(result);
     return;
   }

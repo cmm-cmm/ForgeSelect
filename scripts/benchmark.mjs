@@ -9,6 +9,11 @@ const bundlePath = path.join(root, "dist/index.global.js");
 const stylePath = path.join(root, "styles/forge-select.css");
 const bundle = await readFile(bundlePath);
 const browser = await chromium.launch();
+const BUDGETS = {
+  minifiedGzipBytes: 13_500,
+  renderedRowsAtTenThousand: 30,
+  residualNodesAfterDestroy: 0,
+};
 
 try {
   const page = await browser.newPage();
@@ -28,7 +33,19 @@ try {
       return performance.now() - start;
     };
 
-    const initOneMs = measure(() => new ForgeSelect("#single", { data: options }));
+    const percentile = (values, fraction) => {
+      const sorted = [...values].sort((a, b) => a - b);
+      return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)];
+    };
+    const initSamples = [];
+    for (let sample = 0; sample < 7; sample += 1) {
+      const mount = document.createElement("div");
+      document.querySelector("#single").append(mount);
+      let instance;
+      initSamples.push(measure(() => (instance = new ForgeSelect(mount, { data: options }))));
+      instance.destroy();
+      mount.remove();
+    }
     const many = document.querySelector("#many");
     const initFiftyMs = measure(() => {
       for (let index = 0; index < 50; index += 1) {
@@ -41,11 +58,14 @@ try {
     const search = new ForgeSelect("#search", { data: options });
     search.open();
     const input = document.querySelector("#search + .forge-select .forge-select__search");
-    const searchStart = performance.now();
-    input.value = "Item 9999";
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    const searchTenThousandMs = performance.now() - searchStart;
+    const searchSamples = [];
+    for (const query of ["9999", "5000", "1234", "9876", "4321", "7777", "2468"]) {
+      const searchStart = performance.now();
+      input.value = `Item ${query}`;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      searchSamples.push(performance.now() - searchStart);
+    }
 
     const scroll = new ForgeSelect("#scroll", { data: options });
     scroll.open();
@@ -61,12 +81,25 @@ try {
       list.dispatchEvent(new Event("scroll"));
     }
 
+    const lifecycleSelector = ".forge-select, .forge-select__portal";
+    const nodesBeforeLifecycle = document.querySelectorAll(lifecycleSelector).length;
+    const lifecycleMount = document.createElement("div");
+    document.body.append(lifecycleMount);
+    const lifecycle = new ForgeSelect(lifecycleMount, { data: options.slice(0, 100) });
+    lifecycle.open();
+    lifecycle.destroy();
+    const residualNodesAfterDestroy = document.querySelectorAll(lifecycleSelector).length - nodesBeforeLifecycle;
+    lifecycleMount.remove();
+
     return {
-      initOneMs,
+      initOneMs: percentile(initSamples, 0.5),
+      initOneP95Ms: percentile(initSamples, 0.95),
       initFiftyMs,
-      searchTenThousandMs,
+      searchTenThousandMs: percentile(searchSamples, 0.5),
+      searchTenThousandP95Ms: percentile(searchSamples, 0.95),
       scrollMeanFrameMs: frameTimes.reduce((sum, value) => sum + value, 0) / frameTimes.length,
       renderedRowsAtTenThousand: list.querySelectorAll(".forge-select__option").length,
+      residualNodesAfterDestroy,
     };
   });
 
@@ -83,9 +116,18 @@ try {
       minifiedBytes: bundle.byteLength,
       minifiedGzipBytes: gzipSync(bundle).byteLength,
     },
+    budgets: BUDGETS,
     timings: Object.fromEntries(Object.entries(timings).map(([key, value]) => [key, round(value)])),
   };
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  const failures = [];
+  if (result.bundle.minifiedGzipBytes > BUDGETS.minifiedGzipBytes)
+    failures.push(`gzip bundle ${result.bundle.minifiedGzipBytes} > ${BUDGETS.minifiedGzipBytes}`);
+  if (result.timings.renderedRowsAtTenThousand > BUDGETS.renderedRowsAtTenThousand)
+    failures.push(`rendered rows ${result.timings.renderedRowsAtTenThousand} > ${BUDGETS.renderedRowsAtTenThousand}`);
+  if (result.timings.residualNodesAfterDestroy > BUDGETS.residualNodesAfterDestroy)
+    failures.push(`residual nodes ${result.timings.residualNodesAfterDestroy} > ${BUDGETS.residualNodesAfterDestroy}`);
+  if (failures.length) throw new Error(`Benchmark budget exceeded: ${failures.join("; ")}`);
 } finally {
   await browser.close();
 }

@@ -108,3 +108,6 @@ jobs:
 
       - name: Browser tests
         run: npx playwright test
+
+      - name: Performance and bundle budgets
+        run: node scripts/benchmark.mjs
