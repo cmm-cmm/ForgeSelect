@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-08-02
+
+### Fixed
+
+- `aria-activedescendant` no longer references a row that has been removed from the DOM. Scrolling a virtualized list past the highlighted option left the attribute pointing at that option's id, and virtualization is automatic above ~100 rows, so any large list was affected. A dangling reference reads to assistive technology as no active option at all. The attribute is now cleared while the highlighted row is outside the rendered window, and restored as soon as keyboard navigation scrolls it back into view.
+
 ## [0.7.2] - 2026-08-02
 
 ### Fixed
@@ -196,7 +202,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.3...HEAD
+[0.7.3]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.6.0...v0.7.0

@@ -1981,8 +1981,14 @@ export default class ForgeSelect {
 
   private updateActiveDescendant(): void {
     const target = this.searchInput ?? this.control;
-    if (this.highlightedIndex >= 0) {
-      target.setAttribute("aria-activedescendant", `${this.uid}-nav-${this.highlightedIndex}`);
+    const id = `${this.uid}-nav-${this.highlightedIndex}`;
+    // Virtual scrolling drops off-window rows from the DOM, so a highlight the
+    // user has scrolled past no longer has an element to point at.
+    // aria-activedescendant must reference a real one — a dangling id reads to
+    // assistive tech as no active option at all. Keyboard navigation scrolls
+    // the highlight back into view and restores the reference.
+    if (this.highlightedIndex >= 0 && document.getElementById(id)) {
+      target.setAttribute("aria-activedescendant", id);
     } else {
       target.removeAttribute("aria-activedescendant");
     }

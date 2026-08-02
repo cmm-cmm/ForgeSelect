@@ -2085,6 +2085,34 @@ describe("rich items", () => {
 describe("virtual scrolling", () => {
   const bigData = (n: number) => Array.from({ length: n }, (_, i) => ({ value: String(i), label: `Item ${i}` }));
 
+  it("drops aria-activedescendant when the highlight scrolls out of the rendered window", async () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { virtualScroll: true, data: bigData(1000) });
+    select.open();
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    const search = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+
+    const active = search.getAttribute("aria-activedescendant");
+    expect(active).toBeTruthy();
+    expect(document.getElementById(active!)).not.toBeNull();
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    list.scrollTop = 20000;
+    list.dispatchEvent(new Event("scroll"));
+    await vi.waitFor(() => expect(optionEls()[0]?.textContent).not.toBe("Item 0"));
+
+    // The highlighted row is no longer rendered, so pointing at its id would
+    // reference an element that does not exist.
+    expect(search.getAttribute("aria-activedescendant")).toBeNull();
+
+    // Keyboard navigation scrolls the highlight back and restores the reference.
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    const restored = search.getAttribute("aria-activedescendant");
+    expect(restored).toBeTruthy();
+    expect(document.getElementById(restored!)).not.toBeNull();
+  });
+
   it("renders a window with spacers for large lists", () => {
     mountSelect("");
     const select = new ForgeSelect("#country", { virtualScroll: true, data: bigData(5000) });
