@@ -1725,6 +1725,47 @@ describe("ajax", () => {
     expect(onError).toHaveBeenCalledWith(expect.any(Error));
     vi.unstubAllGlobals();
   });
+
+  it("drops recycled rows when a remote reload replaces the data", async () => {
+    mountSelect("");
+    // Both result sets place value "c" at row index 1, which is the row-recycling
+    // cache key. Only the first nests it under a parent, so a row reused across
+    // the reload would still carry the tree indent it no longer has.
+    const select = new ForgeSelect("#country", {
+      ajax: {
+        debounce: 0,
+        cacheTtl: 0,
+        request: async (query: string) =>
+          query === "a"
+            ? [{ value: "p", label: "Pa", children: [{ value: "c", label: "Ca" }] }]
+            : [
+                { value: "x", label: "Xaa" },
+                { value: "c", label: "Caa" },
+              ],
+      },
+    });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+
+    input.value = "a";
+    input.dispatchEvent(new Event("input"));
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(2));
+    const nested = optionEls()[1];
+    expect(nested.dataset.optionValue).toBe("c");
+    expect(nested.style.paddingLeft).not.toBe("");
+
+    input.value = "aa";
+    input.dispatchEvent(new Event("input"));
+    await vi.waitFor(() => expect(optionEls()[0]?.dataset.optionValue).toBe("x"));
+    const flat = optionEls()[1];
+    expect(flat.dataset.optionValue).toBe("c");
+    // Same value, new label: content is cached by value alone, so a surviving
+    // entry would re-render the superseded "Ca".
+    expect(flat.textContent).toContain("Caa");
+    expect(flat.style.paddingLeft).toBe("");
+    // The replaced dataset must not leave the previous render's <li> in the cache.
+    expect(flat).not.toBe(nested);
+  });
 });
 
 describe("ajax pagination", () => {
