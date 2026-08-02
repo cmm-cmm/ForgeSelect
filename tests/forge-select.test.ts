@@ -1726,6 +1726,64 @@ describe("ajax", () => {
     vi.unstubAllGlobals();
   });
 
+  it("refetches on reopen so a cleared search box never shows the previous query's page", async () => {
+    mountSelect("");
+    const queries: string[] = [];
+    const select = new ForgeSelect("#country", {
+      ajax: {
+        debounce: 0,
+        request: async (query: string) => {
+          queries.push(query);
+          return query === ""
+            ? [
+                { value: "a", label: "Alpha" },
+                { value: "b", label: "Beta" },
+                { value: "g", label: "Gamma" },
+              ]
+            : [{ value: "b", label: "Beta" }];
+        },
+      },
+    });
+
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(3));
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "be";
+    input.dispatchEvent(new Event("input"));
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(1));
+
+    select.close();
+    select.open();
+    // close() clears the search box, so the list must match an empty query
+    // again rather than staying filtered by the query the user can no longer see.
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(3));
+    expect(input.value).toBe("");
+    expect(select.getSearchQuery()).toBe("");
+    // Served from the remote cache — reopening costs no extra request.
+    expect(queries).toEqual(["", "be"]);
+  });
+
+  it("does not refetch on reopen when the search box was already empty", async () => {
+    mountSelect("");
+    const queries: string[] = [];
+    const select = new ForgeSelect("#country", {
+      ajax: {
+        debounce: 0,
+        cacheTtl: 0,
+        request: async (query: string) => {
+          queries.push(query);
+          return [{ value: "a", label: "Alpha" }];
+        },
+      },
+    });
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(1));
+    select.close();
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(1));
+    expect(queries).toEqual([""]);
+  });
+
   it("drops recycled rows when a remote reload replaces the data", async () => {
     mountSelect("");
     // Both result sets place value "c" at row index 1, which is the row-recycling
@@ -1998,6 +2056,52 @@ describe("virtual scrolling", () => {
     const rendered = optionEls();
     expect(rendered.length).toBeLessThan(100);
     expect(document.querySelectorAll(".forge-select__spacer")).toHaveLength(2);
+  });
+
+  it("recycles a row element across a filter change instead of rebuilding it", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      virtualScroll: false,
+      duplicateValuePolicy: "ignore",
+      data: [
+        { value: "a", label: "Alpha" },
+        { value: "b", label: "Beta" },
+        { value: "g", label: "Gamma" },
+      ],
+    });
+    select.open();
+    const beta = optionEls()[1];
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+
+    // "Beta" moves from row 1 to row 0. Recycling is keyed by option value, not
+    // by row index, so the same element is reused at its new position.
+    input.value = "bet";
+    input.dispatchEvent(new Event("input"));
+    expect(optionEls()).toHaveLength(1);
+    expect(optionEls()[0]).toBe(beta);
+    expect(optionEls()[0].textContent).toContain("Beta");
+  });
+
+  it("renders every row when two options share a value in one window", () => {
+    mountSelect("");
+    // duplicateValuePolicy only warns by default, so duplicates reach the
+    // renderer. Both rows must appear — handing one element to both would
+    // move it rather than append it, dropping a row from the list.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const select = new ForgeSelect("#country", {
+      virtualScroll: false,
+      data: [
+        { value: "dup", label: "First" },
+        { value: "dup", label: "Second" },
+        { value: "other", label: "Third" },
+      ],
+    });
+    select.open();
+    const rows = optionEls();
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).not.toBe(rows[1]);
+    expect(rows.map((r) => r.textContent)).toEqual(["First", "Second", "Third"]);
+    warn.mockRestore();
   });
 
   it("virtualizes automatically for large lists without the option", () => {

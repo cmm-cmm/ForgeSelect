@@ -360,6 +360,46 @@ onBeforeUnmount(() => select?.destroy());
 </select>
 ```
 
+## Angular
+
+There is no Angular wrapper package; mount Forge Select on a template ref and
+destroy it with the component. Run it outside Angular's zone if you don't want
+change detection on every internal event.
+
+```ts
+import { Component, ElementRef, OnDestroy, AfterViewInit, ViewChild, NgZone } from "@angular/core";
+import ForgeSelect from "forge-select";
+
+@Component({
+  selector: "app-country-select",
+  standalone: true,
+  template: `<select #host></select>`,
+})
+export class CountrySelectComponent implements AfterViewInit, OnDestroy {
+  @ViewChild("host") host!: ElementRef<HTMLSelectElement>;
+  private select?: ForgeSelect;
+
+  constructor(private zone: NgZone) {}
+
+  ngAfterViewInit(): void {
+    this.zone.runOutsideAngular(() => {
+      this.select = new ForgeSelect(this.host.nativeElement, {
+        searchable: true,
+        data: [
+          { value: "vn", label: "Vietnam" },
+          { value: "jp", label: "Japan" },
+        ],
+      });
+      this.select.on("change", (value) => this.zone.run(() => console.log(value)));
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.select?.destroy();
+  }
+}
+```
+
 ## See also
 
 - [API Reference](./api-reference.md)

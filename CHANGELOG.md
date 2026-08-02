@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-08-02
+
+### Fixed
+
+- Two options sharing a `value` no longer render the same content. Rendered row content was cached by option value, so with `duplicateValuePolicy` left at its default (warn, not reject) the second option displayed the first one's label. Content is now cached against the option object itself.
+- Reopening an AJAX-backed select after a search no longer shows the previous query's results under an empty search box. Closing clears the search box, so the loaded page is now discarded with it and refetched on reopen — normally served from the remote cache without an extra request. Selects whose search box was already empty are unaffected and still do not refetch.
+
+### Changed
+
+- Row `<li>` recycling is keyed by option value instead of value-plus-row-index. Filtering shifts every index below the first change, which previously invalidated the whole element cache on each keystroke; reuse across a narrowing query goes from 0% to ~18% in a 2,000-option list. Rows are claimed at most once per render, so duplicate values still render as separate rows.
+- Removed `scoreOption()`, an unused duplicate of `SearchIndex.score()`. It was never part of the public API and was already tree-shaken out of the published bundle, but left two copies of the scoring rules to keep in sync by hand.
+- Angular and Svelte wrapper packages are no longer planned and have been dropped from the roadmap. Both frameworks mount Forge Select directly; `docs/examples.md` now documents the Angular approach alongside the existing Svelte one.
+
 ## [0.7.1] - 2026-08-02
 
 ### Fixed
@@ -183,7 +196,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.5.0...v0.6.0
