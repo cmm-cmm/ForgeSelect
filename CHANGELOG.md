@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-08-02
+
+### Fixed
+
+- A remote reload no longer leaves the previous result set's recycled `<li>` elements in the row cache. An AJAX-backed select that reused a row position across two result sets could render an option at the wrong tree indent — a top-level option kept the `padding-left` of the nested option that previously occupied its row — and the stale elements were retained until the cache filled. Row recycling now also clears inline styles, so a recycled row can no longer inherit any positional state from its previous occupant.
+
 ## [0.7.0] - 2026-07-31
 
 ### Added
@@ -177,7 +183,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.4.0...v0.5.0

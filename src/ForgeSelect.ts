@@ -399,9 +399,7 @@ export default class ForgeSelect {
     this.nativeSelect?.removeEventListener("change", this.onNativeChange);
     this.nativeSelect?.removeEventListener("invalid", this.onNativeInvalid);
     this.nativeForm?.removeEventListener("reset", this.onFormReset);
-    this.rowContentCache.clear();
-    this.rowElementCache.clear();
-    this.rowHeightCache.clear();
+    this.clearRowCaches();
     this.searchIndex.clear();
     this.portalHost?.remove();
     this.root.remove();
@@ -501,9 +499,7 @@ export default class ForgeSelect {
     }
     this.root.classList.toggle("forge-select--sortable", this.opts.sortable && this.opts.multiple);
     this.updateSearchVisibility();
-    this.rowContentCache.clear();
-    this.rowElementCache.clear();
-    this.rowHeightCache.clear();
+    this.clearRowCaches();
     this.searchIndex.clear();
     this.renderValue();
     if (this.isOpen) this.renderList();
@@ -595,9 +591,7 @@ export default class ForgeSelect {
       this.afterSelectionChange();
     }
     this.updateSearchVisibility();
-    this.rowContentCache.clear();
-    this.rowElementCache.clear();
-    this.rowHeightCache.clear();
+    this.clearRowCaches();
     this.searchIndex.clear();
     this.highlightedIndex = -1;
     if (this.isOpen) this.renderList();
@@ -1545,6 +1539,18 @@ export default class ForgeSelect {
     return this.opts.virtualScroll !== false && this.rows.length > VIRTUAL_THRESHOLD;
   }
 
+  /**
+   * Drops every per-row cache at once. Rendered content, recycled <li>
+   * elements, and measured heights are all keyed off the current `data`, so
+   * they must be invalidated together whenever `data` is replaced — clearing
+   * only some of them leaves recycled rows carrying state from the old list.
+   */
+  private clearRowCaches(): void {
+    this.rowContentCache.clear();
+    this.rowElementCache.clear();
+    this.rowHeightCache.clear();
+  }
+
   private rowKey(row: Row, index: number): string {
     if (row.kind === "option") return `option:${row.option.value}:${index}`;
     if (row.kind === "group") return `group:${row.label}:${index}`;
@@ -1697,6 +1703,10 @@ export default class ForgeSelect {
       "data-nav-index",
       "data-option-value",
       "data-selection-state",
+      // Tree rows set an inline padding-left indent; clearing the whole
+      // attribute keeps recycling self-contained, so a row reused at a
+      // shallower depth can't inherit the previous row's indent.
+      "style",
     ])
       li.removeAttribute(attribute);
     switch (row.kind) {
@@ -2061,8 +2071,7 @@ export default class ForgeSelect {
         this.data = [...this.data, ...options.filter((o) => !existing.has(o.value))];
       } else {
         this.data = options;
-        this.rowContentCache.clear();
-        this.rowHeightCache.clear();
+        this.clearRowCaches();
       }
       this.page = page;
       this.hasMore = hasMore;
@@ -2075,8 +2084,7 @@ export default class ForgeSelect {
       const error = cause instanceof Error ? cause : new Error(String(cause));
       if (!append) {
         this.data = [];
-        this.rowContentCache.clear();
-        this.rowHeightCache.clear();
+        this.clearRowCaches();
       }
       this.hasMore = false;
       this.loadError = error;
