@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Two options sharing a `value` no longer render the same content. Rendered row content was cached by option value, so with `duplicateValuePolicy` left at its default (warn, not reject) the second option displayed the first one's label. Content is now cached against the option object itself.
-- Reopening an AJAX-backed select after a search no longer shows the previous query's results under an empty search box. Closing clears the search box, so the loaded page is now discarded with it and refetched on reopen — normally served from the remote cache without an extra request. Selects whose search box was already empty are unaffected and still do not refetch.
+- Reopening an AJAX-backed select after a search no longer shows the previous query's results under an empty search box. Closing clears the search box, so the loaded page is now discarded with it and refetched on reopen — normally served from the remote cache without an extra request. Closing also retires the request that query belongs to, so one still in flight cannot land its filtered page afterwards and suppress the reload. Selects whose search box was already empty are unaffected and still do not refetch.
 
 ### Changed
 

@@ -136,8 +136,10 @@ export default class ForgeSelect {
   // Keyed by the option object, not its value: duplicateValuePolicy only warns
   // by default, so two options can share a value while carrying different
   // labels, and a value-keyed cache would render the first one's content for
-  // both. Weak keys also drop entries with the data instead of needing a cap.
-  private rowContentCache = new WeakMap<Option, Node>();
+  // both. Still explicitly bounded — a WeakMap would not collect anything while
+  // `data` holds every key, so scrolling a long list would retain a detached
+  // node per option visited.
+  private rowContentCache = new Map<Option, Node>();
   private rowElementCache = new Map<string, HTMLLIElement>();
   private rowHeightCache = new Map<string, number>();
   private rowOffsetsCache: number[] | null = null;
@@ -364,7 +366,22 @@ export default class ForgeSelect {
       // reopening would show a filtered list under an empty search box. Local
       // lists re-filter their own `data` on the next render and need nothing.
       // The remote cache normally serves the refetch without a new request.
-      if (hadQuery && this.opts.ajax) this.remoteLoaded = false;
+      if (hadQuery && this.opts.ajax) {
+        // Retire the request the cleared query belongs to as well. Left running,
+        // it would land its filtered page and set remoteLoaded, so the reopen
+        // would skip the empty-query load and show exactly the stale rows this
+        // is meant to prevent.
+        this.ajaxRequestId += 1;
+        if (this.ajaxTimer) {
+          clearTimeout(this.ajaxTimer);
+          this.ajaxTimer = null;
+        }
+        this.ajaxController?.abort();
+        this.ajaxController = null;
+        this.setLoading(false);
+        this.loadingMore = false;
+        this.remoteLoaded = false;
+      }
     }
 
     this.emitter.emit("close");
@@ -1556,7 +1573,7 @@ export default class ForgeSelect {
    * only some of them leaves recycled rows carrying state from the old list.
    */
   private clearRowCaches(): void {
-    this.rowContentCache = new WeakMap();
+    this.rowContentCache.clear();
     this.rowElementCache.clear();
     this.rowHeightCache.clear();
     // Derived from rowHeightCache, so it has to go with it: buildRows() happens
@@ -1877,6 +1894,11 @@ export default class ForgeSelect {
       const holder = document.createElement("span");
       holder.className = "forge-select__option-content";
       renderOptionContent(holder, option, this.opts.templateResult, "row", this.opts.sanitizeTemplate);
+      if (this.rowContentCache.size >= ROW_CACHE_LIMIT) {
+        // FIFO eviction keeps memory bounded on very large lists.
+        const oldest = this.rowContentCache.keys().next().value as Option;
+        this.rowContentCache.delete(oldest);
+      }
       this.rowContentCache.set(option, holder);
       cached = holder;
     }

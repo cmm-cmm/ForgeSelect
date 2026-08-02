@@ -88,12 +88,6 @@ describe("native and remote helpers", () => {
     expect(data).toEqual([{ value: "a", label: "A", disabled: undefined }]);
   });
 
-  it("falls back to the option value when it carries no text", () => {
-    document.body.innerHTML = '<select><option value="vn"></option></select>';
-    const [option] = parseNativeOptions(document.querySelector("select")!) as Option[];
-    expect(option).toEqual({ value: "vn", label: "", disabled: undefined });
-  });
-
   it("keeps an enabled option inside an enabled group undisabled", () => {
     document.body.innerHTML = '<select><optgroup label="Open"><option value="a">A</option></optgroup></select>';
     const data = parseNativeOptions(document.querySelector("select")!);

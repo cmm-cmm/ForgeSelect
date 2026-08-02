@@ -1763,6 +1763,43 @@ describe("ajax", () => {
     expect(queries).toEqual(["", "be"]);
   });
 
+  it("ignores a filtered response that lands after the dropdown was closed", async () => {
+    mountSelect("");
+    let releaseFiltered: (() => void) | undefined;
+    const select = new ForgeSelect("#country", {
+      ajax: {
+        debounce: 0,
+        request: async (query: string) => {
+          if (query === "")
+            return [
+              { value: "a", label: "Alpha" },
+              { value: "b", label: "Beta" },
+              { value: "g", label: "Gamma" },
+            ];
+          // Hold the filtered page open so it can resolve after close().
+          await new Promise<void>((resolve) => (releaseFiltered = resolve));
+          return [{ value: "b", label: "Beta" }];
+        },
+      },
+    });
+
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(3));
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "be";
+    input.dispatchEvent(new Event("input"));
+    await vi.waitFor(() => expect(releaseFiltered).toBeDefined());
+
+    select.close();
+    // The in-flight request belongs to the query close() just cleared; letting
+    // it apply would mark the remote loaded and suppress the empty-query reload.
+    releaseFiltered!();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(3));
+  });
+
   it("does not refetch on reopen when the search box was already empty", async () => {
     mountSelect("");
     const queries: string[] = [];
