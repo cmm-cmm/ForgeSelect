@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New core options for selection guards, async tag creation, template sanitization, data-integrity policies, and cursor pagination are available through the existing typed options surface. Requires `forge-select` 0.7.0 or newer (bumped the `forge-select` dependency accordingly).
+- New core options for selection guards, async tag creation, template sanitization, data-integrity policies, and cursor pagination are available through the existing typed options surface. Requires `forge-select` 0.7.x (bumped the `forge-select` dependency accordingly).
 
 ## [0.5.0] - 2026-07-21
 
