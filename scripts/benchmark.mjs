@@ -37,14 +37,19 @@ try {
       const sorted = [...values].sort((a, b) => a - b);
       return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)];
     };
+    const lifecycleSelector = ".forge-select, .forge-select__portal";
     const initSamples = [];
+    let residualNodesAfterDestroy = 0;
     for (let sample = 0; sample < 7; sample += 1) {
       const mount = document.createElement("div");
       document.querySelector("#single").append(mount);
+      const nodesBeforeSample = document.querySelectorAll(lifecycleSelector).length;
       let instance;
       initSamples.push(measure(() => (instance = new ForgeSelect(mount, { data: options }))));
       instance.destroy();
       mount.remove();
+      const nodesAfterSample = document.querySelectorAll(lifecycleSelector).length;
+      residualNodesAfterDestroy = Math.max(residualNodesAfterDestroy, nodesAfterSample - nodesBeforeSample);
     }
     const many = document.querySelector("#many");
     const initFiftyMs = measure(() => {
@@ -81,14 +86,16 @@ try {
       list.dispatchEvent(new Event("scroll"));
     }
 
-    const lifecycleSelector = ".forge-select, .forge-select__portal";
     const nodesBeforeLifecycle = document.querySelectorAll(lifecycleSelector).length;
     const lifecycleMount = document.createElement("div");
     document.body.append(lifecycleMount);
     const lifecycle = new ForgeSelect(lifecycleMount, { data: options.slice(0, 100) });
     lifecycle.open();
     lifecycle.destroy();
-    const residualNodesAfterDestroy = document.querySelectorAll(lifecycleSelector).length - nodesBeforeLifecycle;
+    residualNodesAfterDestroy = Math.max(
+      residualNodesAfterDestroy,
+      document.querySelectorAll(lifecycleSelector).length - nodesBeforeLifecycle,
+    );
     lifecycleMount.remove();
 
     return {

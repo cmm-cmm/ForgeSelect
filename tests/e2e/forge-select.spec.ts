@@ -88,6 +88,7 @@ test("keeps a portalled RTL dropdown inside a mobile viewport", async ({ page })
   await page.locator(".forge-select__control").click();
   const box = await page.locator(".forge-select--portal-host").boundingBox();
   if (!box) throw new Error("Portal geometry was unavailable");
+  await expect(page.locator(".forge-select--portal-host")).toHaveCSS("direction", "rtl");
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(390);
 });

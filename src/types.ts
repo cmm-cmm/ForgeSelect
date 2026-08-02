@@ -28,7 +28,7 @@ export type DataItem = Option | OptionGroup;
 
 export interface AjaxConfig {
   /** GET endpoint. Optional when `request` supplies a custom transport. */
-  url?: string | ((query: string, page: number) => string);
+  url?: string | ((query: string, page: number, cursor?: string) => string);
   /**
    * Custom transport for POST/authenticated/GraphQL requests. Takes precedence
    * over `url`; the returned payload is passed through `transform`.

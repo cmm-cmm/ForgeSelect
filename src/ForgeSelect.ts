@@ -765,6 +765,7 @@ export default class ForgeSelect {
     if (portalParent) {
       this.portalHost = document.createElement("div");
       this.portalHost.className = "forge-select forge-select--portal-host";
+      this.portalHost.style.direction = getComputedStyle(this.root).direction;
       this.portalHost.dataset.theme = this.opts.theme;
       this.portalHost.style.setProperty("--fs-item-height", `${this.opts.itemHeight}px`);
       this.portalHost.append(this.dropdown);
@@ -1208,6 +1209,7 @@ export default class ForgeSelect {
         this.announceMaximum(existing);
         return undefined;
       }
+      if (this.opts.beforeSelect?.(existing) === false) return undefined;
       this.selectValue(existing.value, false);
       return { option: existing, created: false };
     }
@@ -1227,6 +1229,7 @@ export default class ForgeSelect {
     const duplicate = this.findOption(option.value);
     if (duplicate) {
       if (this.selected.includes(duplicate.value)) return undefined;
+      if (this.opts.beforeSelect?.(duplicate) === false) return undefined;
       this.selectValue(duplicate.value, false);
       return { option: duplicate, created: false };
     }
@@ -1693,6 +1696,7 @@ export default class ForgeSelect {
       "aria-level",
       "data-nav-index",
       "data-option-value",
+      "data-selection-state",
     ])
       li.removeAttribute(attribute);
     switch (row.kind) {
@@ -1742,51 +1746,51 @@ export default class ForgeSelect {
         li.textContent = format(this.strings.createOption, { query: this.query.trim() });
         if (row.navIndex === this.highlightedIndex) li.classList.add("forge-select__option--highlighted");
         break;
-      case "option": {
-        li.className = "forge-select__option";
-        li.dataset.optionValue = row.option.value;
-        if (row.option.className) li.classList.add(...row.option.className.trim().split(/\s+/).filter(Boolean));
-        li.setAttribute("role", "option");
-        const isSelected = this.selected.includes(row.option.value);
-        li.setAttribute("aria-selected", String(isSelected));
-        if (isSelected) li.classList.add("forge-select__option--selected");
-        if (
-          this.opts.multiple &&
-          row.hasChildren &&
-          computeCheckState(row.option, this.selected, this.isOptionDisabled) === "some"
-        ) {
-          li.classList.add("forge-select__option--indeterminate");
-          li.dataset.selectionState = "mixed";
-        }
-        if (row.depth > 0) {
-          li.style.paddingLeft = `calc(12px + ${row.depth} * var(--fs-tree-indent, 18px))`;
-        }
-        if (
-          this.isOptionDisabled(row.option) ||
-          (this.hasReachedMaximum() && !this.selected.includes(row.option.value))
-        ) {
-          li.classList.add("forge-select__option--disabled");
-          li.setAttribute("aria-disabled", "true");
-        } else {
-          li.id = `${this.uid}-nav-${row.navIndex}`;
-          li.dataset.navIndex = String(row.navIndex);
-          if (row.navIndex === this.highlightedIndex) li.classList.add("forge-select__option--highlighted");
-        }
-        if (row.hasChildren) {
-          const expanded = this.query !== "" || this.expandedValues.has(row.option.value);
-          li.setAttribute("aria-expanded", String(expanded));
-          const twisty = document.createElement("span");
-          twisty.className = "forge-select__twisty";
-          twisty.dataset.twisty = row.option.value;
-          twisty.setAttribute("aria-hidden", "true");
-          twisty.textContent = expanded ? "▼" : "▶";
-          li.append(twisty);
-        }
-        li.append(this.optionContent(row.option));
+      case "option":
+        this.renderOptionRow(li, row);
         break;
-      }
     }
     return li;
+  }
+
+  private renderOptionRow(li: HTMLLIElement, row: Extract<Row, { kind: "option" }>): void {
+    li.className = "forge-select__option";
+    li.dataset.optionValue = row.option.value;
+    if (row.option.className) li.classList.add(...row.option.className.trim().split(/\s+/).filter(Boolean));
+    li.setAttribute("role", "option");
+    const isSelected = this.selected.includes(row.option.value);
+    li.setAttribute("aria-selected", String(isSelected));
+    if (isSelected) li.classList.add("forge-select__option--selected");
+    if (
+      this.opts.multiple &&
+      row.hasChildren &&
+      computeCheckState(row.option, this.selected, this.isOptionDisabled) === "some"
+    ) {
+      li.classList.add("forge-select__option--indeterminate");
+      li.dataset.selectionState = "mixed";
+    }
+    if (row.depth > 0) {
+      li.style.paddingLeft = `calc(12px + ${row.depth} * var(--fs-tree-indent, 18px))`;
+    }
+    if (this.isOptionDisabled(row.option) || (this.hasReachedMaximum() && !this.selected.includes(row.option.value))) {
+      li.classList.add("forge-select__option--disabled");
+      li.setAttribute("aria-disabled", "true");
+    } else {
+      li.id = `${this.uid}-nav-${row.navIndex}`;
+      li.dataset.navIndex = String(row.navIndex);
+      if (row.navIndex === this.highlightedIndex) li.classList.add("forge-select__option--highlighted");
+    }
+    if (row.hasChildren) {
+      const expanded = this.query !== "" || this.expandedValues.has(row.option.value);
+      li.setAttribute("aria-expanded", String(expanded));
+      const twisty = document.createElement("span");
+      twisty.className = "forge-select__twisty";
+      twisty.dataset.twisty = row.option.value;
+      twisty.setAttribute("aria-hidden", "true");
+      twisty.textContent = expanded ? "▼" : "▶";
+      li.append(twisty);
+    }
+    li.append(this.optionContent(row.option));
   }
 
   /**

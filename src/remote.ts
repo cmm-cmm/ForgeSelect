@@ -2,7 +2,7 @@ import type { AjaxConfig, Option } from "./types";
 
 export function buildUrl(ajax: AjaxConfig, query: string, page: number, cursor?: string): string {
   if (!ajax.url) throw new Error("ForgeSelect: ajax requires either url or request.");
-  if (typeof ajax.url === "function") return ajax.url(query, page);
+  if (typeof ajax.url === "function") return ajax.url(query, page, cursor);
   if (!ajax.params) return ajax.url;
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(ajax.params(query, page, cursor))) params.set(key, String(value));

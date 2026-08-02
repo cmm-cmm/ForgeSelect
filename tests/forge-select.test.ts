@@ -206,6 +206,22 @@ describe("guarded creation and data integrity", () => {
     await vi.waitFor(() => expect(select.getValue()).toBe("created"));
   });
 
+  it("enforces beforeSelect when a multi-tag paste exactly matches a blocked existing option", async () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      allowCreate: true,
+      beforeSelect: (option) => option.value !== "blocked",
+      data: [{ value: "blocked", label: "Blocked" }],
+    });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    const event = new Event("paste", { cancelable: true, bubbles: true });
+    Object.defineProperty(event, "clipboardData", { value: { getData: () => "Blocked, Created" } });
+    input.dispatchEvent(event);
+    await vi.waitFor(() => expect(select.getValue()).toEqual(["Created"]));
+  });
+
   it("supports prune/error missing-selection policies and duplicate detection", () => {
     mountSelect("");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
