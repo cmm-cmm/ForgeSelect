@@ -1979,13 +1979,19 @@ export default class ForgeSelect {
     return false;
   }
 
+  /**
+   * Reads the id off the row the render pass just marked, rather than rebuilding
+   * it from the highlight index. Virtual scrolling drops off-window rows, so an
+   * index-derived id can name an element that no longer exists, and
+   * aria-activedescendant must resolve to a real one — a dangling reference
+   * reads to assistive tech as no active option at all. Keyboard navigation
+   * scrolls the highlight back into view, which restores the reference.
+   */
   private updateActiveDescendant(): void {
     const target = this.searchInput ?? this.control;
-    if (this.highlightedIndex >= 0) {
-      target.setAttribute("aria-activedescendant", `${this.uid}-nav-${this.highlightedIndex}`);
-    } else {
-      target.removeAttribute("aria-activedescendant");
-    }
+    const highlighted = this.list.querySelector(".forge-select__option--highlighted");
+    if (highlighted) target.setAttribute("aria-activedescendant", highlighted.id);
+    else target.removeAttribute("aria-activedescendant");
   }
 
   // ---------------------------------------------------------------- remote data
