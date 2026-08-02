@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-02
+
+### Added
+
+- New core options for selection guards, async tag creation, template sanitization, data-integrity policies, and cursor pagination are available through the existing typed options surface. Requires `forge-select` 0.7.x (bumped the `forge-select` dependency accordingly).
+
 ## [0.5.0] - 2026-07-21
 
 ### Added
@@ -46,7 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `ForgeSelectVue` component wrapping the `forge-select` core library, with `v-model` support via `modelValue`/`update:modelValue`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.5.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.6.0...HEAD
+[0.6.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.5.0...vue-v0.6.0
 [0.5.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.4.0...vue-v0.5.0
 [0.4.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.3.0...vue-v0.4.0
 [0.3.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.2.0...vue-v0.3.0

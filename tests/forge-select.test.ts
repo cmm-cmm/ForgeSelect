@@ -168,6 +168,95 @@ describe("reactive, search, remote, and validation APIs", () => {
   });
 });
 
+describe("guarded creation and data integrity", () => {
+  it("does not search or activate an option while an IME composition is active", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      allowCreate: true,
+      data: [{ value: "vn", label: "Việt Nam" }],
+    });
+    const searches = vi.fn();
+    select.on("search", searches);
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+    input.value = "Việt";
+    input.dispatchEvent(new InputEvent("input", { bubbles: true, data: "t", isComposing: true }));
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, isComposing: true }));
+    expect(searches).not.toHaveBeenCalled();
+    expect(select.getValue()).toBeNull();
+    input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "Việt" }));
+    expect(searches).toHaveBeenCalledWith("Việt");
+  });
+
+  it("supports selection guards and async tag creation", async () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      allowCreate: true,
+      beforeSelect: (option) => option.value !== "blocked",
+      beforeCreate: (label) => label !== "forbidden",
+      createOption: async (label) => ({ value: label.toLowerCase(), label }),
+      data: [{ value: "blocked", label: "Blocked" }],
+    });
+    select.open();
+    optionEls()[0].click();
+    expect(select.getValue()).toBeNull();
+    select.setSearchQuery("Created");
+    document.querySelector<HTMLLIElement>(".forge-select__option--create")?.click();
+    await vi.waitFor(() => expect(select.getValue()).toBe("created"));
+  });
+
+  it("enforces beforeSelect when a multi-tag paste exactly matches a blocked existing option", async () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      allowCreate: true,
+      beforeSelect: (option) => option.value !== "blocked",
+      data: [{ value: "blocked", label: "Blocked" }],
+    });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    const event = new Event("paste", { cancelable: true, bubbles: true });
+    Object.defineProperty(event, "clipboardData", { value: { getData: () => "Blocked, Created" } });
+    input.dispatchEvent(event);
+    await vi.waitFor(() => expect(select.getValue()).toEqual(["Created"]));
+  });
+
+  it("supports prune/error missing-selection policies and duplicate detection", () => {
+    mountSelect("");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      missingSelectionPolicy: "prune",
+      data: [
+        { value: "a", label: "A" },
+        { value: "a", label: "Duplicate A" },
+        { value: "b", label: "B" },
+      ],
+    });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("duplicate option value"));
+    select.setValue(["a", "b"]);
+    select.setData([{ value: "b", label: "B" }]);
+    expect(select.getValue()).toEqual(["b"]);
+    select.updateOptions({ missingSelectionPolicy: "error" });
+    expect(() => select.setData([])).toThrow(/missing selected value/);
+    expect(select.getValue()).toEqual(["b"]);
+    warn.mockRestore();
+  });
+
+  it("sanitizes string templates", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      data: [{ value: "a", label: "A" }],
+      templateResult: () => '<img src="x" onerror="alert(1)"><strong>Safe</strong>',
+      sanitizeTemplate: (html) => html.replace(/\sonerror="[^"]*"/, ""),
+    });
+    select.open();
+    expect(document.querySelector(".forge-select__option img")?.hasAttribute("onerror")).toBe(false);
+    expect(document.querySelector(".forge-select__option strong")?.textContent).toBe("Safe");
+  });
+});
+
 describe("initialization", () => {
   it("mounts from a CSS selector and hides the native select", () => {
     const el = mountSelect();
@@ -1693,6 +1782,38 @@ describe("ajax pagination", () => {
     expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta", "Gamma", "Delta"]);
 
     vi.unstubAllGlobals();
+  });
+
+  it("passes a cursor returned by transform to the next custom request", async () => {
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce({ items: [{ id: "a", name: "Alpha" }], next: "cursor-2" })
+      .mockResolvedValueOnce({ items: [{ id: "b", name: "Beta" }], next: null });
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      ajax: {
+        pagination: true,
+        request,
+        transform: (value) => {
+          const response = value as { items: Item[]; next: string | null };
+          return {
+            options: response.items.map((item) => ({ value: item.id, label: item.name })),
+            nextCursor: response.next,
+          };
+        },
+      },
+    });
+
+    select.open();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    mockNearBottom(list);
+    list.dispatchEvent(new Event("scroll"));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(request.mock.calls[1][3]).toBe("cursor-2");
+    expect(optionEls().map((option) => option.textContent)).toEqual(["Alpha", "Beta"]);
   });
 
   it("does not clear the row content cache when appending a page", async () => {

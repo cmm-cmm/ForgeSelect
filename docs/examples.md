@@ -73,6 +73,22 @@ new ForgeSelect("#users", {
 
 Scrolling near the bottom of the dropdown fetches the next page and appends it to the list instead of replacing it; typing a new search query still resets back to page 0 as usual.
 
+For cursor-based APIs, return `nextCursor` and consume the fourth transport argument:
+
+```js
+new ForgeSelect("#users", {
+  ajax: {
+    pagination: true,
+    request: async (query, _page, signal, cursor) =>
+      fetch(`/api/users?q=${encodeURIComponent(query)}&after=${cursor ?? ""}`, { signal }).then((r) => r.json()),
+    transform: (response) => ({
+      options: response.items.map((u) => ({ value: u.id, label: u.name })),
+      nextCursor: response.nextCursor,
+    }),
+  },
+});
+```
+
 ## Tags mode (allow creating new options)
 
 ```js
@@ -84,6 +100,20 @@ new ForgeSelect("#skills", {
 ```
 
 Pasting a comma- or newline-separated string into the search box (e.g. `"React, Vue, Svelte"`) creates one tag per value instead of a single tag containing the whole string. A pasted value that exactly matches an existing option's label selects that option rather than creating a duplicate. A single pasted value with no separator is unaffected and goes into the search box as usual.
+
+Use `createOption` for asynchronous validation or server-side creation, and guards to cancel actions:
+
+```js
+new ForgeSelect("#skills", {
+  allowCreate: true,
+  beforeCreate: (label) => label.length <= 40,
+  createOption: async (label) => {
+    const skill = await api.createSkill(label);
+    return { value: skill.id, label: skill.name };
+  },
+  beforeSelect: (option) => !option.meta?.archived,
+});
+```
 
 ## Custom templates
 

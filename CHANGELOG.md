@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-31
+
+### Added
+
+- IME-safe search/tag input, cancellable selection/creation guards, asynchronous `createOption`, configurable missing-selection and duplicate-value policies, cursor-based remote pagination, and a sanitizer hook for string templates.
+- Benchmark median/p95 reporting, destroy lifecycle checks, bundle/virtual-row budgets, and CI enforcement.
+
+### Changed
+
+- Option lookup is indexed by value/normalized label, tree-search results are memoized per render, variable-height virtualization uses binary search for its starting row, and virtual rows recycle bounded `<li>` elements across scroll renders.
+- Portalled dropdowns now follow `visualViewport` resize/scroll changes on mobile. Remote prefetch is aborted during teardown.
+- Updated `sharp` and `wrangler`; the dependency audit is clean.
+
+### Fixed
+
+- The website header navigation now stays on one horizontally scrollable line at mobile widths instead of wrapping link labels and increasing the sticky header height.
+
 ## [0.6.0] - 2026-07-21
 
 ### Added
@@ -160,7 +177,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.3.0...v0.4.0

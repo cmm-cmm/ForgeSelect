@@ -28,13 +28,13 @@ export type DataItem = Option | OptionGroup;
 
 export interface AjaxConfig {
   /** GET endpoint. Optional when `request` supplies a custom transport. */
-  url?: string | ((query: string, page: number) => string);
+  url?: string | ((query: string, page: number, cursor?: string) => string);
   /**
    * Custom transport for POST/authenticated/GraphQL requests. Takes precedence
    * over `url`; the returned payload is passed through `transform`.
    */
-  request?: (query: string, page: number, signal: AbortSignal) => Promise<unknown>;
-  params?: (query: string, page: number) => Record<string, unknown>;
+  request?: (query: string, page: number, signal: AbortSignal, cursor?: string) => Promise<unknown>;
+  params?: (query: string, page: number, cursor?: string) => Record<string, unknown>;
   /** Debounce in milliseconds. Default 250. */
   debounce?: number;
   /** Load the initial empty query when the dropdown opens. Default true. */
@@ -57,7 +57,7 @@ export interface AjaxConfig {
    * `pagination` existed) or `{ options, hasMore }` so ForgeSelect knows
    * whether to keep requesting further pages when `pagination` is true.
    */
-  transform?: (response: unknown) => Option[] | { options: Option[]; hasMore: boolean };
+  transform?: (response: unknown) => Option[] | { options: Option[]; hasMore?: boolean; nextCursor?: string | null };
 }
 
 export interface ForgeSelectPlugin {
@@ -69,6 +69,10 @@ export interface ForgeSelectPlugin {
 }
 
 export type TemplateFn = (option: Option) => string | Node;
+export type TemplateSanitizer = (html: string, option: Option) => string;
+export type SelectionGuard = (option: Option) => boolean;
+export type CreateOption = (label: string) => Option | undefined | Promise<Option | undefined>;
+export type MissingSelectionPolicy = "preserve" | "prune" | "error";
 export type SearchField = "label" | "description" | `meta.${string}`;
 export type SearchScorer = (option: Option, query: string, normalizedQuery: string) => number;
 
@@ -112,6 +116,20 @@ export interface ForgeSelectOptions {
   ajax?: AjaxConfig;
   templateResult?: TemplateFn;
   templateSelection?: TemplateFn;
+  /** Sanitizes string template output before it is assigned to innerHTML. */
+  sanitizeTemplate?: TemplateSanitizer;
+  /** Return false to cancel an interactive selection. */
+  beforeSelect?: SelectionGuard;
+  /** Return false to cancel an interactive removal. */
+  beforeUnselect?: SelectionGuard;
+  /** Return false to cancel creation before createOption is called. */
+  beforeCreate?: (label: string) => boolean;
+  /** Creates or validates a tag, synchronously or asynchronously. */
+  createOption?: CreateOption;
+  /** Behavior when setData() no longer contains selected values. Default preserve. */
+  missingSelectionPolicy?: MissingSelectionPolicy;
+  /** Warn in development, throw, or ignore duplicate option values. Default warn. */
+  duplicateValuePolicy?: "ignore" | "warn" | "error";
   /**
    * Custom match predicate, replacing the built-in label/description
    * substring match. Receives the trimmed (not lowercased) query.

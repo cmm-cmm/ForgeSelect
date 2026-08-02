@@ -15,38 +15,45 @@ const select = new ForgeSelect(target, options);
 
 ## Options
 
-| Option                | Type                                    | Default           | Description                                                                                                                               |
-| --------------------- | --------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `placeholder`         | `string`                                | `""`              | Text shown when nothing is selected.                                                                                                      |
-| `searchable`          | `boolean`                               | `true`            | Show a search input inside the dropdown.                                                                                                  |
-| `multiple`            | `boolean`                               | `false`           | Allow selecting more than one option.                                                                                                     |
-| `clearable`           | `boolean`                               | `false`           | Show a button to clear the current selection.                                                                                             |
-| `allowCreate`         | `boolean`                               | `false`           | Let the user create a new option from free text (tags mode).                                                                              |
-| `sortable`            | `boolean`                               | `false`           | Multi-select only: let the user reorder selected tags by dragging (mouse/touch/pen), or with `Alt+Left`/`Alt+Right` when a tag has focus. |
-| `closeOnSelect`       | `boolean`                               | `false`           | Multi-select only: close the dropdown immediately after each pick instead of staying open.                                                |
-| `maxSelections`       | `number`                                | `undefined`       | Multi-select only: caps the number of selected values; further picks (including `allowCreate`) are ignored once reached.                  |
-| `theme`               | `string`                                | `"default"`       | Named theme applied via a `data-theme` attribute / CSS class.                                                                             |
-| `disabled`            | `boolean`                               | `false`           | Render the control as disabled.                                                                                                           |
-| `required`            | `boolean`                               | `false`           | Marks the field as required. On a native `<select>` mount, blocks form submission and shows invalid styling until a value is picked.      |
-| `data`                | `Array<Option \| OptionGroup>`          | `undefined`       | Static options, used instead of `<option>` children.                                                                                      |
-| `ajax`                | `AjaxConfig`                            | `undefined`       | Remote data source config (`url`, `params`, `debounce`, `pagination`, `transform`).                                                       |
-| `templateResult`      | `(option) => string \| Node`            | `undefined`       | Custom renderer for dropdown list items.                                                                                                  |
-| `templateSelection`   | `(option) => string \| Node`            | `undefined`       | Custom renderer for the selected value display.                                                                                           |
-| `filterOption`        | `(option, query) => boolean`            | `undefined`       | Custom match predicate, replacing the built-in label/description substring match.                                                         |
-| `searchFields`        | `SearchField[]`                         | label/description | Fields searched by the built-in scorer, including `meta.*` paths.                                                                         |
-| `tokenSearch`         | `boolean`                               | `true`            | Allows query tokens to match across different fields.                                                                                     |
-| `accentInsensitive`   | `boolean`                               | `true`            | Ignores case and diacritics, including Vietnamese `đ`.                                                                                    |
-| `searchScorer`        | `(option, query, normalized) => number` | `undefined`       | Custom relevance scorer; non-positive values exclude an option.                                                                           |
-| `highlightSearch`     | `boolean`                               | `false`           | Highlights matching label tokens in the built-in renderer.                                                                                |
-| `minSearchLength`     | `number`                                | `0`               | Hides results (with a hint row) until the trimmed query reaches this length; also delays ajax requests until then.                        |
-| `minResultsForSearch` | `number`                                | `0`               | Hides the local-list search field when fewer options exist; AJAX search remains visible.                                                  |
-| `isOptionDisabled`    | `(option) => boolean`                   | `undefined`       | Dynamically disables an option in addition to its static `disabled` field. Re-evaluated on every render.                                  |
-| `virtualScroll`       | `boolean`                               | _(auto)_          | `true`/unset = virtualize once the list exceeds ~100 rows; `false` = never virtualize.                                                    |
-| `itemHeight`          | `number \| "auto"`                      | `36`              | Fixed row height, or measured variable-height virtual rows for rich/custom content.                                                       |
-| `language`            | `string \| Record<string, string>`      | `"en"`            | Locale code or a custom string table for i18n.                                                                                            |
-| `plugins`             | `Array<ForgeSelectPlugin>`              | `[]`              | Plugins to register on this instance. See the [Plugin Development Guide](./plugin-development.md).                                        |
-| `openOnFocus`         | `boolean`                               | `false`           | Opens the dropdown when the control receives keyboard focus (e.g. via Tab).                                                               |
-| `dropdownParent`      | `HTMLElement \| string`                 | `undefined`       | Portals the dropdown into a container (commonly `document.body`) to escape overflow-hidden ancestors.                                     |
+| Option                   | Type                                    | Default           | Description                                                                                                                               |
+| ------------------------ | --------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `placeholder`            | `string`                                | `""`              | Text shown when nothing is selected.                                                                                                      |
+| `searchable`             | `boolean`                               | `true`            | Show a search input inside the dropdown.                                                                                                  |
+| `multiple`               | `boolean`                               | `false`           | Allow selecting more than one option.                                                                                                     |
+| `clearable`              | `boolean`                               | `false`           | Show a button to clear the current selection.                                                                                             |
+| `allowCreate`            | `boolean`                               | `false`           | Let the user create a new option from free text (tags mode).                                                                              |
+| `sortable`               | `boolean`                               | `false`           | Multi-select only: let the user reorder selected tags by dragging (mouse/touch/pen), or with `Alt+Left`/`Alt+Right` when a tag has focus. |
+| `closeOnSelect`          | `boolean`                               | `false`           | Multi-select only: close the dropdown immediately after each pick instead of staying open.                                                |
+| `maxSelections`          | `number`                                | `undefined`       | Multi-select only: caps the number of selected values; further picks (including `allowCreate`) are ignored once reached.                  |
+| `theme`                  | `string`                                | `"default"`       | Named theme applied via a `data-theme` attribute / CSS class.                                                                             |
+| `disabled`               | `boolean`                               | `false`           | Render the control as disabled.                                                                                                           |
+| `required`               | `boolean`                               | `false`           | Marks the field as required. On a native `<select>` mount, blocks form submission and shows invalid styling until a value is picked.      |
+| `data`                   | `Array<Option \| OptionGroup>`          | `undefined`       | Static options, used instead of `<option>` children.                                                                                      |
+| `ajax`                   | `AjaxConfig`                            | `undefined`       | Remote data source config (`url`, `params`, `debounce`, `pagination`, `transform`).                                                       |
+| `templateResult`         | `(option) => string \| Node`            | `undefined`       | Custom renderer for dropdown list items.                                                                                                  |
+| `templateSelection`      | `(option) => string \| Node`            | `undefined`       | Custom renderer for the selected value display.                                                                                           |
+| `sanitizeTemplate`       | `(html, option) => string`              | `undefined`       | Sanitizes string output from both template callbacks before insertion.                                                                    |
+| `beforeSelect`           | `(option) => boolean`                   | `undefined`       | Return `false` to cancel an interactive selection.                                                                                        |
+| `beforeUnselect`         | `(option) => boolean`                   | `undefined`       | Return `false` to cancel an interactive removal.                                                                                          |
+| `beforeCreate`           | `(label) => boolean`                    | `undefined`       | Return `false` to cancel tag creation.                                                                                                    |
+| `createOption`           | `(label) => Option \| Promise<Option>`  | `undefined`       | Creates or validates a tag synchronously or asynchronously.                                                                               |
+| `missingSelectionPolicy` | `"preserve" \| "prune" \| "error"`      | `"preserve"`      | Controls selected values absent from new data passed to `setData()`.                                                                      |
+| `duplicateValuePolicy`   | `"ignore" \| "warn" \| "error"`         | `"warn"`          | Controls diagnostics for duplicate option values.                                                                                         |
+| `filterOption`           | `(option, query) => boolean`            | `undefined`       | Custom match predicate, replacing the built-in label/description substring match.                                                         |
+| `searchFields`           | `SearchField[]`                         | label/description | Fields searched by the built-in scorer, including `meta.*` paths.                                                                         |
+| `tokenSearch`            | `boolean`                               | `true`            | Allows query tokens to match across different fields.                                                                                     |
+| `accentInsensitive`      | `boolean`                               | `true`            | Ignores case and diacritics, including Vietnamese `đ`.                                                                                    |
+| `searchScorer`           | `(option, query, normalized) => number` | `undefined`       | Custom relevance scorer; non-positive values exclude an option.                                                                           |
+| `highlightSearch`        | `boolean`                               | `false`           | Highlights matching label tokens in the built-in renderer.                                                                                |
+| `minSearchLength`        | `number`                                | `0`               | Hides results (with a hint row) until the trimmed query reaches this length; also delays ajax requests until then.                        |
+| `minResultsForSearch`    | `number`                                | `0`               | Hides the local-list search field when fewer options exist; AJAX search remains visible.                                                  |
+| `isOptionDisabled`       | `(option) => boolean`                   | `undefined`       | Dynamically disables an option in addition to its static `disabled` field. Re-evaluated on every render.                                  |
+| `virtualScroll`          | `boolean`                               | _(auto)_          | `true`/unset = virtualize once the list exceeds ~100 rows; `false` = never virtualize.                                                    |
+| `itemHeight`             | `number \| "auto"`                      | `36`              | Fixed row height, or measured variable-height virtual rows for rich/custom content.                                                       |
+| `language`               | `string \| Record<string, string>`      | `"en"`            | Locale code or a custom string table for i18n.                                                                                            |
+| `plugins`                | `Array<ForgeSelectPlugin>`              | `[]`              | Plugins to register on this instance. See the [Plugin Development Guide](./plugin-development.md).                                        |
+| `openOnFocus`            | `boolean`                               | `false`           | Opens the dropdown when the control receives keyboard focus (e.g. via Tab).                                                               |
+| `dropdownParent`         | `HTMLElement \| string`                 | `undefined`       | Portals the dropdown into a container (commonly `document.body`) to escape overflow-hidden ancestors.                                     |
 
 ### `Option` shape
 
@@ -125,15 +132,15 @@ It combines with (does not replace) an option's static `disabled` field, and is 
 
 When an option has `avatar` and/or `description` and no custom template is set, Forge Select renders them with a built-in layout (avatar + label + description in the dropdown; small avatar + label in the selected value/tags). All built-in fields are inserted via `textContent`, so they are **XSS-safe** — no escaping needed on your side. `description` is also matched by the search filter.
 
-Custom templates (`templateResult`/`templateSelection`) receive the full option including `meta`. A **string** return value is injected as raw HTML — sanitize any user-provided data yourself. Rendered row content is cached per option value and cloned on scroll, so templates run once per option regardless of scrolling; if your template returns a DOM **Node**, don't rely on event listeners attached inside it (clones don't carry listeners — use event delegation on the document instead).
+Custom templates (`templateResult`/`templateSelection`) receive the full option including `meta`. A **string** return value is injected as raw HTML. Supply `sanitizeTemplate` when content is not fully trusted; the callback is applied to both result and selection templates before insertion. Rendered row content is cached per option value and cloned on scroll, so templates run once per option regardless of scrolling; if your template returns a DOM **Node**, don't rely on event listeners attached inside it (clones don't carry listeners — use event delegation on the document instead).
 
 ### `AjaxConfig` shape
 
 ```ts
 interface AjaxConfig {
   url?: string | ((query: string, page: number) => string);
-  request?: (query: string, page: number, signal: AbortSignal) => Promise<unknown>;
-  params?: (query: string, page: number) => Record<string, unknown>;
+  request?: (query: string, page: number, signal: AbortSignal, cursor?: string) => Promise<unknown>;
+  params?: (query: string, page: number, cursor?: string) => Record<string, unknown>;
   debounce?: number; // ms, default 250
   loadOnOpen?: boolean; // default true
   cacheTtl?: number; // ms, default 30000; 0 disables cache
@@ -141,13 +148,19 @@ interface AjaxConfig {
   retryDelay?: number; // exponential-backoff base, default 250ms
   prefetch?: string[]; // warm query/page-0 cache in the background
   pagination?: boolean; // opt in to loading further pages on scroll; default false
-  transform?: (response: unknown) => Option[] | { options: Option[]; hasMore: boolean };
+  transform?: (response: unknown) =>
+    | Option[]
+    | {
+        options: Option[];
+        hasMore?: boolean;
+        nextCursor?: string | null;
+      };
 }
 ```
 
 Provide either `url` for the built-in GET transport or `request` for POST, authenticated, GraphQL, or custom-client requests. `request` takes precedence and its result is passed through the same `transform` function; respect the supplied `AbortSignal` where the underlying client supports cancellation.
 
-By default `ajax` replaces the whole list on every search (`transform` returns a plain `Option[]`, as above). Set `pagination: true` to additionally load more pages as the user scrolls near the bottom of the dropdown: `params` now also receives the current `page` (starting at `0`), and `transform` should return `{ options, hasMore }` so Forge Select knows whether to keep requesting further pages. A search query change always resets back to page `0` and replaces the list, regardless of `pagination`. See [Examples](./examples.md) for a full snippet.
+By default `ajax` replaces the whole list on every search (`transform` returns a plain `Option[]`, as above). Set `pagination: true` to additionally load more pages as the user scrolls near the bottom. Page-based APIs return `{ options, hasMore }`. Cursor-based APIs return `{ options, nextCursor }`; the cursor is passed as the optional final argument to `request` and `params`. A search query change resets both page and cursor state. See [Examples](./examples.md) for complete snippets.
 
 ## Instance methods
 
@@ -158,7 +171,7 @@ By default `ajax` replaces the whole list on every search (`transform` returns a
 | `.destroy()`                       | `void`                       | Removes Forge Select and restores the original element.                                                                                  |
 | `.getValue()`                      | `string \| string[] \| null` | Returns the current value(s).                                                                                                            |
 | `.setValue(value, options?)`       | `void`                       | Sets the value; `{ emitChange: false }` synchronizes silently.                                                                           |
-| `.setData(data)`                   | `void`                       | Replaces the option list, cancels pending AJAX/pagination work, re-renders an open dropdown, and preserves existing selections.          |
+| `.setData(data)`                   | `void`                       | Replaces options and applies `missingSelectionPolicy` (`preserve`, `prune`, or `error`).                                                 |
 | `.updateOptions(options)`          | `void`                       | Updates non-structural options without remounting or losing state.                                                                       |
 | `.getSearchQuery()`                | `string`                     | Returns the current search query.                                                                                                        |
 | `.setSearchQuery(query, options?)` | `void`                       | Controls search; `{ emitSearch: false }` synchronizes silently.                                                                          |

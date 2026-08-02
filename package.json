@@ -1,6 +1,6 @@
 {
   "name": "forge-select",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A modern, lightweight, highly customizable replacement for Select2.",
   "keywords": [
     "select",
@@ -53,6 +53,7 @@
   "scripts": {
     "build": "tsup",
     "bench": "npm run build && node scripts/benchmark.mjs",
+    "bench:check": "npm run bench",
     "build:site": "npm run build && node scripts/build-site.mjs",
     "check:package": "npm run build && npm run build --workspaces --if-present && npm pack --dry-run --ignore-scripts && npm pack ./packages/react --dry-run --ignore-scripts && npm pack ./packages/vue --dry-run --ignore-scripts",
     "check:site": "npm run build:site && node scripts/check-site.mjs",
@@ -81,11 +82,11 @@
     "jsdom": "^29.1.1",
     "markdown-it": "^14.3.0",
     "prettier": "^3.9.5",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.3",
     "tsup": "^8.3.5",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.65.0",
     "vitest": "^4.1.10",
-    "wrangler": "^4.110.0"
+    "wrangler": "^4.116.0"
   }
 }

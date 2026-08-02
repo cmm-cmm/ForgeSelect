@@ -11,7 +11,6 @@ import {
   collectDescendantValues,
   collectValues,
   computeCheckState,
-  findOption as findDataOption,
   isGroup,
   syncTreeAncestors as syncDataTreeAncestors,
 } from "./selection";
@@ -30,6 +29,10 @@ import type {
   SearchField,
   SearchScorer,
   TemplateFn,
+  TemplateSanitizer,
+  SelectionGuard,
+  CreateOption,
+  MissingSelectionPolicy,
 } from "./types";
 
 type Row =
@@ -61,6 +64,13 @@ interface ResolvedOptions {
   ajax?: AjaxConfig;
   templateResult?: TemplateFn;
   templateSelection?: TemplateFn;
+  sanitizeTemplate?: TemplateSanitizer;
+  beforeSelect?: SelectionGuard;
+  beforeUnselect?: SelectionGuard;
+  beforeCreate?: (label: string) => boolean;
+  createOption?: CreateOption;
+  missingSelectionPolicy: MissingSelectionPolicy;
+  duplicateValuePolicy: "ignore" | "warn" | "error";
   filterOption?: (option: Option, query: string) => boolean;
   searchFields: SearchField[];
   tokenSearch: boolean;
@@ -95,6 +105,8 @@ export default class ForgeSelect {
   private opts: ResolvedOptions;
   private strings: Strings;
   private data: DataItem[];
+  private optionByValue = new Map<string, Option>();
+  private optionByLabel = new Map<string, Option>();
   private selected: string[] = [];
   private selectedOptions = new Map<string, Option>();
   private suppressNextTagClick = false;
@@ -122,6 +134,7 @@ export default class ForgeSelect {
   private typeaheadBuffer = "";
   private typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
   private rowContentCache = new Map<string, Node>();
+  private rowElementCache = new Map<string, HTMLLIElement>();
   private rowHeightCache = new Map<string, number>();
   private rowOffsetsCache: number[] | null = null;
   private scrollRafId: number | null = null;
@@ -137,7 +150,10 @@ export default class ForgeSelect {
   private ajaxRequestId = 0;
   private ajaxController: AbortController | null = null;
   private remoteLoaded = false;
-  private remoteCache = new RemoteCache<{ options: Option[]; hasMore: boolean }>();
+  private remoteCache = new RemoteCache<{ options: Option[]; hasMore: boolean; nextCursor?: string }>();
+  private remoteInFlight = new Map<string, Promise<{ options: Option[]; hasMore: boolean; nextCursor?: string }>>();
+  private nextCursor: string | undefined;
+  private prefetchControllers = new Set<AbortController>();
   private loadError: Error | null = null;
   private originalDisplay = "";
   private originalDisabled = false;
@@ -233,6 +249,13 @@ export default class ForgeSelect {
       ajax: options.ajax,
       templateResult: options.templateResult,
       templateSelection: options.templateSelection,
+      sanitizeTemplate: options.sanitizeTemplate,
+      beforeSelect: options.beforeSelect,
+      beforeUnselect: options.beforeUnselect,
+      beforeCreate: options.beforeCreate,
+      createOption: options.createOption,
+      missingSelectionPolicy: options.missingSelectionPolicy ?? "preserve",
+      duplicateValuePolicy: options.duplicateValuePolicy ?? "warn",
       filterOption: options.filterOption,
       searchFields: options.searchFields ?? ["label", "description"],
       tokenSearch: options.tokenSearch ?? true,
@@ -255,6 +278,7 @@ export default class ForgeSelect {
     if (nativeSelect) nativeSelect.required = this.opts.required;
 
     this.data = this.opts.data ?? (nativeSelect ? parseNativeOptions(nativeSelect) : []);
+    this.rebuildOptionIndexes();
     if (nativeSelect && !this.opts.data) {
       const nativeOptions = Array.from(nativeSelect.options);
       const hasIntentionalSelection =
@@ -293,6 +317,8 @@ export default class ForgeSelect {
     this.renderList();
     this.positionDropdown();
     window.addEventListener("resize", this.onWindowResize);
+    window.visualViewport?.addEventListener("resize", this.onWindowResize);
+    window.visualViewport?.addEventListener("scroll", this.onWindowResize);
     document.addEventListener("scroll", this.onAncestorScroll, true);
     if (this.searchInput && !this.searchInput.hidden) this.searchInput.focus();
 
@@ -309,6 +335,8 @@ export default class ForgeSelect {
     this.control.setAttribute("aria-expanded", "false");
     document.removeEventListener("mousedown", this.onDocumentMouseDown);
     window.removeEventListener("resize", this.onWindowResize);
+    window.visualViewport?.removeEventListener("resize", this.onWindowResize);
+    window.visualViewport?.removeEventListener("scroll", this.onWindowResize);
     document.removeEventListener("scroll", this.onAncestorScroll, true);
     if (this.ancestorScrollRafId != null) {
       cancelAnimationFrame(this.ancestorScrollRafId);
@@ -342,11 +370,16 @@ export default class ForgeSelect {
    */
   private positionDropdown(): void {
     const controlRect = this.control.getBoundingClientRect();
-    const placement = computeDropdownPlacement(controlRect, this.dropdown.offsetHeight, window.innerHeight);
+    const viewport = window.visualViewport;
+    const placement = computeDropdownPlacement(
+      controlRect,
+      this.dropdown.offsetHeight,
+      viewport?.height ?? window.innerHeight,
+    );
     this.root.classList.toggle("forge-select--drop-up", placement.dropUp);
     if (this.portalHost) {
-      this.portalHost.style.top = `${placement.top}px`;
-      this.portalHost.style.left = `${controlRect.left}px`;
+      this.portalHost.style.top = `${placement.top + (viewport?.offsetTop ?? 0)}px`;
+      this.portalHost.style.left = `${controlRect.left + (viewport?.offsetLeft ?? 0)}px`;
       this.portalHost.style.width = `${controlRect.width}px`;
     }
   }
@@ -358,12 +391,16 @@ export default class ForgeSelect {
     this.destroyed = true;
     if (this.ajaxTimer) clearTimeout(this.ajaxTimer);
     this.ajaxController?.abort();
+    for (const controller of this.prefetchControllers) controller.abort();
+    this.prefetchControllers.clear();
+    this.remoteInFlight.clear();
     if (this.scrollRafId != null) cancelAnimationFrame(this.scrollRafId);
     if (this.typeaheadTimer) clearTimeout(this.typeaheadTimer);
     this.nativeSelect?.removeEventListener("change", this.onNativeChange);
     this.nativeSelect?.removeEventListener("invalid", this.onNativeInvalid);
     this.nativeForm?.removeEventListener("reset", this.onFormReset);
     this.rowContentCache.clear();
+    this.rowElementCache.clear();
     this.rowHeightCache.clear();
     this.searchIndex.clear();
     this.portalHost?.remove();
@@ -420,10 +457,23 @@ export default class ForgeSelect {
     }
     if (options.templateResult !== undefined) this.opts.templateResult = options.templateResult;
     if (options.templateSelection !== undefined) this.opts.templateSelection = options.templateSelection;
+    if (options.sanitizeTemplate !== undefined) this.opts.sanitizeTemplate = options.sanitizeTemplate;
+    if (options.beforeSelect !== undefined) this.opts.beforeSelect = options.beforeSelect;
+    if (options.beforeUnselect !== undefined) this.opts.beforeUnselect = options.beforeUnselect;
+    if (options.beforeCreate !== undefined) this.opts.beforeCreate = options.beforeCreate;
+    if (options.createOption !== undefined) this.opts.createOption = options.createOption;
+    if (options.missingSelectionPolicy !== undefined) this.opts.missingSelectionPolicy = options.missingSelectionPolicy;
+    if (options.duplicateValuePolicy !== undefined) {
+      this.opts.duplicateValuePolicy = options.duplicateValuePolicy;
+      this.rebuildOptionIndexes();
+    }
     if (options.filterOption !== undefined) this.opts.filterOption = options.filterOption;
     if (options.searchFields !== undefined) this.opts.searchFields = options.searchFields;
     if (options.tokenSearch !== undefined) this.opts.tokenSearch = options.tokenSearch;
-    if (options.accentInsensitive !== undefined) this.opts.accentInsensitive = options.accentInsensitive;
+    if (options.accentInsensitive !== undefined) {
+      this.opts.accentInsensitive = options.accentInsensitive;
+      this.rebuildOptionIndexes();
+    }
     if (options.searchScorer !== undefined) this.opts.searchScorer = options.searchScorer;
     if (options.highlightSearch !== undefined) this.opts.highlightSearch = options.highlightSearch;
     if (options.minSearchLength !== undefined)
@@ -452,6 +502,7 @@ export default class ForgeSelect {
     this.root.classList.toggle("forge-select--sortable", this.opts.sortable && this.opts.multiple);
     this.updateSearchVisibility();
     this.rowContentCache.clear();
+    this.rowElementCache.clear();
     this.rowHeightCache.clear();
     this.searchIndex.clear();
     this.renderValue();
@@ -490,6 +541,7 @@ export default class ForgeSelect {
 
   clearRemoteCache(): void {
     this.remoteCache.clear();
+    this.remoteInFlight.clear();
   }
 
   setValue(value: ForgeSelectValue, options: SetValueOptions = {}): void {
@@ -521,10 +573,30 @@ export default class ForgeSelect {
     this.remoteLoaded = true;
     this.page = 0;
     this.hasMore = false;
+    this.nextCursor = undefined;
+    const previousData = this.data;
     this.data = data;
+    try {
+      this.rebuildOptionIndexes();
+    } catch (error) {
+      this.data = previousData;
+      this.rebuildOptionIndexes();
+      throw error;
+    }
+    const missing = this.selected.filter((value) => !this.optionByValue.has(value));
+    if (missing.length > 0 && this.opts.missingSelectionPolicy === "error") {
+      this.data = previousData;
+      this.rebuildOptionIndexes();
+      throw new Error(`ForgeSelect: setData() is missing selected value(s): ${missing.join(", ")}`);
+    }
     this.opts.data = data;
+    if (missing.length > 0 && this.opts.missingSelectionPolicy === "prune") {
+      this.selected = this.selected.filter((value) => this.optionByValue.has(value));
+      this.afterSelectionChange();
+    }
     this.updateSearchVisibility();
     this.rowContentCache.clear();
+    this.rowElementCache.clear();
     this.rowHeightCache.clear();
     this.searchIndex.clear();
     this.highlightedIndex = -1;
@@ -693,6 +765,7 @@ export default class ForgeSelect {
     if (portalParent) {
       this.portalHost = document.createElement("div");
       this.portalHost.className = "forge-select forge-select--portal-host";
+      this.portalHost.style.direction = getComputedStyle(this.root).direction;
       this.portalHost.dataset.theme = this.opts.theme;
       this.portalHost.style.setProperty("--fs-item-height", `${this.opts.itemHeight}px`);
       this.portalHost.append(this.dropdown);
@@ -735,11 +808,27 @@ export default class ForgeSelect {
 
     this.clearBtn.addEventListener("click", (event) => {
       event.stopPropagation();
+      if (
+        this.selected.some((value) => {
+          const option = this.findOption(value) ?? this.selectedOptions.get(value) ?? { value, label: value };
+          return this.opts.beforeUnselect?.(option) === false;
+        })
+      )
+        return;
       this.clearSelection();
     });
 
     if (this.searchInput) {
+      let composing = false;
+      this.searchInput.addEventListener("compositionstart", () => {
+        composing = true;
+      });
+      this.searchInput.addEventListener("compositionend", () => {
+        composing = false;
+        this.applySearchQuery(this.searchInput!.value, true);
+      });
       this.searchInput.addEventListener("input", () => {
+        if (composing) return;
         this.applySearchQuery(this.searchInput!.value, true);
       });
       this.searchInput.addEventListener("keydown", (event) => this.handleKeydown(event));
@@ -752,21 +841,24 @@ export default class ForgeSelect {
           .filter(Boolean);
         if (labels.length < 2) return;
         event.preventDefault();
-        const created: TagCreation[] = [];
-        for (const label of labels) {
-          const result = this.createTag(label);
-          if (result) created.push(result);
-        }
-        if (created.length === 0) return;
-        this.searchInput!.value = "";
-        this.query = "";
-        this.afterSelectionChange();
-        for (const result of created) {
-          if (result.created) this.emitter.emit("create", result.option);
-          this.emitter.emit("select", result.option);
-        }
-        if (this.opts.closeOnSelect) this.close();
-        else this.renderList();
+        void Promise.all(labels.map((label) => this.createTag(label)))
+          .then((results) => {
+            const created = results.filter((result): result is TagCreation => result !== undefined);
+            if (created.length === 0 || this.destroyed) return;
+            this.searchInput!.value = "";
+            this.query = "";
+            this.afterSelectionChange();
+            for (const result of created) {
+              if (result.created) this.emitter.emit("create", result.option);
+              this.emitter.emit("select", result.option);
+            }
+            if (this.opts.closeOnSelect) this.close();
+            else this.renderList();
+          })
+          .catch((cause: unknown) => {
+            const error = cause instanceof Error ? cause : new Error(String(cause));
+            this.emitter.emit("error", error);
+          });
       });
     }
 
@@ -827,7 +919,7 @@ export default class ForgeSelect {
   }
 
   private handleKeydown(event: KeyboardEvent): void {
-    if (this.isDisabled) return;
+    if (this.isDisabled || event.isComposing || event.keyCode === 229) return;
     switch (event.key) {
       case "Enter":
         event.preventDefault();
@@ -1081,28 +1173,33 @@ export default class ForgeSelect {
   }
 
   private findOption(value: string): Option | undefined {
-    return findDataOption(this.data, value);
+    return this.optionByValue.get(value);
   }
 
   private findOptionByLabel(label: string): Option | undefined {
-    const lower = label.toLowerCase();
-    const search = (options: Option[]): Option | undefined => {
-      for (const option of options) {
-        if (option.label.toLowerCase() === lower) return option;
-        const found = option.children ? search(option.children) : undefined;
-        if (found) return found;
-      }
-      return undefined;
+    return this.optionByLabel.get(normalizeSearchText(label, this.opts.accentInsensitive));
+  }
+
+  private rebuildOptionIndexes(): void {
+    this.optionByValue.clear();
+    this.optionByLabel.clear();
+    const duplicates = new Set<string>();
+    const visit = (option: Option): void => {
+      if (this.optionByValue.has(option.value)) duplicates.add(option.value);
+      else this.optionByValue.set(option.value, option);
+      const label = normalizeSearchText(option.label, this.opts.accentInsensitive);
+      if (!this.optionByLabel.has(label)) this.optionByLabel.set(label, option);
+      option.children?.forEach(visit);
     };
-    for (const item of this.data) {
-      const found = search(isGroup(item) ? item.options : [item]);
-      if (found) return found;
-    }
-    return undefined;
+    for (const item of this.data) (isGroup(item) ? item.options : [item]).forEach(visit);
+    if (duplicates.size === 0 || this.opts.duplicateValuePolicy === "ignore") return;
+    const message = `ForgeSelect: duplicate option value(s): ${[...duplicates].join(", ")}`;
+    if (this.opts.duplicateValuePolicy === "error") throw new Error(message);
+    console.warn(message);
   }
 
   /** Selects an existing option matching `label` exactly, or creates and selects a new one. */
-  private createTag(label: string): TagCreation | undefined {
+  private createTag(label: string): TagCreation | undefined | Promise<TagCreation | undefined> {
     const trimmed = label.trim();
     if (!trimmed) return undefined;
     const existing = this.findOptionByLabel(trimmed);
@@ -1112,15 +1209,32 @@ export default class ForgeSelect {
         this.announceMaximum(existing);
         return undefined;
       }
+      if (this.opts.beforeSelect?.(existing) === false) return undefined;
       this.selectValue(existing.value, false);
       return { option: existing, created: false };
     }
-    const option: Option = { value: trimmed, label: trimmed };
+    if (this.opts.beforeCreate?.(trimmed) === false) return undefined;
+    const created = this.opts.createOption?.(trimmed) ?? { value: trimmed, label: trimmed };
+    if (created instanceof Promise) {
+      return created.then((option) => (option ? this.addCreatedOption(option) : undefined));
+    }
+    return created ? this.addCreatedOption(created) : undefined;
+  }
+
+  private addCreatedOption(option: Option): TagCreation | undefined {
     if (this.opts.multiple && !this.canSelectOption(option)) {
       this.announceMaximum(option);
       return undefined;
     }
+    const duplicate = this.findOption(option.value);
+    if (duplicate) {
+      if (this.selected.includes(duplicate.value)) return undefined;
+      if (this.opts.beforeSelect?.(duplicate) === false) return undefined;
+      this.selectValue(duplicate.value, false);
+      return { option: duplicate, created: false };
+    }
     this.data.push(option);
+    this.rebuildOptionIndexes();
     this.selectValue(option.value, false);
     return { option, created: true };
   }
@@ -1129,8 +1243,21 @@ export default class ForgeSelect {
     const label = this.query.trim();
     if (!label) return;
     const result = this.createTag(label);
-    if (!result) return;
-    if (this.searchInput) {
+    if (result instanceof Promise) {
+      void result
+        .then((created) => this.finishCreateFromQuery(created, label))
+        .catch((cause: unknown) => {
+          const error = cause instanceof Error ? cause : new Error(String(cause));
+          this.emitter.emit("error", error);
+        });
+      return;
+    }
+    this.finishCreateFromQuery(result, label);
+  }
+
+  private finishCreateFromQuery(result: TagCreation | undefined, sourceLabel: string): void {
+    if (!result || this.destroyed) return;
+    if (this.searchInput && this.query.trim() === sourceLabel) {
       this.searchInput.value = "";
       this.query = "";
     }
@@ -1152,9 +1279,11 @@ export default class ForgeSelect {
     if (this.opts.multiple) {
       let changed = false;
       if (this.selected.includes(value)) {
+        if (this.opts.beforeUnselect?.(item.option) === false) return;
         this.deselectValue(value, true);
         changed = true;
       } else if (this.canSelectOption(item.option)) {
+        if (this.opts.beforeSelect?.(item.option) === false) return;
         this.selectValue(value, true);
         changed = true;
       } else {
@@ -1162,6 +1291,7 @@ export default class ForgeSelect {
       }
       if (changed && this.opts.closeOnSelect) this.close();
     } else {
+      if (this.opts.beforeSelect?.(item.option) === false) return;
       this.selectValue(value, true);
       this.close();
       this.control.focus();
@@ -1190,7 +1320,7 @@ export default class ForgeSelect {
         tag.className = "forge-select__tag";
         const label = document.createElement("span");
         label.className = "forge-select__tag-label";
-        renderOptionContent(label, option, this.opts.templateSelection, "inline");
+        renderOptionContent(label, option, this.opts.templateSelection, "inline", this.opts.sanitizeTemplate);
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "forge-select__tag-remove";
@@ -1198,7 +1328,7 @@ export default class ForgeSelect {
         remove.textContent = "×";
         remove.addEventListener("click", (event) => {
           event.stopPropagation();
-          if (!this.isDisabled) this.deselectValue(value, true);
+          if (!this.isDisabled && this.opts.beforeUnselect?.(option) !== false) this.deselectValue(value, true);
         });
         tag.append(label, remove);
         if (this.opts.sortable) {
@@ -1218,7 +1348,7 @@ export default class ForgeSelect {
       };
       const span = document.createElement("span");
       span.className = "forge-select__single-value";
-      renderOptionContent(span, option, this.opts.templateSelection, "inline");
+      renderOptionContent(span, option, this.opts.templateSelection, "inline", this.opts.sanitizeTemplate);
       this.valueEl.append(span);
     }
   }
@@ -1342,8 +1472,14 @@ export default class ForgeSelect {
 
     // A tree node is visible while searching if it matches, or any descendant
     // does (leaf options with no children just reduce to `matches()`).
-    const subtreeMatches = (option: Option): boolean =>
-      query === "" || matches(option) || (option.children ?? []).some(subtreeMatches);
+    const subtreeMatchCache = new Map<Option, boolean>();
+    const subtreeMatches = (option: Option): boolean => {
+      const cached = subtreeMatchCache.get(option);
+      if (cached !== undefined) return cached;
+      const result = query === "" || matches(option) || (option.children ?? []).some(subtreeMatches);
+      subtreeMatchCache.set(option, result);
+      return result;
+    };
 
     const pushOption = (option: Option, depth: number, parentValue?: string): void => {
       let navIndex = -1;
@@ -1410,7 +1546,7 @@ export default class ForgeSelect {
   }
 
   private rowKey(row: Row, index: number): string {
-    if (row.kind === "option") return `option:${row.option.value}`;
+    if (row.kind === "option") return `option:${row.option.value}:${index}`;
     if (row.kind === "group") return `group:${row.label}:${index}`;
     return `${row.kind}:${index}`;
   }
@@ -1475,7 +1611,14 @@ export default class ForgeSelect {
     if (virtual) {
       const viewport = clientHeight || rowHeight * 8;
       if (this.opts.variableItemHeight) {
-        while (start < this.rows.length && offsets![start + 1] < scrollTop) start += 1;
+        let low = 0;
+        let high = this.rows.length;
+        while (low < high) {
+          const middle = (low + high) >>> 1;
+          if (offsets![middle + 1] < scrollTop) low = middle + 1;
+          else high = middle;
+        }
+        start = low;
         start = Math.max(0, start - VIRTUAL_BUFFER);
         end = start;
         const target = scrollTop + viewport + VIRTUAL_BUFFER * rowHeight;
@@ -1499,7 +1642,13 @@ export default class ForgeSelect {
     // per renderRows() call instead of once per row.
     const appended: HTMLLIElement[] = [];
     for (let i = start; i < end; i++) {
-      const element = this.renderRow(this.rows[i]);
+      const key = this.rowKey(this.rows[i], i);
+      const element = this.renderRow(this.rows[i], this.rowElementCache.get(key));
+      this.rowElementCache.set(key, element);
+      if (this.rowElementCache.size > ROW_CACHE_LIMIT) {
+        const oldest = this.rowElementCache.keys().next().value as string;
+        this.rowElementCache.delete(oldest);
+      }
       this.list.append(element);
       appended.push(element);
     }
@@ -1533,8 +1682,23 @@ export default class ForgeSelect {
     this.updateActiveDescendant();
   }
 
-  private renderRow(row: Row): HTMLLIElement {
-    const li = document.createElement("li");
+  private renderRow(row: Row, recycled?: HTMLLIElement): HTMLLIElement {
+    const li = recycled ?? document.createElement("li");
+    li.replaceChildren();
+    li.className = "";
+    for (const attribute of [
+      "role",
+      "id",
+      "aria-hidden",
+      "aria-selected",
+      "aria-disabled",
+      "aria-expanded",
+      "aria-level",
+      "data-nav-index",
+      "data-option-value",
+      "data-selection-state",
+    ])
+      li.removeAttribute(attribute);
     switch (row.kind) {
       case "group":
         li.className = "forge-select__group-label";
@@ -1582,51 +1746,51 @@ export default class ForgeSelect {
         li.textContent = format(this.strings.createOption, { query: this.query.trim() });
         if (row.navIndex === this.highlightedIndex) li.classList.add("forge-select__option--highlighted");
         break;
-      case "option": {
-        li.className = "forge-select__option";
-        li.dataset.optionValue = row.option.value;
-        if (row.option.className) li.classList.add(...row.option.className.trim().split(/\s+/).filter(Boolean));
-        li.setAttribute("role", "option");
-        const isSelected = this.selected.includes(row.option.value);
-        li.setAttribute("aria-selected", String(isSelected));
-        if (isSelected) li.classList.add("forge-select__option--selected");
-        if (
-          this.opts.multiple &&
-          row.hasChildren &&
-          computeCheckState(row.option, this.selected, this.isOptionDisabled) === "some"
-        ) {
-          li.classList.add("forge-select__option--indeterminate");
-          li.dataset.selectionState = "mixed";
-        }
-        if (row.depth > 0) {
-          li.style.paddingLeft = `calc(12px + ${row.depth} * var(--fs-tree-indent, 18px))`;
-        }
-        if (
-          this.isOptionDisabled(row.option) ||
-          (this.hasReachedMaximum() && !this.selected.includes(row.option.value))
-        ) {
-          li.classList.add("forge-select__option--disabled");
-          li.setAttribute("aria-disabled", "true");
-        } else {
-          li.id = `${this.uid}-nav-${row.navIndex}`;
-          li.dataset.navIndex = String(row.navIndex);
-          if (row.navIndex === this.highlightedIndex) li.classList.add("forge-select__option--highlighted");
-        }
-        if (row.hasChildren) {
-          const expanded = this.query !== "" || this.expandedValues.has(row.option.value);
-          li.setAttribute("aria-expanded", String(expanded));
-          const twisty = document.createElement("span");
-          twisty.className = "forge-select__twisty";
-          twisty.dataset.twisty = row.option.value;
-          twisty.setAttribute("aria-hidden", "true");
-          twisty.textContent = expanded ? "▼" : "▶";
-          li.append(twisty);
-        }
-        li.append(this.optionContent(row.option));
+      case "option":
+        this.renderOptionRow(li, row);
         break;
-      }
     }
     return li;
+  }
+
+  private renderOptionRow(li: HTMLLIElement, row: Extract<Row, { kind: "option" }>): void {
+    li.className = "forge-select__option";
+    li.dataset.optionValue = row.option.value;
+    if (row.option.className) li.classList.add(...row.option.className.trim().split(/\s+/).filter(Boolean));
+    li.setAttribute("role", "option");
+    const isSelected = this.selected.includes(row.option.value);
+    li.setAttribute("aria-selected", String(isSelected));
+    if (isSelected) li.classList.add("forge-select__option--selected");
+    if (
+      this.opts.multiple &&
+      row.hasChildren &&
+      computeCheckState(row.option, this.selected, this.isOptionDisabled) === "some"
+    ) {
+      li.classList.add("forge-select__option--indeterminate");
+      li.dataset.selectionState = "mixed";
+    }
+    if (row.depth > 0) {
+      li.style.paddingLeft = `calc(12px + ${row.depth} * var(--fs-tree-indent, 18px))`;
+    }
+    if (this.isOptionDisabled(row.option) || (this.hasReachedMaximum() && !this.selected.includes(row.option.value))) {
+      li.classList.add("forge-select__option--disabled");
+      li.setAttribute("aria-disabled", "true");
+    } else {
+      li.id = `${this.uid}-nav-${row.navIndex}`;
+      li.dataset.navIndex = String(row.navIndex);
+      if (row.navIndex === this.highlightedIndex) li.classList.add("forge-select__option--highlighted");
+    }
+    if (row.hasChildren) {
+      const expanded = this.query !== "" || this.expandedValues.has(row.option.value);
+      li.setAttribute("aria-expanded", String(expanded));
+      const twisty = document.createElement("span");
+      twisty.className = "forge-select__twisty";
+      twisty.dataset.twisty = row.option.value;
+      twisty.setAttribute("aria-hidden", "true");
+      twisty.textContent = expanded ? "▼" : "▶";
+      li.append(twisty);
+    }
+    li.append(this.optionContent(row.option));
   }
 
   /**
@@ -1662,7 +1826,7 @@ export default class ForgeSelect {
     if (!cached) {
       const holder = document.createElement("span");
       holder.className = "forge-select__option-content";
-      renderOptionContent(holder, option, this.opts.templateResult);
+      renderOptionContent(holder, option, this.opts.templateResult, "row", this.opts.sanitizeTemplate);
       if (this.rowContentCache.size >= ROW_CACHE_LIMIT) {
         // FIFO eviction keeps memory bounded on very large lists.
         const oldest = this.rowContentCache.keys().next().value as string;
@@ -1766,6 +1930,7 @@ export default class ForgeSelect {
     this.ajaxController = null;
     this.page = 0;
     this.hasMore = true;
+    this.nextCursor = undefined;
     this.setLoading(true);
     this.loadingMore = false;
     this.loadError = null;
@@ -1782,18 +1947,38 @@ export default class ForgeSelect {
     this.emitter.emit("loading", loading);
   }
 
-  private remoteCacheKey(query: string, page: number): string {
-    return `${query}\u0000${page}`;
+  private remoteCacheKey(query: string, page: number, cursor?: string): string {
+    return `${query}\u0000${cursor ?? page}`;
   }
 
-  private async requestRemote(query: string, page: number, signal: AbortSignal): Promise<unknown> {
+  private fetchRemoteResult(
+    query: string,
+    page: number,
+    signal: AbortSignal,
+    cursor?: string,
+  ): Promise<{ options: Option[]; hasMore: boolean; nextCursor?: string }> {
+    const key = this.remoteCacheKey(query, page, cursor);
+    const pending = this.remoteInFlight.get(key);
+    if (pending) return pending;
+    const ajax = this.opts.ajax!;
+    const request = this.requestRemote(query, page, signal, cursor)
+      .then((json) => normalizeRemoteResult(ajax, json))
+      .finally(() => this.remoteInFlight.delete(key));
+    this.remoteInFlight.set(key, request);
+    return request;
+  }
+
+  private async requestRemote(query: string, page: number, signal: AbortSignal, cursor?: string): Promise<unknown> {
     const ajax = this.opts.ajax!;
     const attempts = Math.max(0, Math.floor(ajax.retry ?? 0)) + 1;
     let lastError: unknown;
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       try {
-        if (ajax.request) return await ajax.request(query, page, signal);
-        const response = await fetch(buildUrl(ajax, query, page), { signal });
+        if (ajax.request)
+          return cursor === undefined
+            ? await ajax.request(query, page, signal)
+            : await ajax.request(query, page, signal, cursor);
+        const response = await fetch(buildUrl(ajax, query, page, cursor), { signal });
         if (response.ok === false) throw new Error(`ForgeSelect: remote request failed with HTTP ${response.status}`);
         return await response.json();
       } catch (error) {
@@ -1822,11 +2007,14 @@ export default class ForgeSelect {
     const key = this.remoteCacheKey(query, 0);
     if (this.remoteCache.get(key)) return;
     const controller = new AbortController();
+    this.prefetchControllers.add(controller);
     try {
-      const json = await this.requestRemote(query, 0, controller.signal);
-      this.remoteCache.set(key, normalizeRemoteResult(ajax, json), ajax.cacheTtl ?? 30000);
+      const result = await this.fetchRemoteResult(query, 0, controller.signal);
+      this.remoteCache.set(key, result, ajax.cacheTtl ?? 30000);
     } catch {
       // Prefetch is intentionally best-effort and must not surface UI errors.
+    } finally {
+      this.prefetchControllers.delete(controller);
     }
   }
 
@@ -1857,12 +2045,12 @@ export default class ForgeSelect {
     const controller = new AbortController();
     this.ajaxController = controller;
     const page = append ? this.page + 1 : 0;
+    const cursor = append ? this.nextCursor : undefined;
     try {
-      const key = this.remoteCacheKey(query, page);
+      const key = this.remoteCacheKey(query, page, cursor);
       let result = this.remoteCache.get(key);
       if (!result) {
-        const json = await this.requestRemote(query, page, controller.signal);
-        result = normalizeRemoteResult(ajax, json);
+        result = await this.fetchRemoteResult(query, page, controller.signal, cursor);
         this.remoteCache.set(key, result, ajax.cacheTtl ?? 30000);
       }
       if (activeRequestId !== this.ajaxRequestId || this.destroyed) return;
@@ -1878,8 +2066,10 @@ export default class ForgeSelect {
       }
       this.page = page;
       this.hasMore = hasMore;
+      this.nextCursor = result.nextCursor;
       this.remoteLoaded = true;
       this.loadError = null;
+      this.rebuildOptionIndexes();
     } catch (cause) {
       if (activeRequestId !== this.ajaxRequestId || this.destroyed || controller.signal.aborted) return;
       const error = cause instanceof Error ? cause : new Error(String(cause));
