@@ -1549,6 +1549,11 @@ export default class ForgeSelect {
     this.rowContentCache.clear();
     this.rowElementCache.clear();
     this.rowHeightCache.clear();
+    // Derived from rowHeightCache, so it has to go with it: buildRows() happens
+    // to reset it on the way to every render today, but leaving it behind here
+    // would reintroduce exactly the partial invalidation this helper exists to
+    // prevent if a render ever runs straight off cleared caches.
+    this.rowOffsetsCache = null;
   }
 
   private rowKey(row: Row, index: number): string {

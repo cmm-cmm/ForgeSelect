@@ -1759,6 +1759,9 @@ describe("ajax", () => {
     await vi.waitFor(() => expect(optionEls()[0]?.dataset.optionValue).toBe("x"));
     const flat = optionEls()[1];
     expect(flat.dataset.optionValue).toBe("c");
+    // Same value, new label: content is cached by value alone, so a surviving
+    // entry would re-render the superseded "Ca".
+    expect(flat.textContent).toContain("Caa");
     expect(flat.style.paddingLeft).toBe("");
     // The replaced dataset must not leave the previous render's <li> in the cache.
     expect(flat).not.toBe(nested);
