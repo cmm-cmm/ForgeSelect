@@ -133,7 +133,13 @@ export default class ForgeSelect {
   private highlightedIndex = -1;
   private typeaheadBuffer = "";
   private typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
-  private rowContentCache = new Map<string, Node>();
+  // Keyed by the option object, not its value: duplicateValuePolicy only warns
+  // by default, so two options can share a value while carrying different
+  // labels, and a value-keyed cache would render the first one's content for
+  // both. Still explicitly bounded — a WeakMap would not collect anything while
+  // `data` holds every key, so scrolling a long list would retain a detached
+  // node per option visited.
+  private rowContentCache = new Map<Option, Node>();
   private rowElementCache = new Map<string, HTMLLIElement>();
   private rowHeightCache = new Map<string, number>();
   private rowOffsetsCache: number[] | null = null;
@@ -353,8 +359,29 @@ export default class ForgeSelect {
     this.typeaheadBuffer = "";
     this.highlightedIndex = -1;
     if (this.searchInput) {
+      const hadQuery = this.query !== "";
       this.searchInput.value = "";
       this.query = "";
+      // A remote list holds the page fetched for the query just cleared, so
+      // reopening would show a filtered list under an empty search box. Local
+      // lists re-filter their own `data` on the next render and need nothing.
+      // The remote cache normally serves the refetch without a new request.
+      if (hadQuery && this.opts.ajax) {
+        // Retire the request the cleared query belongs to as well. Left running,
+        // it would land its filtered page and set remoteLoaded, so the reopen
+        // would skip the empty-query load and show exactly the stale rows this
+        // is meant to prevent.
+        this.ajaxRequestId += 1;
+        if (this.ajaxTimer) {
+          clearTimeout(this.ajaxTimer);
+          this.ajaxTimer = null;
+        }
+        this.ajaxController?.abort();
+        this.ajaxController = null;
+        this.setLoading(false);
+        this.loadingMore = false;
+        this.remoteLoaded = false;
+      }
     }
 
     this.emitter.emit("close");
@@ -1556,10 +1583,28 @@ export default class ForgeSelect {
     this.rowOffsetsCache = null;
   }
 
+  /** Identifies a row *position*, which is what measured heights are tied to. */
   private rowKey(row: Row, index: number): string {
     if (row.kind === "option") return `option:${row.option.value}:${index}`;
     if (row.kind === "group") return `group:${row.label}:${index}`;
     return `${row.kind}:${index}`;
+  }
+
+  /**
+   * Identifies a row's *content* for `<li>` recycling, deliberately without the
+   * row index: filtering shifts every index below the first change, so an
+   * index-keyed element cache misses on every keystroke — exactly when the list
+   * re-renders most. renderRow() rewrites the element completely, so reusing it
+   * at a new position is safe.
+   *
+   * Keys are not guaranteed unique within a render — duplicateValuePolicy
+   * defaults to warning rather than rejecting duplicate values — so callers
+   * must not hand the same element to two rows of one render.
+   */
+  private rowElementKey(row: Row): string {
+    if (row.kind === "option") return `option:${row.option.value}`;
+    if (row.kind === "group") return `group:${row.label}`;
+    return row.kind;
   }
 
   private measuredRowHeight(index: number): number {
@@ -1652,9 +1697,16 @@ export default class ForgeSelect {
     // flush overall (unavoidable — real heights are needed), but only once
     // per renderRows() call instead of once per row.
     const appended: HTMLLIElement[] = [];
+    // Two rows of one render can share an element key (duplicate option values
+    // are warned about, not rejected). Appending one element twice would move
+    // it rather than add it, silently dropping a row, so each element is
+    // claimed at most once per render and later rows fall back to a new one.
+    const claimed = new Set<HTMLLIElement>();
     for (let i = start; i < end; i++) {
-      const key = this.rowKey(this.rows[i], i);
-      const element = this.renderRow(this.rows[i], this.rowElementCache.get(key));
+      const key = this.rowElementKey(this.rows[i]);
+      const cached = this.rowElementCache.get(key);
+      const element = this.renderRow(this.rows[i], cached && !claimed.has(cached) ? cached : undefined);
+      claimed.add(element);
       this.rowElementCache.set(key, element);
       if (this.rowElementCache.size > ROW_CACHE_LIMIT) {
         const oldest = this.rowElementCache.keys().next().value as string;
@@ -1837,17 +1889,17 @@ export default class ForgeSelect {
       }
       return holder;
     }
-    let cached = this.rowContentCache.get(option.value);
+    let cached = this.rowContentCache.get(option);
     if (!cached) {
       const holder = document.createElement("span");
       holder.className = "forge-select__option-content";
       renderOptionContent(holder, option, this.opts.templateResult, "row", this.opts.sanitizeTemplate);
       if (this.rowContentCache.size >= ROW_CACHE_LIMIT) {
         // FIFO eviction keeps memory bounded on very large lists.
-        const oldest = this.rowContentCache.keys().next().value as string;
+        const oldest = this.rowContentCache.keys().next().value as Option;
         this.rowContentCache.delete(oldest);
       }
-      this.rowContentCache.set(option.value, holder);
+      this.rowContentCache.set(option, holder);
       cached = holder;
     }
     return cached.cloneNode(true);
