@@ -358,30 +358,33 @@ export default class ForgeSelect {
     }
     this.typeaheadBuffer = "";
     this.highlightedIndex = -1;
-    if (this.searchInput) {
-      const hadQuery = this.query !== "";
-      this.searchInput.value = "";
-      this.query = "";
-      // A remote list holds the page fetched for the query just cleared, so
-      // reopening would show a filtered list under an empty search box. Local
-      // lists re-filter their own `data` on the next render and need nothing.
-      // The remote cache normally serves the refetch without a new request.
-      if (hadQuery && this.opts.ajax) {
-        // Retire the request the cleared query belongs to as well. Left running,
-        // it would land its filtered page and set remoteLoaded, so the reopen
-        // would skip the empty-query load and show exactly the stale rows this
-        // is meant to prevent.
-        this.ajaxRequestId += 1;
-        if (this.ajaxTimer) {
-          clearTimeout(this.ajaxTimer);
-          this.ajaxTimer = null;
-        }
-        this.ajaxController?.abort();
-        this.ajaxController = null;
-        this.setLoading(false);
-        this.loadingMore = false;
-        this.remoteLoaded = false;
+    // Not gated on `this.searchInput` existing: a searchable: false select with
+    // ajax can still carry a non-empty `query` set programmatically through
+    // setSearchQuery(), and that query must be retired on close the same way a
+    // typed one is, or reopening reproduces the exact stale-filtered-page bug
+    // this block exists to prevent.
+    const hadQuery = this.query !== "";
+    if (this.searchInput) this.searchInput.value = "";
+    this.query = "";
+    // A remote list holds the page fetched for the query just cleared, so
+    // reopening would show a filtered list under an empty search box. Local
+    // lists re-filter their own `data` on the next render and need nothing.
+    // The remote cache normally serves the refetch without a new request.
+    if (hadQuery && this.opts.ajax) {
+      // Retire the request the cleared query belongs to as well. Left running,
+      // it would land its filtered page and set remoteLoaded, so the reopen
+      // would skip the empty-query load and show exactly the stale rows this
+      // is meant to prevent.
+      this.ajaxRequestId += 1;
+      if (this.ajaxTimer) {
+        clearTimeout(this.ajaxTimer);
+        this.ajaxTimer = null;
       }
+      this.ajaxController?.abort();
+      this.ajaxController = null;
+      this.setLoading(false);
+      this.loadingMore = false;
+      this.remoteLoaded = false;
     }
 
     this.emitter.emit("close");
@@ -488,16 +491,17 @@ export default class ForgeSelect {
     if (options.beforeCreate !== undefined) this.opts.beforeCreate = options.beforeCreate;
     if (options.createOption !== undefined) this.opts.createOption = options.createOption;
     if (options.missingSelectionPolicy !== undefined) this.opts.missingSelectionPolicy = options.missingSelectionPolicy;
+    let needsReindex = false;
     if (options.duplicateValuePolicy !== undefined) {
       this.opts.duplicateValuePolicy = options.duplicateValuePolicy;
-      this.rebuildOptionIndexes();
+      needsReindex = true;
     }
     if (options.filterOption !== undefined) this.opts.filterOption = options.filterOption;
     if (options.searchFields !== undefined) this.opts.searchFields = options.searchFields;
     if (options.tokenSearch !== undefined) this.opts.tokenSearch = options.tokenSearch;
     if (options.accentInsensitive !== undefined) {
       this.opts.accentInsensitive = options.accentInsensitive;
-      this.rebuildOptionIndexes();
+      needsReindex = true;
     }
     if (options.searchScorer !== undefined) this.opts.searchScorer = options.searchScorer;
     if (options.highlightSearch !== undefined) this.opts.highlightSearch = options.highlightSearch;
@@ -524,6 +528,12 @@ export default class ForgeSelect {
       if (options.disabled) this.disable();
       else this.enable();
     }
+    // Deferred to the end and deduped: every plain field assignment above must
+    // land first, so a duplicateValuePolicy: "error" throw here (on data that
+    // already has duplicates) only skips the trailing render refresh below —
+    // opts already fully reflects this call — instead of aborting mid-update
+    // and leaving later options in this same call unapplied.
+    if (needsReindex) this.rebuildOptionIndexes();
     this.root.classList.toggle("forge-select--sortable", this.opts.sortable && this.opts.multiple);
     this.updateSearchVisibility();
     this.clearRowCaches();
@@ -583,20 +593,6 @@ export default class ForgeSelect {
    * the same fallback used for values selected from a stale ajax page).
    */
   setData(data: DataItem[]): void {
-    if (this.ajaxTimer) {
-      clearTimeout(this.ajaxTimer);
-      this.ajaxTimer = null;
-    }
-    this.ajaxController?.abort();
-    this.ajaxController = null;
-    this.ajaxRequestId += 1;
-    this.setLoading(false);
-    this.loadingMore = false;
-    this.loadError = null;
-    this.remoteLoaded = true;
-    this.page = 0;
-    this.hasMore = false;
-    this.nextCursor = undefined;
     const previousData = this.data;
     this.data = data;
     try {
@@ -612,6 +608,24 @@ export default class ForgeSelect {
       this.rebuildOptionIndexes();
       throw new Error(`ForgeSelect: setData() is missing selected value(s): ${missing.join(", ")}`);
     }
+    // Only committed once the new data is known to be acceptable — a validation
+    // failure above must not silently cancel an in-flight remote load or reset
+    // pagination state that the caller, having just received an exception, has
+    // no way to detect or undo.
+    if (this.ajaxTimer) {
+      clearTimeout(this.ajaxTimer);
+      this.ajaxTimer = null;
+    }
+    this.ajaxController?.abort();
+    this.ajaxController = null;
+    this.ajaxRequestId += 1;
+    this.setLoading(false);
+    this.loadingMore = false;
+    this.loadError = null;
+    this.remoteLoaded = true;
+    this.page = 0;
+    this.hasMore = false;
+    this.nextCursor = undefined;
     this.opts.data = data;
     if (missing.length > 0 && this.opts.missingSelectionPolicy === "prune") {
       this.selected = this.selected.filter((value) => this.optionByValue.has(value));
@@ -1235,7 +1249,12 @@ export default class ForgeSelect {
       return { option: existing, created: false };
     }
     if (this.opts.beforeCreate?.(trimmed) === false) return undefined;
-    const created = this.opts.createOption?.(trimmed) ?? { value: trimmed, label: trimmed };
+    // createOption's sync-undefined return means "cancel creation" (see CreateOption
+    // in types.ts), distinct from "createOption isn't configured" — `?? fallback`
+    // would conflate the two and create the default option even when a configured
+    // createOption explicitly rejected the label.
+    if (!this.opts.createOption) return this.addCreatedOption({ value: trimmed, label: trimmed });
+    const created = this.opts.createOption(trimmed);
     if (created instanceof Promise) {
       return created.then((option) => (option ? this.addCreatedOption(option) : undefined));
     }
@@ -2021,7 +2040,9 @@ export default class ForgeSelect {
   }
 
   private remoteCacheKey(query: string, page: number, cursor?: string): string {
-    return `${query}\u0000${cursor ?? page}`;
+    // Tagged so a cursor value that happens to equal a page number (e.g. both
+    // "0") can't collide with the unrelated page-numbered cache entry.
+    return `${query}\u0000${cursor !== undefined ? `c:${cursor}` : `p:${page}`}`;
   }
 
   private fetchRemoteResult(
@@ -2148,6 +2169,12 @@ export default class ForgeSelect {
       if (!append) {
         this.data = [];
         this.clearRowCaches();
+        // Every other assignment to `this.data` (constructor, setData,
+        // addCreatedOption, the success branch above) rebuilds the value/label
+        // indexes in step; skipping it here would leave optionByValue/optionByLabel
+        // resolving options that are no longer in `this.data` until the next
+        // successful load happens to rebuild them.
+        this.rebuildOptionIndexes();
       }
       this.hasMore = false;
       this.loadError = error;

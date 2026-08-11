@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `createOption` returning `undefined` synchronously to cancel tag creation is now honored. It was only respected on the async (`Promise`) path — the sync path's `?? fallback` couldn't distinguish "createOption cancelled" from "createOption isn't configured," so a rejected label was created anyway with the default `{ value, label }` shape.
+- `updateOptions({ duplicateValuePolicy: "error", ... })` no longer leaves later fields in the same call unapplied when it throws. Validation is now deferred until every other field has been assigned, so a call combining `duplicateValuePolicy: "error"` with unrelated options (theme, placeholder, `itemHeight`, etc.) against already-duplicate data still applies all of them before raising.
+- `setData()` no longer cancels a pending or in-flight remote request as a side effect of being rejected by `missingSelectionPolicy: "error"`. The AJAX timer/controller reset and pagination-state clear now happen only once the new data is known to be acceptable.
+- A failed (non-append) remote reload now rebuilds the value/label option indexes after resetting `data` to `[]`, matching every other site that reassigns `data`. Previously the indexes kept resolving options that were no longer present until the next successful load happened to rebuild them.
+- The remote response cache key no longer conflates a cursor value with a page number sharing the same string (e.g. both `"0"`) — cursor and page-numbered entries are now tagged separately, so one can no longer silently overwrite the other.
+- Closing the dropdown now retires a programmatically-set search query (via `setSearchQuery()`) the same way it retires a typed one, even on a `searchable: false` instance with no search box. Previously the reset was nested inside a search-input existence check, so a `searchable: false` AJAX select could reopen showing a stale filtered page.
+
 ## [0.7.3] - 2026-08-02
 
 ### Fixed
