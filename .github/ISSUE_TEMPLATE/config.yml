@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & discussion
+    url: https://github.com/cmm-cmm/ForgeSelect/discussions
+    about: Ask usage questions or discuss ideas before filing a feature request.
+  - name: Report a security vulnerability
+    url: https://github.com/cmm-cmm/ForgeSelect/security/advisories/new
+    about: Please do not open a public issue for security vulnerabilities — see SECURITY.md.
