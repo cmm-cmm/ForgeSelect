@@ -244,6 +244,61 @@ describe("guarded creation and data integrity", () => {
     warn.mockRestore();
   });
 
+  it("honors a synchronous createOption returning undefined to cancel creation", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      allowCreate: true,
+      createOption: (label) => (label.includes("@") ? undefined : { value: label, label }),
+      data: [],
+    });
+    select.open();
+    select.setSearchQuery("bad@label");
+    document.querySelector<HTMLLIElement>(".forge-select__option--create")?.click();
+    expect(select.getValue()).toBeNull();
+
+    select.setSearchQuery("good");
+    document.querySelector<HTMLLIElement>(".forge-select__option--create")?.click();
+    expect(select.getValue()).toBe("good");
+  });
+
+  it("applies every option in one updateOptions() call before duplicateValuePolicy: error throws", () => {
+    mountSelect("");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const select = new ForgeSelect("#country", {
+      data: [
+        { value: "a", label: "A" },
+        { value: "a", label: "A2" },
+      ],
+    });
+    // itemHeight is applied later than duplicateValuePolicy in updateOptions()'s
+    // field order, so this only passes if validation is deferred until every
+    // other field in the call has already landed.
+    expect(() => select.updateOptions({ duplicateValuePolicy: "error", itemHeight: 50 })).toThrow(
+      /duplicate option value/,
+    );
+    expect(document.querySelector<HTMLElement>(".forge-select")?.style.getPropertyValue("--fs-item-height")).toBe(
+      "50px",
+    );
+    warn.mockRestore();
+  });
+
+  it("does not cancel a pending remote request when setData() is rejected by missingSelectionPolicy: error", async () => {
+    const request = vi.fn().mockResolvedValue([{ value: "z", label: "Z" }]);
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      missingSelectionPolicy: "error",
+      data: [{ value: "a", label: "A" }],
+      ajax: { request, debounce: 0 },
+    });
+    select.setValue("a");
+    select.open();
+    select.setSearchQuery("q");
+    expect(() => select.setData([{ value: "b", label: "B" }])).toThrow(/missing selected value/);
+    // A validation failure must not silently cancel the load scheduled just
+    // before it — the caller has no way to detect or retry a cancelled load.
+    await vi.waitFor(() => expect(request).toHaveBeenCalled());
+  });
+
   it("sanitizes string templates", () => {
     mountSelect("");
     const select = new ForgeSelect("#country", {
@@ -1760,6 +1815,35 @@ describe("ajax", () => {
     expect(input.value).toBe("");
     expect(select.getSearchQuery()).toBe("");
     // Served from the remote cache — reopening costs no extra request.
+    expect(queries).toEqual(["", "be"]);
+  });
+
+  it("retires a programmatically-set query on close even without a search box (searchable: false)", async () => {
+    mountSelect("");
+    const queries: string[] = [];
+    const select = new ForgeSelect("#country", {
+      searchable: false,
+      ajax: {
+        debounce: 0,
+        request: async (query: string) => {
+          queries.push(query);
+          return query === "" ? [{ value: "a", label: "Alpha" }] : [{ value: "b", label: "Beta" }];
+        },
+      },
+    });
+
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(1));
+    select.setSearchQuery("be");
+    await vi.waitFor(() => expect(optionEls().map((li) => li.textContent)).toEqual(["Beta"]));
+
+    select.close();
+    select.open();
+    // close() must clear the programmatic query the same way it clears a typed
+    // one, or reopening shows the filtered page under what looks like a fresh
+    // (query-less) reopen.
+    await vi.waitFor(() => expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha"]));
+    expect(select.getSearchQuery()).toBe("");
     expect(queries).toEqual(["", "be"]);
   });
 
