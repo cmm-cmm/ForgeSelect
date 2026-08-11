@@ -133,7 +133,13 @@ export default class ForgeSelect {
   private highlightedIndex = -1;
   private typeaheadBuffer = "";
   private typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
-  private rowContentCache = new Map<string, Node>();
+  // Keyed by the option object, not its value: duplicateValuePolicy only warns
+  // by default, so two options can share a value while carrying different
+  // labels, and a value-keyed cache would render the first one's content for
+  // both. Still explicitly bounded — a WeakMap would not collect anything while
+  // `data` holds every key, so scrolling a long list would retain a detached
+  // node per option visited.
+  private rowContentCache = new Map<Option, Node>();
   private rowElementCache = new Map<string, HTMLLIElement>();
   private rowHeightCache = new Map<string, number>();
   private rowOffsetsCache: number[] | null = null;
@@ -353,8 +359,29 @@ export default class ForgeSelect {
     this.typeaheadBuffer = "";
     this.highlightedIndex = -1;
     if (this.searchInput) {
+      const hadQuery = this.query !== "";
       this.searchInput.value = "";
       this.query = "";
+      // A remote list holds the page fetched for the query just cleared, so
+      // reopening would show a filtered list under an empty search box. Local
+      // lists re-filter their own `data` on the next render and need nothing.
+      // The remote cache normally serves the refetch without a new request.
+      if (hadQuery && this.opts.ajax) {
+        // Retire the request the cleared query belongs to as well. Left running,
+        // it would land its filtered page and set remoteLoaded, so the reopen
+        // would skip the empty-query load and show exactly the stale rows this
+        // is meant to prevent.
+        this.ajaxRequestId += 1;
+        if (this.ajaxTimer) {
+          clearTimeout(this.ajaxTimer);
+          this.ajaxTimer = null;
+        }
+        this.ajaxController?.abort();
+        this.ajaxController = null;
+        this.setLoading(false);
+        this.loadingMore = false;
+        this.remoteLoaded = false;
+      }
     }
 
     this.emitter.emit("close");
@@ -399,9 +426,7 @@ export default class ForgeSelect {
     this.nativeSelect?.removeEventListener("change", this.onNativeChange);
     this.nativeSelect?.removeEventListener("invalid", this.onNativeInvalid);
     this.nativeForm?.removeEventListener("reset", this.onFormReset);
-    this.rowContentCache.clear();
-    this.rowElementCache.clear();
-    this.rowHeightCache.clear();
+    this.clearRowCaches();
     this.searchIndex.clear();
     this.portalHost?.remove();
     this.root.remove();
@@ -501,9 +526,7 @@ export default class ForgeSelect {
     }
     this.root.classList.toggle("forge-select--sortable", this.opts.sortable && this.opts.multiple);
     this.updateSearchVisibility();
-    this.rowContentCache.clear();
-    this.rowElementCache.clear();
-    this.rowHeightCache.clear();
+    this.clearRowCaches();
     this.searchIndex.clear();
     this.renderValue();
     if (this.isOpen) this.renderList();
@@ -595,9 +618,7 @@ export default class ForgeSelect {
       this.afterSelectionChange();
     }
     this.updateSearchVisibility();
-    this.rowContentCache.clear();
-    this.rowElementCache.clear();
-    this.rowHeightCache.clear();
+    this.clearRowCaches();
     this.searchIndex.clear();
     this.highlightedIndex = -1;
     if (this.isOpen) this.renderList();
@@ -1545,10 +1566,45 @@ export default class ForgeSelect {
     return this.opts.virtualScroll !== false && this.rows.length > VIRTUAL_THRESHOLD;
   }
 
+  /**
+   * Drops every per-row cache at once. Rendered content, recycled <li>
+   * elements, and measured heights are all keyed off the current `data`, so
+   * they must be invalidated together whenever `data` is replaced — clearing
+   * only some of them leaves recycled rows carrying state from the old list.
+   */
+  private clearRowCaches(): void {
+    this.rowContentCache.clear();
+    this.rowElementCache.clear();
+    this.rowHeightCache.clear();
+    // Derived from rowHeightCache, so it has to go with it: buildRows() happens
+    // to reset it on the way to every render today, but leaving it behind here
+    // would reintroduce exactly the partial invalidation this helper exists to
+    // prevent if a render ever runs straight off cleared caches.
+    this.rowOffsetsCache = null;
+  }
+
+  /** Identifies a row *position*, which is what measured heights are tied to. */
   private rowKey(row: Row, index: number): string {
     if (row.kind === "option") return `option:${row.option.value}:${index}`;
     if (row.kind === "group") return `group:${row.label}:${index}`;
     return `${row.kind}:${index}`;
+  }
+
+  /**
+   * Identifies a row's *content* for `<li>` recycling, deliberately without the
+   * row index: filtering shifts every index below the first change, so an
+   * index-keyed element cache misses on every keystroke — exactly when the list
+   * re-renders most. renderRow() rewrites the element completely, so reusing it
+   * at a new position is safe.
+   *
+   * Keys are not guaranteed unique within a render — duplicateValuePolicy
+   * defaults to warning rather than rejecting duplicate values — so callers
+   * must not hand the same element to two rows of one render.
+   */
+  private rowElementKey(row: Row): string {
+    if (row.kind === "option") return `option:${row.option.value}`;
+    if (row.kind === "group") return `group:${row.label}`;
+    return row.kind;
   }
 
   private measuredRowHeight(index: number): number {
@@ -1641,9 +1697,16 @@ export default class ForgeSelect {
     // flush overall (unavoidable — real heights are needed), but only once
     // per renderRows() call instead of once per row.
     const appended: HTMLLIElement[] = [];
+    // Two rows of one render can share an element key (duplicate option values
+    // are warned about, not rejected). Appending one element twice would move
+    // it rather than add it, silently dropping a row, so each element is
+    // claimed at most once per render and later rows fall back to a new one.
+    const claimed = new Set<HTMLLIElement>();
     for (let i = start; i < end; i++) {
-      const key = this.rowKey(this.rows[i], i);
-      const element = this.renderRow(this.rows[i], this.rowElementCache.get(key));
+      const key = this.rowElementKey(this.rows[i]);
+      const cached = this.rowElementCache.get(key);
+      const element = this.renderRow(this.rows[i], cached && !claimed.has(cached) ? cached : undefined);
+      claimed.add(element);
       this.rowElementCache.set(key, element);
       if (this.rowElementCache.size > ROW_CACHE_LIMIT) {
         const oldest = this.rowElementCache.keys().next().value as string;
@@ -1697,6 +1760,10 @@ export default class ForgeSelect {
       "data-nav-index",
       "data-option-value",
       "data-selection-state",
+      // Tree rows set an inline padding-left indent; clearing the whole
+      // attribute keeps recycling self-contained, so a row reused at a
+      // shallower depth can't inherit the previous row's indent.
+      "style",
     ])
       li.removeAttribute(attribute);
     switch (row.kind) {
@@ -1822,17 +1889,17 @@ export default class ForgeSelect {
       }
       return holder;
     }
-    let cached = this.rowContentCache.get(option.value);
+    let cached = this.rowContentCache.get(option);
     if (!cached) {
       const holder = document.createElement("span");
       holder.className = "forge-select__option-content";
       renderOptionContent(holder, option, this.opts.templateResult, "row", this.opts.sanitizeTemplate);
       if (this.rowContentCache.size >= ROW_CACHE_LIMIT) {
         // FIFO eviction keeps memory bounded on very large lists.
-        const oldest = this.rowContentCache.keys().next().value as string;
+        const oldest = this.rowContentCache.keys().next().value as Option;
         this.rowContentCache.delete(oldest);
       }
-      this.rowContentCache.set(option.value, holder);
+      this.rowContentCache.set(option, holder);
       cached = holder;
     }
     return cached.cloneNode(true);
@@ -1912,13 +1979,19 @@ export default class ForgeSelect {
     return false;
   }
 
+  /**
+   * Reads the id off the row the render pass just marked, rather than rebuilding
+   * it from the highlight index. Virtual scrolling drops off-window rows, so an
+   * index-derived id can name an element that no longer exists, and
+   * aria-activedescendant must resolve to a real one — a dangling reference
+   * reads to assistive tech as no active option at all. Keyboard navigation
+   * scrolls the highlight back into view, which restores the reference.
+   */
   private updateActiveDescendant(): void {
     const target = this.searchInput ?? this.control;
-    if (this.highlightedIndex >= 0) {
-      target.setAttribute("aria-activedescendant", `${this.uid}-nav-${this.highlightedIndex}`);
-    } else {
-      target.removeAttribute("aria-activedescendant");
-    }
+    const highlighted = this.list.querySelector(".forge-select__option--highlighted");
+    if (highlighted) target.setAttribute("aria-activedescendant", highlighted.id);
+    else target.removeAttribute("aria-activedescendant");
   }
 
   // ---------------------------------------------------------------- remote data
@@ -2061,8 +2134,7 @@ export default class ForgeSelect {
         this.data = [...this.data, ...options.filter((o) => !existing.has(o.value))];
       } else {
         this.data = options;
-        this.rowContentCache.clear();
-        this.rowHeightCache.clear();
+        this.clearRowCaches();
       }
       this.page = page;
       this.hasMore = hasMore;
@@ -2075,8 +2147,7 @@ export default class ForgeSelect {
       const error = cause instanceof Error ? cause : new Error(String(cause));
       if (!append) {
         this.data = [];
-        this.rowContentCache.clear();
-        this.rowHeightCache.clear();
+        this.clearRowCaches();
       }
       this.hasMore = false;
       this.loadError = error;

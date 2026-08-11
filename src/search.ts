@@ -29,22 +29,6 @@ export function getSearchField(option: Option, field: SearchField): string {
   return value == null ? "" : String(value);
 }
 
-export function scoreOption(option: Option, query: string, config: SearchConfig): number {
-  const normalizedQuery = normalizeSearchText(query.trim(), config.accentInsensitive);
-  if (!normalizedQuery) return 1;
-  if (config.scorer) return config.scorer(option, query.trim(), normalizedQuery);
-  const haystacks = config.fields.map((field) =>
-    normalizeSearchText(getSearchField(option, field), config.accentInsensitive),
-  );
-  const tokens = config.tokenSearch ? normalizedQuery.split(/\s+/).filter(Boolean) : [normalizedQuery];
-  if (!tokens.every((token) => haystacks.some((field) => field.includes(token)))) return 0;
-  const label = haystacks[config.fields.indexOf("label")];
-  if (label === normalizedQuery) return 4;
-  if (label?.startsWith(normalizedQuery)) return 3;
-  if (label?.includes(normalizedQuery)) return 2;
-  return 1;
-}
-
 export class SearchIndex {
   private cache = new WeakMap<Option, Map<string, string[]>>();
 

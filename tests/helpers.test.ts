@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { format, getStrings } from "../src/i18n";
 import { parseNativeOptions } from "../src/native-select";
 import { renderOptionContent } from "../src/option-renderer";
 import { computeDropdownPlacement } from "../src/dropdown-position";
 import { buildUrl, normalizeRemoteResult } from "../src/remote";
 import { RemoteCache } from "../src/remote-cache";
-import { findNormalizedRanges, getSearchField, normalizeSearchText, scoreOption, SearchIndex } from "../src/search";
+import { findNormalizedRanges, getSearchField, normalizeSearchText, SearchIndex } from "../src/search";
 import {
   arraysEqual,
   collectDescendantValues,
@@ -81,6 +82,18 @@ describe("native and remote helpers", () => {
     expect(data).toEqual([{ value: "empty", label: "", disabled: undefined }]);
   });
 
+  it("skips select children that are neither <option> nor <optgroup>", () => {
+    document.body.innerHTML = '<select><!-- note --><script></script><option value="a">A</option><hr></select>';
+    const data = parseNativeOptions(document.querySelector("select")!);
+    expect(data).toEqual([{ value: "a", label: "A", disabled: undefined }]);
+  });
+
+  it("keeps an enabled option inside an enabled group undisabled", () => {
+    document.body.innerHTML = '<select><optgroup label="Open"><option value="a">A</option></optgroup></select>';
+    const data = parseNativeOptions(document.querySelector("select")!);
+    expect(data).toEqual([{ label: "Open", options: [{ value: "a", label: "A", disabled: undefined }] }]);
+  });
+
   it("builds paginated URLs and normalizes response shapes", () => {
     const ajax = {
       url: "/api?kind=user",
@@ -150,7 +163,7 @@ describe("search and cache helpers", () => {
     expect(normalizeSearchText("Đà Nẵng")).toBe("da nang");
     expect(getSearchField(option, "meta.team.name")).toBe("Miền Trung");
     expect(
-      scoreOption(option, "da bien", {
+      new SearchIndex().score(option, "da bien", {
         fields: ["label", "description"],
         tokenSearch: true,
         accentInsensitive: true,
@@ -161,16 +174,20 @@ describe("search and cache helpers", () => {
     expect(getSearchField(option, "label")).toBe("Đà Nẵng");
     expect(getSearchField(option, "description")).toBe("Thành phố biển");
     expect(getSearchField(option, "meta.missing.value")).toBe("");
-    expect(scoreOption(option, "", { fields: ["label"], tokenSearch: true, accentInsensitive: true })).toBe(1);
+    expect(new SearchIndex().score(option, "", { fields: ["label"], tokenSearch: true, accentInsensitive: true })).toBe(
+      1,
+    );
     expect(
-      scoreOption(option, "anything", {
+      new SearchIndex().score(option, "anything", {
         fields: ["label"],
         tokenSearch: false,
         accentInsensitive: true,
         scorer: () => 7,
       }),
     ).toBe(7);
-    expect(scoreOption(option, "missing", { fields: ["label"], tokenSearch: false, accentInsensitive: true })).toBe(0);
+    expect(
+      new SearchIndex().score(option, "missing", { fields: ["label"], tokenSearch: false, accentInsensitive: true }),
+    ).toBe(0);
     expect(findNormalizedRanges(option.label, "")).toEqual([]);
     const index = new SearchIndex();
     const config = { fields: ["label"] as const, tokenSearch: true, accentInsensitive: true };
@@ -194,5 +211,22 @@ describe("search and cache helpers", () => {
     expect(cache.get("q9", 0)).toBeUndefined();
     expect(cache.get("q10", 0)).toBe("value10");
     expect(cache.get("q59", 0)).toBe("value59");
+  });
+});
+
+describe("i18n", () => {
+  it("falls back to English for an unknown locale code", () => {
+    expect(getStrings("kl").noResults).toBe(getStrings("en").noResults);
+  });
+
+  it("layers a custom string table over the English defaults", () => {
+    const strings = getStrings({ noResults: "Nothing here" });
+    expect(strings.noResults).toBe("Nothing here");
+    // Keys the caller did not override still resolve.
+    expect(strings.loading).toBe(getStrings("en").loading);
+  });
+
+  it("leaves placeholders without a matching variable untouched", () => {
+    expect(format("Create {query} in {scope}", { query: "x" })).toBe("Create x in {scope}");
   });
 });

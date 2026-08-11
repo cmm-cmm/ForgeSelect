@@ -61,8 +61,6 @@ Browse the documentation website at **<https://forgeselect.konexforge.com/docs/>
 - Internationalization (en/vi built in, custom string tables)
 - TypeScript Support (written in strict TypeScript, ships `.d.ts`)
 
-> Planned/in-progress capabilities — Angular/Svelte wrappers — are tracked in the [Roadmap](#roadmap) below and intentionally not listed above as shipped features.
-
 ## Installation
 
 ```bash
@@ -189,8 +187,8 @@ Forge Select is vanilla TypeScript/JavaScript, so it can be mounted inside any f
 - Vanilla JavaScript
 - React — via [`forge-select-react`](./packages/react/README.md) (`ForgeSelectReact` component, controlled `value`/`onChange`)
 - Vue — via [`forge-select-vue`](./packages/vue/README.md) (`ForgeSelectVue` component, `v-model` support)
-- Angular — mount manually for now; a dedicated wrapper is on the [Roadmap](#roadmap)
-- Svelte — mount manually for now; a dedicated wrapper is on the [Roadmap](#roadmap)
+- Angular — mount manually (see [`docs/examples.md`](./docs/examples.md))
+- Svelte — mount manually (see [`docs/examples.md`](./docs/examples.md))
 - Next.js
 - Nuxt
 - Astro
@@ -221,8 +219,6 @@ Run `npm run bench` for a reproducible JSON baseline covering bundle size, initi
 - [x] CSS Variables
 - [x] React Component
 - [x] Vue Component
-- [ ] Angular Component
-- [ ] Svelte Component
 
 ## Plugin Development Guide
 

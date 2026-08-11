@@ -1725,6 +1725,142 @@ describe("ajax", () => {
     expect(onError).toHaveBeenCalledWith(expect.any(Error));
     vi.unstubAllGlobals();
   });
+
+  it("refetches on reopen so a cleared search box never shows the previous query's page", async () => {
+    mountSelect("");
+    const queries: string[] = [];
+    const select = new ForgeSelect("#country", {
+      ajax: {
+        debounce: 0,
+        request: async (query: string) => {
+          queries.push(query);
+          return query === ""
+            ? [
+                { value: "a", label: "Alpha" },
+                { value: "b", label: "Beta" },
+                { value: "g", label: "Gamma" },
+              ]
+            : [{ value: "b", label: "Beta" }];
+        },
+      },
+    });
+
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(3));
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "be";
+    input.dispatchEvent(new Event("input"));
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(1));
+
+    select.close();
+    select.open();
+    // close() clears the search box, so the list must match an empty query
+    // again rather than staying filtered by the query the user can no longer see.
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(3));
+    expect(input.value).toBe("");
+    expect(select.getSearchQuery()).toBe("");
+    // Served from the remote cache — reopening costs no extra request.
+    expect(queries).toEqual(["", "be"]);
+  });
+
+  it("ignores a filtered response that lands after the dropdown was closed", async () => {
+    mountSelect("");
+    let releaseFiltered: (() => void) | undefined;
+    const select = new ForgeSelect("#country", {
+      ajax: {
+        debounce: 0,
+        request: async (query: string) => {
+          if (query === "")
+            return [
+              { value: "a", label: "Alpha" },
+              { value: "b", label: "Beta" },
+              { value: "g", label: "Gamma" },
+            ];
+          // Hold the filtered page open so it can resolve after close().
+          await new Promise<void>((resolve) => (releaseFiltered = resolve));
+          return [{ value: "b", label: "Beta" }];
+        },
+      },
+    });
+
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(3));
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "be";
+    input.dispatchEvent(new Event("input"));
+    await vi.waitFor(() => expect(releaseFiltered).toBeDefined());
+
+    select.close();
+    // The in-flight request belongs to the query close() just cleared; letting
+    // it apply would mark the remote loaded and suppress the empty-query reload.
+    releaseFiltered!();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(3));
+  });
+
+  it("does not refetch on reopen when the search box was already empty", async () => {
+    mountSelect("");
+    const queries: string[] = [];
+    const select = new ForgeSelect("#country", {
+      ajax: {
+        debounce: 0,
+        cacheTtl: 0,
+        request: async (query: string) => {
+          queries.push(query);
+          return [{ value: "a", label: "Alpha" }];
+        },
+      },
+    });
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(1));
+    select.close();
+    select.open();
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(1));
+    expect(queries).toEqual([""]);
+  });
+
+  it("drops recycled rows when a remote reload replaces the data", async () => {
+    mountSelect("");
+    // Both result sets place value "c" at row index 1, which is the row-recycling
+    // cache key. Only the first nests it under a parent, so a row reused across
+    // the reload would still carry the tree indent it no longer has.
+    const select = new ForgeSelect("#country", {
+      ajax: {
+        debounce: 0,
+        cacheTtl: 0,
+        request: async (query: string) =>
+          query === "a"
+            ? [{ value: "p", label: "Pa", children: [{ value: "c", label: "Ca" }] }]
+            : [
+                { value: "x", label: "Xaa" },
+                { value: "c", label: "Caa" },
+              ],
+      },
+    });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+
+    input.value = "a";
+    input.dispatchEvent(new Event("input"));
+    await vi.waitFor(() => expect(optionEls()).toHaveLength(2));
+    const nested = optionEls()[1];
+    expect(nested.dataset.optionValue).toBe("c");
+    expect(nested.style.paddingLeft).not.toBe("");
+
+    input.value = "aa";
+    input.dispatchEvent(new Event("input"));
+    await vi.waitFor(() => expect(optionEls()[0]?.dataset.optionValue).toBe("x"));
+    const flat = optionEls()[1];
+    expect(flat.dataset.optionValue).toBe("c");
+    // Same value, new label: content is cached by value alone, so a surviving
+    // entry would re-render the superseded "Ca".
+    expect(flat.textContent).toContain("Caa");
+    expect(flat.style.paddingLeft).toBe("");
+    // The replaced dataset must not leave the previous render's <li> in the cache.
+    expect(flat).not.toBe(nested);
+  });
 });
 
 describe("ajax pagination", () => {
@@ -1949,6 +2085,34 @@ describe("rich items", () => {
 describe("virtual scrolling", () => {
   const bigData = (n: number) => Array.from({ length: n }, (_, i) => ({ value: String(i), label: `Item ${i}` }));
 
+  it("drops aria-activedescendant when the highlight scrolls out of the rendered window", async () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { virtualScroll: true, data: bigData(1000) });
+    select.open();
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    const search = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+
+    const active = search.getAttribute("aria-activedescendant");
+    expect(active).toBeTruthy();
+    expect(document.getElementById(active!)).not.toBeNull();
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    list.scrollTop = 20000;
+    list.dispatchEvent(new Event("scroll"));
+    await vi.waitFor(() => expect(optionEls()[0]?.textContent).not.toBe("Item 0"));
+
+    // The highlighted row is no longer rendered, so pointing at its id would
+    // reference an element that does not exist.
+    expect(search.getAttribute("aria-activedescendant")).toBeNull();
+
+    // Keyboard navigation scrolls the highlight back and restores the reference.
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    const restored = search.getAttribute("aria-activedescendant");
+    expect(restored).toBeTruthy();
+    expect(document.getElementById(restored!)).not.toBeNull();
+  });
+
   it("renders a window with spacers for large lists", () => {
     mountSelect("");
     const select = new ForgeSelect("#country", { virtualScroll: true, data: bigData(5000) });
@@ -1957,6 +2121,52 @@ describe("virtual scrolling", () => {
     const rendered = optionEls();
     expect(rendered.length).toBeLessThan(100);
     expect(document.querySelectorAll(".forge-select__spacer")).toHaveLength(2);
+  });
+
+  it("recycles a row element across a filter change instead of rebuilding it", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      virtualScroll: false,
+      duplicateValuePolicy: "ignore",
+      data: [
+        { value: "a", label: "Alpha" },
+        { value: "b", label: "Beta" },
+        { value: "g", label: "Gamma" },
+      ],
+    });
+    select.open();
+    const beta = optionEls()[1];
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+
+    // "Beta" moves from row 1 to row 0. Recycling is keyed by option value, not
+    // by row index, so the same element is reused at its new position.
+    input.value = "bet";
+    input.dispatchEvent(new Event("input"));
+    expect(optionEls()).toHaveLength(1);
+    expect(optionEls()[0]).toBe(beta);
+    expect(optionEls()[0].textContent).toContain("Beta");
+  });
+
+  it("renders every row when two options share a value in one window", () => {
+    mountSelect("");
+    // duplicateValuePolicy only warns by default, so duplicates reach the
+    // renderer. Both rows must appear — handing one element to both would
+    // move it rather than append it, dropping a row from the list.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const select = new ForgeSelect("#country", {
+      virtualScroll: false,
+      data: [
+        { value: "dup", label: "First" },
+        { value: "dup", label: "Second" },
+        { value: "other", label: "Third" },
+      ],
+    });
+    select.open();
+    const rows = optionEls();
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).not.toBe(rows[1]);
+    expect(rows.map((r) => r.textContent)).toEqual(["First", "Second", "Third"]);
+    warn.mockRestore();
   });
 
   it("virtualizes automatically for large lists without the option", () => {
