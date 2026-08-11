@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-08-11
+
 ### Fixed
 
 - `createOption` returning `undefined` synchronously to cancel tag creation is now honored. It was only respected on the async (`Promise`) path — the sync path's `?? fallback` couldn't distinguish "createOption cancelled" from "createOption isn't configured," so a rejected label was created anyway with the default `{ value, label }` shape.
@@ -211,7 +213,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.3...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.4...HEAD
+[0.7.4]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.0...v0.7.1
