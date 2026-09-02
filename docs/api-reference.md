@@ -132,7 +132,7 @@ It combines with (does not replace) an option's static `disabled` field, and is 
 
 When an option has `avatar` and/or `description` and no custom template is set, Forge Select renders them with a built-in layout (avatar + label + description in the dropdown; small avatar + label in the selected value/tags). All built-in fields are inserted via `textContent`, so they are **XSS-safe** — no escaping needed on your side. `description` is also matched by the search filter.
 
-Custom templates (`templateResult`/`templateSelection`) receive the full option including `meta`. A **string** return value is injected as raw HTML. Supply `sanitizeTemplate` when content is not fully trusted; the callback is applied to both result and selection templates before insertion. Rendered row content is cached per option value and cloned on scroll, so templates run once per option regardless of scrolling; if your template returns a DOM **Node**, don't rely on event listeners attached inside it (clones don't carry listeners — use event delegation on the document instead).
+Custom templates (`templateResult`/`templateSelection`) receive the full option including `meta`. A **string** return value is injected as raw HTML. Supply `sanitizeTemplate` when content is not fully trusted; the callback is applied to both result and selection templates before insertion. Rendered row content is cached against the option object and cloned on scroll, so templates run once per option regardless of scrolling; if your template returns a DOM **Node**, don't rely on event listeners attached inside it (clones don't carry listeners — use event delegation on the document instead).
 
 ### `AjaxConfig` shape
 
