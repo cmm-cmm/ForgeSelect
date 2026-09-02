@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-09-02
+
+### Fixed
+
+- `forge-select/styles.css` is no longer dropped by bundlers that honor `sideEffects`. The package declared `"sideEffects": false`, which tells a bundler that no module in it has side effects, so a bare `import "forge-select/styles.css"` was eligible for elimination. Reproduced with webpack 5 + `mini-css-extract-plugin`: no CSS asset was emitted at all, silently, leaving the component unstyled with no error. The field now marks CSS as side-effectful (`["**/*.css"]`), which restores the emitted stylesheet; JavaScript tree-shaking is unaffected. `forge-select-react` and `forge-select-vue` ship no CSS and correctly keep `"sideEffects": false`.
+
+### Changed
+
+- The benchmark gzip budget moves from 13,500 to 14,000 bytes. It had been sitting about five bytes above the bundle it guarded, so it no longer distinguished real growth from noise — the 0.7.4 correctness fixes crossed it and landed with CI red instead of being weighed against it. The bundle itself is unchanged at 13,529 bytes; this restores roughly 3% of headroom so a breach again means something.
+
+### Documentation
+
+- `docs/api-reference.md` said rendered row content is "cached per option value". It has been keyed by the option object since 0.7.2 — the change that stopped two options sharing a value from rendering the first one's label.
+- README now documents that the bundle is monolithic: every feature is included whether or not it is used, so a minimal select costs 13.3 KB gzipped against 13.4 KB for one using the entire API. Opt-in subpath entrypoints are noted as a possible future major, not a patch.
+
 ## [0.7.4] - 2026-08-11
 
 ### Fixed
@@ -213,7 +228,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.4...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.5...HEAD
+[0.7.5]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.1...v0.7.2

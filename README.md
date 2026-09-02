@@ -205,6 +205,17 @@ Forge Select is vanilla TypeScript/JavaScript, so it can be mounted inside any f
 
 Forge Select is designed as a drop-in-concept replacement for Select2: no jQuery dependency, native accessibility, and a smaller API surface. A full option/event/method mapping table and a step-by-step migration checklist are available in [`docs/migration-from-select2.md`](./docs/migration-from-select2.md).
 
+## Bundle size
+
+Forge Select ships as a single class, so **the whole feature set is in the bundle whether or not you use it** — tree select, AJAX, tags, sortable tags and virtualization cannot be tree-shaken away. Measured with esbuild (minified + gzipped):
+
+| Usage                                                           | JS      |
+| --------------------------------------------------------------- | ------- |
+| Minimal — `new ForgeSelect(el, { placeholder })`                | 13.3 KB |
+| Every feature — tree, AJAX, tags, sortable, measured rows, etc. | 13.4 KB |
+
+Plus 1.7 KB gzipped for `forge-select/styles.css`. Budget ~15 KB gzipped total and the number won't move as you adopt more of the API. Splitting the core into opt-in subpath entrypoints is under consideration for a future major version; it is not planned as a patch, since it would change the public import surface.
+
 ## Benchmarks
 
 Run `npm run bench` for a reproducible JSON baseline covering bundle size, initialization, 10,000-option search latency, and virtual-scroll performance. The methodology and result fields are documented in [`docs/benchmarks.md`](./docs/benchmarks.md).

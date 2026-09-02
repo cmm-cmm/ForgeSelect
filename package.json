@@ -1,6 +1,6 @@
 {
   "name": "forge-select",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "A modern, lightweight, highly customizable replacement for Select2.",
   "keywords": [
     "select",
@@ -46,7 +46,9 @@
     "dist",
     "styles"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "overrides": {
     "esbuild": "0.28.1"
   },
