@@ -71,6 +71,24 @@ yarn add forge-select
 pnpm add forge-select
 ```
 
+### CDN (no build step)
+
+The package also ships a self-contained minified IIFE bundle (~13.5 KB gzipped)
+that defines the global `ForgeSelectBundle`. Pin the version — the unversioned
+URL follows the latest release and will change under you:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/forge-select@0.8.0/styles/forge-select.css" />
+<script src="https://cdn.jsdelivr.net/npm/forge-select@0.8.0"></script>
+<script>
+  new ForgeSelectBundle.default("#country", { placeholder: "Select a country" });
+</script>
+```
+
+`unpkg.com/forge-select@0.8.0` serves the same file. The bundle is also
+reachable by its explicit path (`.../forge-select@0.8.0/dist/index.global.js`)
+if you prefer not to rely on the package's `unpkg`/`jsdelivr` fields.
+
 ## Quick Start
 
 ```html
@@ -195,11 +213,29 @@ Forge Select is vanilla TypeScript/JavaScript, so it can be mounted inside any f
 
 ## Browser Support
 
-- Chrome
-- Edge
-- Firefox
-- Safari
-- Mobile Browsers
+| Browser        | Minimum |
+| -------------- | ------- |
+| Chrome / Edge  | 87      |
+| Firefox        | 78      |
+| Safari         | 14.1    |
+| iOS Safari     | 14.5    |
+| Chrome Android | 87      |
+
+The floor is set by `Element.replaceChildren()` and the CSS logical-property
+shorthands (`inset-inline`) plus flexbox `gap` — all of which the component
+relies on unconditionally.
+
+Two visual refinements are progressive enhancements layered on top of that
+floor, each declared after a static fallback so an older browser keeps a usable
+(if less precisely tinted) result rather than losing the style outright:
+
+- `color-mix()` — Chrome/Edge 111, Firefox 113, Safari 16.2 — derives the focus
+  ring, the tree indeterminate fill and the search-match highlight from your
+  theme tokens. Below it, the `--fs-focus-ring`, `--fs-option-indeterminate-bg`
+  and `--fs-match-bg` variables supply the fallback; override them alongside
+  their source token if you theme for older browsers.
+- `@media (forced-colors: active)` — restates selection, focus and disabled
+  states in system colors for Windows High Contrast.
 
 ## Migration from Select2
 

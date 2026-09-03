@@ -63,14 +63,41 @@ export class SearchIndex {
   }
 }
 
+/**
+ * Normalizes `value` while recording, for every code unit of the result, the
+ * index in `value` it came from. `map` carries one trailing sentinel equal to
+ * `value.length`, so a half-open range [start, end) in the normalized text maps
+ * to [map[start], map[end]) in the original.
+ *
+ * Normalization is not length-preserving — stripping combining marks shortens a
+ * decomposed label ("Cafe" + U+0301 loses a code unit), and lowercasing can
+ * lengthen one (U+0130 -> "i" + U+0307) — so normalized indices cannot be used
+ * against the raw string directly. Walking code point by code point keeps the
+ * correspondence exact instead of assuming a 1:1 mapping.
+ */
+function normalizeWithMap(value: string, accentInsensitive: boolean): { text: string; map: number[] } {
+  let text = "";
+  const map: number[] = [];
+  let offset = 0;
+  for (const char of value) {
+    const normalized = normalizeSearchText(char, accentInsensitive);
+    for (let i = 0; i < normalized.length; i += 1) map.push(offset);
+    text += normalized;
+    offset += char.length;
+  }
+  map.push(value.length);
+  return { text, map };
+}
+
+/** Ranges are indices into `label` itself, ready to slice for <mark> wrapping. */
 export function findNormalizedRanges(label: string, query: string, accentInsensitive = true): Array<[number, number]> {
   const tokens = normalizeSearchText(query.trim(), accentInsensitive).split(/\s+/).filter(Boolean);
   if (!tokens.length) return [];
-  const normalized = normalizeSearchText(label, accentInsensitive);
+  const { text, map } = normalizeWithMap(label, accentInsensitive);
   const ranges: Array<[number, number]> = [];
   for (const token of tokens) {
-    const index = normalized.indexOf(token);
-    if (index >= 0) ranges.push([index, index + token.length]);
+    const index = text.indexOf(token);
+    if (index >= 0) ranges.push([map[index], map[index + token.length]]);
   }
   return ranges.sort((a, b) => a[0] - b[0]);
 }

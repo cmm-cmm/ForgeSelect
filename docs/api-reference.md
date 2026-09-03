@@ -110,6 +110,24 @@ For modals, drawers, or containers that clip descendants, set `dropdownParent: d
 
 With the dropdown open: `ArrowUp`/`ArrowDown` move the highlight, `Enter` picks the highlighted row, `Home`/`End` jump to the first/last option, `PageUp`/`PageDown` jump by 10 rows (clamped at the ends), `ArrowLeft`/`ArrowRight` collapse/expand a tree node, and `Escape`/`Tab` close it. When focus is on the combobox control, typing a letter (or several in quick succession) jumps to the next option whose label starts with what was typed; repeating one letter cycles matching options, matching native `<select>` typeahead. A pause of half a second resets the buffer. Typing in the search input filters normally and does not also trigger typeahead.
 
+### Ownership of the `data` array
+
+Forge Select keeps its own copy of the array you pass to `data` (and to
+`setData()`), so it never writes back into your state. This matters in tags
+mode: `allowCreate` appends each newly created option to the internal list, and
+that `push` used to land on the caller's array — invisible to React (same array
+reference, so no re-render) and visible in the wrong way to Vue (a deep watcher
+on the options prop fired straight back into `updateOptions()`).
+
+Only the array is copied. The `Option` objects inside it are shared by
+reference, which is required — the row-content cache and the search index are
+keyed by object identity — so mutating an option in place still affects the
+rendered list, and is still not something Forge Select will notice on its own.
+Call `setData()` with the new list instead.
+
+To read back the options a session created, listen for the `create` event
+rather than inspecting the array you passed in.
+
 ### Native form validation (`required`)
 
 When mounted on a real `<select>`, `required: true` participates in the browser's Constraint Validation API exactly like a native `<select required>`: an empty selection blocks `<form>` submission, and Forge Select shows its own inline invalid styling (`forge-select__control--invalid`, `aria-invalid`) and opens the dropdown in response to the native `invalid` event, since the hidden native element can't display its own validation bubble. The styling clears as soon as a valid selection is made. On a plain-element mount (no native `<select>` to hook into), `required: true` only sets `aria-required` for assistive tech — there's no native form to participate in.

@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-03
+
+### Fixed
+
+- `aria-activedescendant` was written to the search input even when that input was hidden. `open()` only focuses the search box when it is visible, so a select whose search is suppressed (`minResultsForSearch`, or `searchable` data below the threshold) keeps focus on the control — the reference then named an element no assistive tech was on, and arrowing through the list announced nothing at all. It now follows whichever element actually holds focus, and the other one is cleared so a runtime show/hide of the search box can't strand a stale reference.
+- A closed dropdown kept its `aria-activedescendant`. `close()` hides the dropdown without re-rendering it, so the last highlighted row and its id survived, leaving a collapsed combobox (`aria-expanded="false"`) still naming an active option. The reference is now dropped on close.
+- Search-match highlighting put the `<mark>` boundary in the wrong place on labels whose normalized form has a different length than the source. Ranges were computed against the normalized text and then sliced out of the raw label, which holds only while normalization is length-preserving — it is not: stripping combining marks shortens a decomposed label (`"Cafe" + U+0301`, the form macOS hands back, lost a code unit and the accent rendered outside the mark on the following glyph), and lowercasing can lengthen one (`U+0130` becomes `"i" + U+0307`). Normalization now records the source index of every code unit it emits, so ranges map back exactly.
+- `allowCreate` appended each created option to the caller's own `data` array. Forge Select now copies the array it is given, in the constructor and in `setData()`, so tags mode no longer mutates the array a consumer passed in — which React could not see (same reference, no re-render) and which Vue saw the wrong way (a deep watcher on the options prop firing back into `updateOptions()`). The `Option` objects inside stay shared by reference, as the row-content cache and search index require. Documented under "Ownership of the `data` array" in the API reference.
+- Options no longer report their position only within the rendered virtual-scroll window. `aria-setsize`/`aria-posinset` are now emitted on every option row and on the create row, describing the whole filtered list, so a screen reader on a 10,000-option select announces the real total instead of "1 of 20". WAI-ARIA requires the pair whenever the DOM holds only part of the set; axe could not catch this because it only sees what is rendered.
+
+### Changed
+
+- Bulk selection is no longer quadratic. `setValue()`, `selectAll()`, native `change`/`reset` syncing and the initial parse of a `<select>`'s pre-selected options all drove `selectValue()` from a loop, and each call cost a linear `includes` scan of the running selection plus a `syncTreeAncestors()` walk of the entire dataset. They now share one bulk path that checks membership against a `Set` and syncs the tree once at the end — all that sync ever needed, since it recomputes ancestors from the finished selection rather than accumulating across calls. `syncNativeSelect()` was independently quadratic for the same reason and now indexes the `<option>` elements by value. Measured in Chromium on a native `<select multiple>`: `setValue()` over 8,000 values drops from 492 ms to 44 ms, and over 16,000 from 1,782 ms to 60 ms — quadratic to linear. `selectAll()` under a `maxSelections` cap keeps the incremental path (the cap has to be weighed per candidate) but now stops once the cap is reached instead of scanning every remaining option: 20,000 options with a cap of 5 goes from a full scan to 6 ms.
+- The focus ring, tree indeterminate fill and search-match highlight now declare a static fallback before their `color-mix()` derivation. A browser without `color-mix()` (pre Chrome 111 / Firefox 113 / Safari 16.2) previously dropped those declarations entirely — losing the focus ring outright, which is an accessibility regression rather than a cosmetic one. The fallbacks are exposed as `--fs-focus-ring`, `--fs-option-indeterminate-bg` and `--fs-match-bg` so they stay themeable. This lowers the component's real browser floor to Chrome/Edge 87, Firefox 78 and Safari 14.1, now stated explicitly in the README.
+
+### Added
+
+- Windows High Contrast support via `@media (forced-colors: active)`. Forced-colors mode replaces every author color, which collapsed selected, highlighted and hovered rows into one indistinguishable swatch and removed the focus ring entirely (it is a `box-shadow`, which the mode drops). Those states are now restated with system color keywords and real outlines.
+- `@media (prefers-reduced-motion: reduce)` disables the dropdown arrow's rotation transition.
+- A documented CDN consumption path. The minified IIFE bundle has always been built and size-budgeted in CI, but nothing pointed at it: with an `exports` map present bundlers could not resolve its path, and `unpkg.com/forge-select` fell through to `main` — a CommonJS file that fails in a `<script>` tag. The package now declares `unpkg`/`jsdelivr` fields plus explicit `./dist/index.global.js` and `./package.json` export entries, and the README documents the `<script>` usage.
+
+### Documentation
+
+- README states minimum browser versions instead of listing engine names, and separates the hard floor from the two progressive enhancements layered above it.
+- `CONTRIBUTING.md`'s deploy section described retiring GitHub Pages as pending work. The `gh-pages` branch and its workflow are gone and the github.io URL returns 404; the section now records that as done and says not to reintroduce a second deploy target.
+
+### Internal
+
+- CI pins every action to a commit SHA, matching `release.yml` — `ci.yml` had been using floating `@v4` tags, so the repository held two different supply-chain standards. A `dependabot.yml` now proposes the bumps, since a pinned SHA otherwise never moves, including past a security fix.
+- Pull requests targeting `dev` run CI. The trigger only covered `main`, so a fork PR into `dev` — where work actually lands first — was reviewed with no checks at all.
+- Playwright retries twice on CI. Three engines run in parallel on a shared runner, and a single flake failed the build.
+- `forge-select` is a peer dependency of the React and Vue wrappers rather than a hard dependency, so a consumer controls the core version and cannot end up with two copies installed.
+- The React wrapper's `@types/react` is aligned to the React 18 runtime it is actually tested against, instead of pinning React 19 types over an 18 runtime. Root `@types/node` is aligned to the `>=20.19` floor in `engines`, so scripts cannot silently rely on APIs the minimum supported Node lacks.
+- Both wrappers re-export `TemplateSanitizer`, `SelectionGuard`, `CreateOption` and `MissingSelectionPolicy`, which the core has always exported but the wrappers stopped short of — a React consumer using `sanitizeTemplate` could not import its type.
+- The benchmark gzip budget moves from 14,000 to 14,500 bytes. The bundle grew from 13,529 to 13,908 — `aria-setsize`/`aria-posinset` on every row, the linear bulk-selection path, and the index-mapped search normalization — which left only 92 bytes of headroom, the same too-tight-to-be-useful state 13,500 was in before 0.7.5 raised it. Weighed rather than nudged: the 379 bytes buy a WAI-ARIA requirement, a quadratic-to-linear fix worth 1.7 s on a 16,000-value `setValue()`, and a highlight correctness fix.
+- The React and Vue workspaces now build and test against the core in this repository. They declared `forge-select` by semver range, and npm does not treat the root project as a linkable workspace target, so it resolved that range from the registry instead: every `npm run typecheck/test/build --workspaces` run — locally and in CI, including the one inside the release job — was validating the wrappers against the last _published_ core (0.7.0, six releases behind the source next to it). The release workflow's own notes claimed the opposite. The dev dependency is now a `file:../..` link, so the wrappers compile against the core they ship alongside.
+- The benchmark's lifecycle selector no longer includes `.forge-select__portal`, which matched nothing (the class is `forge-select--portal-host`). The leak check was already covered by the `.forge-select` half.
+
 ## [0.7.6] - 2026-09-03
 
 ### Changed
@@ -234,7 +272,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.6...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.6...v0.8.0
 [0.7.6]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.3...v0.7.4

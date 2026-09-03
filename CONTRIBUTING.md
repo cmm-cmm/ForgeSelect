@@ -81,7 +81,7 @@ Every push to `main` deploys the assembled site (`npm run build:site` → `_site
 
 The canonical live site is **<https://forgeselect.konexforge.com/>** (a custom domain routed to the `forge-select` Worker in the Cloudflare Dashboard; the raw `*.workers.dev` URL still works too). `homepage` in `package.json` and all hardcoded canonical/OG/JSON-LD URLs point at this domain.
 
-This project previously also deployed to GitHub Pages (`.github/workflows/pages.yml`, force-pushing `_site/` to the `gh-pages` branch). That workflow has been removed now that Cloudflare is canonical — if a `gh-pages` branch still exists and GitHub Pages is still enabled in **Settings → Pages**, delete the branch and set the Pages source to "None" to fully retire it.
+This project previously also deployed to GitHub Pages (`.github/workflows/pages.yml`, force-pushing `_site/` to the `gh-pages` branch). That path is fully retired: the workflow and the `gh-pages` branch are both gone, and `https://cmm-cmm.github.io/ForgeSelect/` returns 404. Cloudflare is the only deploy target — do not reintroduce a Pages workflow, or the two will serve different versions of the site under different domains, which is exactly what went wrong before (the Pages copy sat at v0.2.0 for months while Cloudflare tracked releases).
 
 The Cloudflare Workers Builds project is configured with:
 

@@ -230,3 +230,43 @@ describe("i18n", () => {
     expect(format("Create {query} in {scope}", { query: "x" })).toBe("Create x in {scope}");
   });
 });
+
+describe("findNormalizedRanges index mapping", () => {
+  it("maps ranges back onto the raw label when normalization changes its length", () => {
+    // Stripping the combining acute shortens the normalized form by one code
+    // unit, so normalized indices used directly against the source would cut
+    // between "e" and its own accent and render the mark on the wrong glyph.
+    const decomposed = "Cafe\u0301";
+    expect(decomposed).toHaveLength(5);
+    const [start, end] = findNormalizedRanges(decomposed, "cafe")[0];
+    expect(decomposed.slice(start, end)).toBe(decomposed);
+  });
+
+  it("returns the same slice for the precomposed and decomposed spellings", () => {
+    const precomposed = "Café";
+    const decomposed = "Cafe\u0301";
+    const slice = (label: string) => {
+      const [start, end] = findNormalizedRanges(label, "cafe")[0];
+      return label.slice(start, end).normalize("NFC");
+    };
+    expect(slice(precomposed)).toBe(slice(decomposed));
+  });
+
+  it("maps a partial match that starts after an accented character", () => {
+    const label = "Cafe\u0301 Bar";
+    const [start, end] = findNormalizedRanges(label, "bar")[0];
+    expect(label.slice(start, end)).toBe("Bar");
+  });
+
+  it("handles a lowercasing that lengthens the text", () => {
+    // U+0130 lowercases to "i" + U+0307, so the normalized form is longer than
+    // the source here — the opposite skew from stripping marks.
+    const label = "\u0130stanbul";
+    const [start, end] = findNormalizedRanges(label, "istanbul")[0];
+    expect(label.slice(start, end)).toBe(label);
+  });
+
+  it("still returns no ranges for an empty query", () => {
+    expect(findNormalizedRanges("Café", "   ")).toEqual([]);
+  });
+});

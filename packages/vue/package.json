@@ -1,6 +1,6 @@
 {
   "name": "forge-select-vue",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Vue 3 wrapper component for Forge Select.",
   "license": "MIT",
   "author": "KonexForge",
@@ -42,12 +42,11 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
+    "forge-select": "^0.8.0",
     "vue": ">=3.2"
   },
-  "dependencies": {
-    "forge-select": "^0.7.0"
-  },
   "devDependencies": {
+    "forge-select": "file:../..",
     "jsdom": "^29.1.1",
     "tsup": "^8.3.5",
     "typescript": "^5.7.0",

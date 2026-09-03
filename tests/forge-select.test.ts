@@ -2573,3 +2573,213 @@ describe("advanced API integrations", () => {
     expect(portal.querySelector(".forge-select--portal-host")).toBeNull();
   });
 });
+
+describe("aria-activedescendant targeting", () => {
+  const shortData = Array.from({ length: 4 }, (_, index) => ({ value: `v${index}`, label: `Item ${index}` }));
+
+  it("points at the control, not the hidden search box, when search is suppressed", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const select = new ForgeSelect("#mount", { data: shortData, minResultsForSearch: 10 });
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    const search = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    expect(search.hidden).toBe(true);
+    select.open();
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    const highlighted = document.querySelector(".forge-select__option--highlighted")!;
+    // The control is what holds focus here, so it is what must carry the
+    // reference — otherwise the focused combobox announces nothing.
+    expect(control.getAttribute("aria-activedescendant")).toBe(highlighted.id);
+    expect(search.getAttribute("aria-activedescendant")).toBeNull();
+  });
+
+  it("moves the reference onto the search box once it becomes visible", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const select = new ForgeSelect("#mount", { data: shortData, minResultsForSearch: 10 });
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    const search = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    select.open();
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(control.getAttribute("aria-activedescendant")).not.toBeNull();
+    select.updateOptions({ minResultsForSearch: 0 });
+    expect(search.hidden).toBe(false);
+    search.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(search.getAttribute("aria-activedescendant")).toBe(
+      document.querySelector(".forge-select__option--highlighted")!.id,
+    );
+    expect(control.getAttribute("aria-activedescendant")).toBeNull();
+  });
+
+  it("drops the reference when the dropdown closes", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const select = new ForgeSelect("#mount", { data: shortData, searchable: false });
+    const control = document.querySelector<HTMLElement>(".forge-select__control")!;
+    select.open();
+    control.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(control.getAttribute("aria-activedescendant")).not.toBeNull();
+    select.close();
+    // A collapsed combobox has no active option.
+    expect(control.getAttribute("aria-activedescendant")).toBeNull();
+  });
+});
+
+describe("aria-setsize and aria-posinset", () => {
+  it("describes the whole list, not just the virtualized window", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const data = Array.from({ length: 500 }, (_, index) => ({ value: `v${index}`, label: `Item ${index}` }));
+    const select = new ForgeSelect("#mount", { data });
+    select.open();
+    const rendered = optionEls();
+    expect(rendered.length).toBeLessThan(data.length);
+    expect(rendered[0].getAttribute("aria-setsize")).toBe("500");
+    expect(rendered[0].getAttribute("aria-posinset")).toBe("1");
+    expect(rendered[1].getAttribute("aria-posinset")).toBe("2");
+  });
+
+  it("counts only the rows matching the current query", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const data = [
+      { value: "a", label: "Alpha" },
+      { value: "b", label: "Beta" },
+      { value: "c", label: "Alpine" },
+    ];
+    const select = new ForgeSelect("#mount", { data });
+    select.open();
+    select.setSearchQuery("Al");
+    const rows = optionEls();
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.getAttribute("aria-posinset"))).toEqual(["1", "2"]);
+    expect(rows.every((row) => row.getAttribute("aria-setsize") === "2")).toBe(true);
+  });
+
+  it("numbers options across group headers as one flat set", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const select = new ForgeSelect("#mount", {
+      data: [
+        { label: "Asia", options: [{ value: "vn", label: "Vietnam" }] },
+        { label: "Europe", options: [{ value: "fr", label: "France" }] },
+      ],
+    });
+    select.open();
+    // Group labels are role="presentation", so both options belong to one set.
+    expect(optionEls().map((row) => row.getAttribute("aria-posinset"))).toEqual(["1", "2"]);
+    expect(optionEls().map((row) => row.getAttribute("aria-setsize"))).toEqual(["2", "2"]);
+  });
+
+  it("includes the create row in the set", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const select = new ForgeSelect("#mount", { data: [{ value: "a", label: "Alpha" }], allowCreate: true });
+    select.open();
+    select.setSearchQuery("Zeta");
+    const create = document.querySelector<HTMLElement>(".forge-select__option--create")!;
+    expect(create.getAttribute("aria-setsize")).toBe("1");
+    expect(create.getAttribute("aria-posinset")).toBe("1");
+  });
+});
+
+describe("data array ownership", () => {
+  it("does not append created options to the caller's array", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const mine = [{ value: "a", label: "Alpha" }];
+    const select = new ForgeSelect("#mount", { data: mine, allowCreate: true, multiple: true });
+    select.open();
+    select.setSearchQuery("Bravo");
+    document.querySelector<HTMLElement>(".forge-select__option--create")!.click();
+    expect(select.getValue()).toEqual(["Bravo"]);
+    expect(mine).toHaveLength(1);
+  });
+
+  it("does not append created options to an array passed to setData", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const select = new ForgeSelect("#mount", { data: [], allowCreate: true, multiple: true });
+    const replacement = [{ value: "a", label: "Alpha" }];
+    select.setData(replacement);
+    select.open();
+    select.setSearchQuery("Bravo");
+    document.querySelector<HTMLElement>(".forge-select__option--create")!.click();
+    expect(replacement).toHaveLength(1);
+  });
+
+  it("ignores later mutations of the caller's array, as documented", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const mine = [{ value: "a", label: "Alpha" }];
+    const select = new ForgeSelect("#mount", { data: mine });
+    mine.push({ value: "b", label: "Beta" });
+    select.open();
+    expect(optionEls()).toHaveLength(1);
+    select.setData(mine);
+    expect(optionEls()).toHaveLength(2);
+  });
+});
+
+describe("bulk selection", () => {
+  const tree = [
+    {
+      value: "p",
+      label: "Parent",
+      children: [
+        { value: "c1", label: "One" },
+        { value: "c2", label: "Two" },
+      ],
+    },
+  ];
+
+  it("setValue applies the tree cascade exactly once", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const select = new ForgeSelect("#mount", { multiple: true, data: tree });
+    select.setValue(["p"]);
+    expect(select.getValue()).toEqual(["p", "c1", "c2"]);
+  });
+
+  it("setValue marks a parent selected once every child is listed", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const select = new ForgeSelect("#mount", { multiple: true, data: tree });
+    select.setValue(["c1", "c2"]);
+    expect((select.getValue() as string[]).slice().sort()).toEqual(["c1", "c2", "p"]);
+  });
+
+  it("setValue drops duplicates in the incoming list", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const select = new ForgeSelect("#mount", {
+      multiple: true,
+      data: [
+        { value: "a", label: "Alpha" },
+        { value: "b", label: "Beta" },
+      ],
+    });
+    select.setValue(["a", "b", "a"]);
+    expect(select.getValue()).toEqual(["a", "b"]);
+  });
+
+  it("selectAll stops at maxSelections without scanning the rest", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const data = Array.from({ length: 200 }, (_, index) => ({ value: `v${index}`, label: `Item ${index}` }));
+    const select = new ForgeSelect("#mount", { data, multiple: true, maxSelections: 3 });
+    select.selectAll();
+    expect(select.getValue()).toEqual(["v0", "v1", "v2"]);
+  });
+
+  it("selectAll still skips disabled options", () => {
+    document.body.innerHTML = `<div id="mount"></div>`;
+    const select = new ForgeSelect("#mount", {
+      multiple: true,
+      data: [
+        { value: "a", label: "Alpha" },
+        { value: "b", label: "Beta", disabled: true },
+        { value: "c", label: "Gamma" },
+      ],
+    });
+    select.selectAll();
+    expect(select.getValue()).toEqual(["a", "c"]);
+  });
+
+  it("keeps a native <select multiple> in sync after a bulk setValue", () => {
+    mountSelect(`<option value="vn">Vietnam</option><option value="jp">Japan</option><option value="us">US</option>`);
+    const native = document.querySelector<HTMLSelectElement>("#country")!;
+    native.multiple = true;
+    const select = new ForgeSelect("#country", { multiple: true });
+    select.setValue(["vn", "us"]);
+    expect(Array.from(native.selectedOptions, (option) => option.value)).toEqual(["vn", "us"]);
+    select.setValue(["jp"]);
+    expect(Array.from(native.selectedOptions, (option) => option.value)).toEqual(["jp"]);
+  });
+});

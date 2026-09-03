@@ -169,4 +169,8 @@ export type {
   SearchField,
   SearchScorer,
   TemplateFn,
+  TemplateSanitizer,
+  SelectionGuard,
+  CreateOption,
+  MissingSelectionPolicy,
 } from "forge-select";

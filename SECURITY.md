@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Forge Select is pre-1.0; only the latest released minor version (currently `0.7.x`) receives security fixes. Older minors are not patched — upgrade to the latest release to receive a fix.
+Forge Select is pre-1.0; only the latest released minor version (currently `0.8.x`) receives security fixes. Older minors are not patched — upgrade to the latest release to receive a fix.
 
 ## Reporting a Vulnerability
 

@@ -17,6 +17,17 @@
   --fs-tag-fg: #3730a3;
   --fs-font-size: 14px;
   --fs-tree-indent: 18px;
+  /*
+   * Static fallbacks for the three color-mix() derivations below. A browser
+   * without color-mix() drops that declaration and keeps the one above it, so
+   * the focus ring, tree indeterminate fill and search highlight degrade to a
+   * fixed tint instead of disappearing — losing the focus ring in particular is
+   * an accessibility regression, not a cosmetic one. Override these alongside
+   * their source token when theming for pre-2023 browsers.
+   */
+  --fs-focus-ring: rgba(99, 102, 241, 0.25);
+  --fs-option-indeterminate-bg: rgba(224, 231, 255, 0.5);
+  --fs-match-bg: rgba(99, 102, 241, 0.22);
 
   position: relative;
   display: inline-block;
@@ -39,6 +50,9 @@
   --fs-option-selected-fg: #e0e7ff;
   --fs-tag-bg: #3730a3;
   --fs-tag-fg: #e0e7ff;
+  --fs-focus-ring: rgba(129, 140, 248, 0.25);
+  --fs-option-indeterminate-bg: rgba(55, 48, 163, 0.5);
+  --fs-match-bg: rgba(129, 140, 248, 0.22);
 }
 
 .forge-select__control {
@@ -57,6 +71,7 @@
 .forge-select__control:focus {
   outline: none;
   border-color: var(--fs-border-focus);
+  box-shadow: 0 0 0 3px var(--fs-focus-ring);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--fs-border-focus) 25%, transparent);
 }
 
@@ -261,6 +276,7 @@
 }
 
 .forge-select__option--indeterminate {
+  background: var(--fs-option-indeterminate-bg);
   background: color-mix(in srgb, var(--fs-option-selected-bg) 50%, transparent);
 }
 
@@ -273,6 +289,7 @@
 .forge-select__match {
   padding: 0;
   color: inherit;
+  background: var(--fs-match-bg);
   background: color-mix(in srgb, var(--fs-border-focus) 22%, transparent);
 }
 
@@ -325,4 +342,65 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forge-select__arrow {
+    transition: none;
+  }
+}
+
+/*
+ * Windows High Contrast and other forced-colors modes replace every author
+ * color, so any state carried only by background-color — selected, highlighted,
+ * hovered — collapses into the same swatch, and the focus ring disappears
+ * outright because it is a box-shadow, which forced-colors drops. System color
+ * keywords are honored in this mode, so the states are re-expressed with those
+ * plus real outlines.
+ */
+@media (forced-colors: active) {
+  .forge-select__control {
+    border-color: ButtonBorder;
+  }
+
+  .forge-select__control:focus {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+  }
+
+  .forge-select__control--invalid {
+    outline: 2px dashed CanvasText;
+    outline-offset: 1px;
+  }
+
+  .forge-select--disabled .forge-select__control {
+    opacity: 1;
+    color: GrayText;
+    border-color: GrayText;
+  }
+
+  .forge-select__tag {
+    border: 1px solid ButtonBorder;
+  }
+
+  .forge-select__option--highlighted,
+  .forge-select__option:hover:not(.forge-select__option--disabled) {
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  /* Inset so it stays visible under the Highlight fill when a row is both. */
+  .forge-select__option--selected {
+    outline: 1px solid CanvasText;
+    outline-offset: -3px;
+  }
+
+  .forge-select__option--disabled {
+    color: GrayText;
+  }
+
+  .forge-select__match {
+    background: Mark;
+    color: MarkText;
+  }
 }

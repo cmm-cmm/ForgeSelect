@@ -14,9 +14,17 @@ const browser = await chromium.launch();
 // 0.7.4 correctness fixes crossed it and were merged with CI red rather than
 // weighed against it. Raise it in deliberate steps, well clear of the current
 // size, and treat a breach as a question about the change rather than a number
-// to nudge. Current: 13_529 gzipped.
+// to nudge. Current: 13_908 gzipped.
+//
+// Raised from 14_000 once the accessibility and bulk-selection work landed
+// (aria-setsize/aria-posinset on every row, the linear replaceSelection path,
+// and the index-mapped search normalization) and left only 92 bytes of
+// headroom — the same too-tight-to-be-useful state 13_500 was in. The +379
+// bytes bought a WAI-ARIA requirement, a quadratic-to-linear fix worth 1.7s on
+// a 16k-value setValue, and a highlight correctness fix; that was weighed, not
+// nudged past.
 const BUDGETS = {
-  minifiedGzipBytes: 14_000,
+  minifiedGzipBytes: 14_500,
   renderedRowsAtTenThousand: 30,
   residualNodesAfterDestroy: 0,
 };
@@ -43,7 +51,10 @@ try {
       const sorted = [...values].sort((a, b) => a - b);
       return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)];
     };
-    const lifecycleSelector = ".forge-select, .forge-select__portal";
+    // The portal host carries the plain "forge-select" class too, so one
+    // selector covers both. (The old second half, ".forge-select__portal",
+    // matched nothing — the class is "forge-select--portal-host".)
+    const lifecycleSelector = ".forge-select";
     const initSamples = [];
     let residualNodesAfterDestroy = 0;
     for (let sample = 0; sample < 7; sample += 1) {

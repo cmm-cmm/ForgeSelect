@@ -37,8 +37,8 @@ import type {
 
 type Row =
   | { kind: "group"; label: string }
-  | { kind: "option"; option: Option; navIndex: number; depth: number; hasChildren: boolean }
-  | { kind: "create"; navIndex: number }
+  | { kind: "option"; option: Option; navIndex: number; depth: number; hasChildren: boolean; posInSet: number }
+  | { kind: "create"; navIndex: number; posInSet: number }
   | { kind: "empty" }
   | { kind: "error" }
   | { kind: "loading" }
@@ -135,6 +135,10 @@ export default class ForgeSelect {
   private query = "";
   private rows: Row[] = [];
   private navItems: NavItem[] = [];
+  // Total number of role="option" rows the current query produces, including
+  // ones virtual scrolling leaves out of the DOM. Reported as aria-setsize so
+  // assistive tech describes the whole list rather than the rendered window.
+  private rowSetSize = 0;
   private highlightedIndex = -1;
   private typeaheadBuffer = "";
   private typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
@@ -214,8 +218,7 @@ export default class ForgeSelect {
   };
 
   private applyNativeValues(values: string[]): void {
-    this.selected = [];
-    for (const value of this.opts.multiple ? values : values.slice(0, 1)) this.selectValue(value, false);
+    this.replaceSelection(this.opts.multiple ? values : values.slice(0, 1));
     this.renderValue();
     if (this.isOpen) this.renderList();
     this.emitter.emit("change", this.getValue());
@@ -288,7 +291,13 @@ export default class ForgeSelect {
     this.plugins = this.opts.plugins;
     if (nativeSelect) nativeSelect.required = this.opts.required;
 
-    this.data = this.opts.data ?? (nativeSelect ? parseNativeOptions(nativeSelect) : []);
+    // Copied, not aliased: allowCreate appends to `this.data`, and writing that
+    // into the array the caller handed us mutates their own state from the
+    // outside — invisible to React (same array reference, so no re-render) and
+    // visible in the wrong way to Vue (a deep watcher on the options prop fires
+    // straight back into updateOptions). The Option objects stay shared, which
+    // is required: rowContentCache and SearchIndex are keyed by object identity.
+    this.data = this.opts.data ? [...this.opts.data] : nativeSelect ? parseNativeOptions(nativeSelect) : [];
     this.rebuildOptionIndexes();
     if (nativeSelect && !this.opts.data) {
       const nativeOptions = Array.from(nativeSelect.options);
@@ -296,8 +305,8 @@ export default class ForgeSelect {
         nativeSelect.multiple ||
         nativeSelect.selectedIndex > 0 ||
         nativeOptions.some((option) => option.defaultSelected);
-      for (const option of nativeOptions) {
-        if (hasIntentionalSelection && option.selected) this.selectValue(option.value, false);
+      if (hasIntentionalSelection) {
+        this.replaceSelection(nativeOptions.filter((option) => option.selected).map((option) => option.value));
       }
     }
 
@@ -367,6 +376,10 @@ export default class ForgeSelect {
     }
     this.typeaheadBuffer = "";
     this.highlightedIndex = -1;
+    // The dropdown is only hidden, not re-rendered, so the highlighted row and
+    // its id survive the close. Dropping the reference here keeps a collapsed
+    // combobox (aria-expanded="false") from still naming an active option.
+    this.updateActiveDescendant();
     // Not gated on `this.searchInput` existing: a searchable: false select with
     // ajax can still carry a non-empty `query` set programmatically through
     // setSearchQuery(), and that query must be retired on close the same way a
@@ -590,8 +603,7 @@ export default class ForgeSelect {
     const values = value == null ? [] : Array.isArray(value) ? value : [value];
     const next = this.opts.multiple ? values : values.slice(0, 1);
     if (arraysEqual(next, this.selected)) return;
-    this.selected = [];
-    for (const v of next) this.selectValue(v, false);
+    this.replaceSelection(next);
     this.afterSelectionChange(options.emitChange ?? true);
   }
 
@@ -603,7 +615,8 @@ export default class ForgeSelect {
    */
   setData(data: DataItem[]): void {
     const previousData = this.data;
-    this.data = data;
+    // Copied for the same reason as in the constructor — see the note there.
+    this.data = [...data];
     try {
       this.rebuildOptionIndexes();
     } catch (error) {
@@ -635,7 +648,9 @@ export default class ForgeSelect {
     this.page = 0;
     this.hasMore = false;
     this.nextCursor = undefined;
-    this.opts.data = data;
+    // Points at the internal copy, so a later read of opts.data can't hand
+    // back an array the caller may have mutated since.
+    this.opts.data = this.data;
     if (missing.length > 0 && this.opts.missingSelectionPolicy === "prune") {
       this.selected = this.selected.filter((value) => this.optionByValue.has(value));
       this.afterSelectionChange();
@@ -655,8 +670,19 @@ export default class ForgeSelect {
    */
   selectAll(): void {
     if (!this.opts.multiple) return;
+    if (this.opts.maxSelections == null) {
+      this.replaceSelection(this.allSelectableValues());
+      this.afterSelectionChange();
+      return;
+    }
+    // Capped lists keep the incremental path: canSelectOption() has to weigh
+    // each candidate (plus its cascaded descendants and resynced ancestors)
+    // against the running total, which a single bulk pass can't express. The
+    // cost stays bounded because the loop stops at the cap — once the selection
+    // reaches it, every remaining candidate would project past it anyway.
     this.selected = [];
     for (const value of this.allSelectableValues()) {
+      if (this.hasReachedMaximum()) break;
       const option = this.findOption(value);
       if (option && this.canSelectOption(option)) this.selectValue(value, false);
     }
@@ -1095,6 +1121,43 @@ export default class ForgeSelect {
     this.emitter.emit("maximum", { limit, option });
   }
 
+  /**
+   * Replaces the whole selection in one pass, applying the same cascade and
+   * ancestor rules selectValue() does.
+   *
+   * selectValue() costs O(n) per call — a linear `includes` scan of the current
+   * selection, plus a syncTreeAncestors() walk of the entire dataset — which is
+   * the right trade for the one-value-at-a-time interactive paths it serves.
+   * Driving it from a loop made the bulk entry points quadratic: setValue() with
+   * 8,000 values blocked the main thread for ~0.9s (70/137/305/886ms at
+   * 1k/2k/4k/8k). Here membership is a Set, and the tree sync runs once at the
+   * end — all it ever needed, since it recomputes every ancestor from the
+   * finished selection rather than accumulating across calls.
+   *
+   * Callers pass an already-sliced list for single-select; the `break` below
+   * only re-states that, matching selectValue()'s `this.selected = [value]`.
+   */
+  private replaceSelection(values: Iterable<string>, accept?: (option: Option) => boolean): void {
+    const next: string[] = [];
+    const seen = new Set<string>();
+    for (const value of values) {
+      if (seen.has(value)) continue;
+      const option = this.findOption(value) ?? this.selectedOptions.get(value) ?? { value, label: value };
+      if (accept && !accept(option)) continue;
+      this.selectedOptions.set(value, option);
+      seen.add(value);
+      next.push(value);
+      if (!this.opts.multiple) break;
+      for (const descendant of collectDescendantValues(option, this.isOptionDisabled)) {
+        if (seen.has(descendant)) continue;
+        seen.add(descendant);
+        next.push(descendant);
+      }
+    }
+    this.selected = next;
+    if (this.opts.multiple) this.syncTreeAncestors();
+  }
+
   private selectValue(value: string, notify: boolean): void {
     if (this.selected.includes(value)) return;
     const option = this.findOption(value) ?? this.selectedOptions.get(value) ?? { value, label: value };
@@ -1184,18 +1247,24 @@ export default class ForgeSelect {
 
   private syncNativeSelect(dispatchChange = true): void {
     if (!(this.el instanceof HTMLSelectElement)) return;
-    const existing = new Set<string>();
+    // Set/Map rather than includes()/find() inside these loops: this runs on
+    // every selection change, so a linear scan per <option> made syncing a
+    // large multi-select quadratic in its own right, independent of the
+    // selection path that called it.
+    const selectedValues = new Set(this.selected);
+    const byValue = new Map<string, HTMLOptionElement>();
     for (const option of Array.from(this.el.options)) {
-      existing.add(option.value);
-      option.selected = this.selected.includes(option.value);
+      if (!byValue.has(option.value)) byValue.set(option.value, option);
+      option.selected = selectedValues.has(option.value);
     }
     for (const value of this.selected) {
-      if (existing.has(value)) continue;
+      if (byValue.has(value)) continue;
       const option = document.createElement("option");
       option.value = value;
       option.textContent = this.selectedOptions.get(value)?.label ?? value;
       option.selected = true;
       this.el.append(option);
+      byValue.set(value, option);
     }
     if (this.opts.sortable && this.opts.multiple) {
       // Re-appending in `this.selected` order moves each selected <option> to
@@ -1203,7 +1272,7 @@ export default class ForgeSelect {
       // submission serializes values in the dragged order (unselected options
       // simply end up interleaved before them, which submission ignores).
       for (const value of this.selected) {
-        const option = Array.from(this.el.options).find((o) => o.value === value);
+        const option = byValue.get(value);
         if (option) this.el.append(option);
       }
     }
@@ -1517,7 +1586,9 @@ export default class ForgeSelect {
   private buildRows(): void {
     this.rows = [];
     this.navItems = [];
+    this.rowSetSize = 0;
     this.rowOffsetsCache = null;
+    let optionCount = 0;
     const trimmedQuery = this.query.trim();
     const query = normalizeSearchText(trimmedQuery, this.opts.accentInsensitive);
     const matches = (option: Option): boolean =>
@@ -1551,7 +1622,8 @@ export default class ForgeSelect {
         this.navItems.push({ kind: "option", option, parentValue });
       }
       const hasChildren = !!option.children && option.children.length > 0;
-      this.rows.push({ kind: "option", option, navIndex, depth, hasChildren });
+      optionCount += 1;
+      this.rows.push({ kind: "option", option, navIndex, depth, hasChildren, posInSet: optionCount });
       if (hasChildren) {
         // Expanding is ephemeral while searching (never written to
         // expandedValues), so clearing the query restores manual state.
@@ -1590,9 +1662,11 @@ export default class ForgeSelect {
 
     if (this.opts.allowCreate && query !== "" && !this.hasExactMatch(query)) {
       const navIndex = this.navItems.length;
+      optionCount += 1;
       this.navItems.push({ kind: "create" });
-      this.rows.push({ kind: "create", navIndex });
+      this.rows.push({ kind: "create", navIndex, posInSet: optionCount });
     }
+    this.rowSetSize = optionCount;
 
     if (this.rows.length === 0) this.rows.push({ kind: "empty" });
     else if (this.loadingMore) this.rows.push({ kind: "loading-more" });
@@ -1797,6 +1871,8 @@ export default class ForgeSelect {
       "aria-disabled",
       "aria-expanded",
       "aria-level",
+      "aria-setsize",
+      "aria-posinset",
       "data-nav-index",
       "data-option-value",
       "data-selection-state",
@@ -1848,6 +1924,8 @@ export default class ForgeSelect {
       case "create":
         li.className = "forge-select__option forge-select__option--create";
         li.setAttribute("role", "option");
+        li.setAttribute("aria-setsize", String(this.rowSetSize));
+        li.setAttribute("aria-posinset", String(row.posInSet));
         li.id = `${this.uid}-nav-${row.navIndex}`;
         li.dataset.navIndex = String(row.navIndex);
         li.textContent = format(this.strings.createOption, { query: this.query.trim() });
@@ -1865,6 +1943,10 @@ export default class ForgeSelect {
     li.dataset.optionValue = row.option.value;
     if (row.option.className) li.classList.add(...row.option.className.trim().split(/\s+/).filter(Boolean));
     li.setAttribute("role", "option");
+    // Virtual scrolling renders a window of ~20 rows out of a list that can be
+    // thousands long, so without these a screen reader announces "1 of 20".
+    li.setAttribute("aria-setsize", String(this.rowSetSize));
+    li.setAttribute("aria-posinset", String(row.posInSet));
     const isSelected = this.selected.includes(row.option.value);
     li.setAttribute("aria-selected", String(isSelected));
     if (isSelected) li.classList.add("forge-select__option--selected");
@@ -2026,12 +2108,27 @@ export default class ForgeSelect {
    * aria-activedescendant must resolve to a real one — a dangling reference
    * reads to assistive tech as no active option at all. Keyboard navigation
    * scrolls the highlight back into view, which restores the reference.
+   *
+   * The reference has to land on whichever element actually holds focus.
+   * open() only focuses the search input when it is visible, so a select whose
+   * input is hidden (minResultsForSearch, or searchable data below the
+   * threshold) keeps focus on the control — pointing the attribute at the
+   * hidden input there names an element no assistive tech is on, and the
+   * focused combobox announces nothing at all while the user arrows through
+   * the list.
    */
   private updateActiveDescendant(): void {
-    const target = this.searchInput ?? this.control;
-    const highlighted = this.list.querySelector(".forge-select__option--highlighted");
-    if (highlighted) target.setAttribute("aria-activedescendant", highlighted.id);
-    else target.removeAttribute("aria-activedescendant");
+    const focused = this.searchInput && !this.searchInput.hidden ? this.searchInput : this.control;
+    // Whichever of the two isn't focused must not keep a stale reference: the
+    // search box can be shown or hidden at runtime by updateOptions()/setData().
+    const other = focused === this.control ? this.searchInput : this.control;
+    other?.removeAttribute("aria-activedescendant");
+    // A closed combobox has no active option. close() leaves the last render's
+    // highlight markup in the hidden dropdown, so this is gated on isOpen
+    // rather than on finding a highlighted row.
+    const highlighted = this.isOpen ? this.list.querySelector(".forge-select__option--highlighted") : null;
+    if (highlighted) focused.setAttribute("aria-activedescendant", highlighted.id);
+    else focused.removeAttribute("aria-activedescendant");
   }
 
   // ---------------------------------------------------------------- remote data
@@ -2175,7 +2272,9 @@ export default class ForgeSelect {
         const existing = collectValues(this.data);
         this.data = [...this.data, ...options.filter((o) => !existing.has(o.value))];
       } else {
-        this.data = options;
+        // Copied so addCreatedOption()'s push lands on our array rather than
+        // the one ajax.transform just built for us.
+        this.data = [...options];
         this.clearRowCaches();
       }
       this.page = page;

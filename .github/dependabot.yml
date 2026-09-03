@@ -1,0 +1,31 @@
+version: 2
+
+# Both workflows pin every action to a commit SHA, which is the point — a
+# floating tag is a mutable ref someone else controls. The cost is that a
+# pinned SHA never moves on its own, including past a security fix, so the
+# pinning is only safe paired with something that proposes the bumps. That is
+# what this file is for; Dependabot rewrites the SHA and the trailing `# v6`
+# comment together.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Grouped so a routine devDependency refresh arrives as one reviewable PR
+  # rather than a dozen. Majors stay separate: they are the ones that need a
+  # human to read a changelog.
+  - package-ecosystem: npm
+    directories:
+      - /
+      - /packages/react
+      - /packages/vue
+    schedule:
+      interval: weekly
+    groups:
+      dev-minor-and-patch:
+        dependency-type: development
+        update-types: [minor, patch]
