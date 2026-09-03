@@ -51,6 +51,7 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 3. Add or update tests for behavior changes; jsdom cannot model layout (e.g. `scrollTop` clamping), so verify scroll/visual behavior in a real browser too.
 4. Update the relevant docs page under `docs/` and add an entry to `CHANGELOG.md` under **Unreleased**.
 5. Keep the zero-dependency promise: no new runtime dependencies. Dev dependencies are fine when justified.
+6. Comment `@coderabbitai review` on the PR to get an AI review. CodeRabbit is still free for this repository, but it does not review automatically while the repository has fewer than 10 GitHub stars — and it says so in a comment rather than staying silent, so an unreviewed PR can read as one with no findings. No `.coderabbit.yaml` setting overrides this; the request has to be made per PR.
 
 ## Releasing (maintainers)
 
