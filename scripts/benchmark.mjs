@@ -136,14 +136,8 @@ try {
       ];
       const selfTime = Object.create(null);
       const stack = [];
-      const missing = [];
-      for (const name of PHASES) {
-        const original = ForgeSelect.prototype[name];
-        if (typeof original !== "function") {
-          missing.push(name);
-          continue;
-        }
-        ForgeSelect.prototype[name] = function instrumented(...args) {
+      const wrap = (name, original) =>
+        function instrumented(...args) {
           const frame = { childTime: 0 };
           stack.push(frame);
           const start = performance.now();
@@ -157,6 +151,11 @@ try {
             if (parent) parent.childTime += elapsed;
           }
         };
+      const missing = [];
+      for (const name of PHASES) {
+        const original = ForgeSelect.prototype[name];
+        if (typeof original === "function") ForgeSelect.prototype[name] = wrap(name, original);
+        else missing.push(name);
       }
       const reset = () => {
         for (const name of PHASES) selfTime[name] = 0;
@@ -184,9 +183,11 @@ try {
           reset();
           const openStart = performance.now();
           select.open();
-          // Force the pending layout so appended rows are actually paid for here.
-          void select.el.parentElement.querySelector(".forge-select__list").offsetHeight;
+          // Read layout so the reflow for the rows just appended is paid inside
+          // this measurement rather than leaking into whatever runs next.
+          const flushed = select.el.parentElement.querySelector(".forge-select__list").offsetHeight;
           const openTotal = performance.now() - openStart;
+          if (flushed < 0) throw new Error("unreachable: negative list height");
           const openPhases = snapshot();
 
           runs.push({ constructTotal, constructPhases, openTotal, openPhases });
@@ -213,12 +214,11 @@ try {
   );
 
   const round = (value) => Math.round(value * 100) / 100;
-  const roundDeep = (value) =>
-    typeof value === "number"
-      ? round(value)
-      : Array.isArray(value)
-        ? value
-        : Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, roundDeep(nested)]));
+  const roundDeep = (value) => {
+    if (typeof value === "number") return round(value);
+    if (Array.isArray(value)) return value;
+    return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, roundDeep(nested)]));
+  };
   const result = {
     generatedAt: new Date().toISOString(),
     environment: {
