@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-03
+
+### Changed
+
+- Filtering no longer rebuilds the query for every option it scores. `SearchIndex.score()` normalized the query (NFD plus two regex passes), split it into tokens, built the haystack cache key and located the label field on each call, so a keystroke over a 10,000-option list repeated all of it 10,000 times; the caller also allocated a fresh config object per option. That half now happens once per pass through `SearchIndex.prepare()`, with `scorePrepared()` doing only the per-option work. `score()` keeps its signature and delegates to both.
+- `buildRows()` skips its subtree-match cache for a dataset with no nested options, and skips it entirely when there is no query. The cache only pays off for a node reachable twice — through its parent's descendant scan and again as that parent expands — so on a flat list every entry was written and never read. Whether the data is nested is recorded by the walk `rebuildOptionIndexes()` already does, and it is only ever a speed hint: subtree matching is pure, so a stale flag would recompute, never answer differently. `hasReachedMaximum()` is also hoisted out of the per-option loop, since `selected` cannot change while rows are being built.
+- Measured over a 10,000-option list, interleaved A/B across four rounds: `buildRows()` during a search keystroke drops from 24.4 ms to 10.8 ms (−56%), and during `open()` from 1.4 ms to 0.85 ms (−39%). A keystroke is almost entirely `buildRows()` — 12.0 ms of 12.5 ms measured by phase — so that is the whole of the work. Search p95 in `npm run bench` falls from 40.3 ms to 33.4 ms; the median is unchanged because that metric waits two animation frames regardless. Costs 151 gzipped bytes, to 14,059 against the 14,500 budget.
+
 ## [0.8.0] - 2026-09-03
 
 ### Fixed
@@ -272,7 +280,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.6...v0.8.0
 [0.7.6]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.4...v0.7.5

@@ -627,6 +627,27 @@ describe("closeOnSelect and maxSelections", () => {
     expect(select.getValue()).toEqual(["a"]);
   });
 
+  it("drops unselected options out of keyboard navigation once maxSelections is reached", () => {
+    mountSelect(`<option value="a">A</option><option value="b">B</option><option value="c">C</option>`);
+    const select = new ForgeSelect("#country", { multiple: true, maxSelections: 2 });
+    select.setValue(["a", "b"]);
+    select.open();
+
+    // At the cap only the already-selected rows stay navigable, so ArrowUp —
+    // which wraps to the *last* navigable row — must land on B. If C were left
+    // in the nav list it would take that slot while still rendering disabled,
+    // leaving the highlight on a row the user cannot see.
+    const search = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    search.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }));
+    const highlighted = document.querySelectorAll(".forge-select__option--highlighted");
+    expect(highlighted).toHaveLength(1);
+    expect(highlighted[0].textContent?.trim()).toBe("B");
+
+    const cRow = optionEls().find((li) => li.textContent?.trim() === "C")!;
+    cRow.click();
+    expect(select.getValue()).toEqual(["a", "b"]);
+  });
+
   it("blocks creating a new tag via allowCreate once maxSelections is reached", () => {
     mountSelect();
     const select = new ForgeSelect("#country", { multiple: true, allowCreate: true, maxSelections: 1 });
@@ -1334,6 +1355,41 @@ describe("tree select", () => {
     expect(fruitsLiAfter.classList.contains("forge-select__option--selected")).toBe(false);
     expect(fruitsLiAfter.classList.contains("forge-select__option--indeterminate")).toBe(true);
     expect(select.getValue()).toEqual(["apple"]);
+  });
+
+  it("surfaces an ancestor whose descendant matches, and hides branches that match nothing", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: treeData() });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "carrot";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+
+    // "Vegetables" matches nothing itself; it is visible only because Carrot
+    // below it does. Fruits has no matching descendant and drops out entirely.
+    expect(optionEls().map(optionLabel)).toEqual(["Vegetables", "Carrot"]);
+  });
+
+  it("re-derives whether the dataset is nested when setData swaps a flat list for a tree", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      data: [
+        { value: "carrot", label: "Carrot" },
+        { value: "apple", label: "Apple" },
+      ],
+    });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "carrot";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(optionEls().map(optionLabel)).toEqual(["Carrot"]);
+
+    // The flat dataset needs no subtree bookkeeping; the tree that replaces it
+    // does, so searching must still walk descendants to surface an ancestor.
+    select.setData(treeData());
+    input.value = "carrot";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(optionEls().map(optionLabel)).toEqual(["Vegetables", "Carrot"]);
   });
 
   it("does not cascade selection onto a disabled descendant", () => {

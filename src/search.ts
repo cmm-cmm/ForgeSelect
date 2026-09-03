@@ -29,6 +29,21 @@ export function getSearchField(option: Option, field: SearchField): string {
   return value == null ? "" : String(value);
 }
 
+/**
+ * Everything `score()` derives from the query and the config rather than from
+ * the option being scored. A filtering pass scores every option against a
+ * single query, so these are exactly the values that would otherwise be
+ * rebuilt once per option.
+ */
+export interface PreparedQuery {
+  readonly trimmed: string;
+  readonly normalized: string;
+  readonly tokens: readonly string[];
+  readonly cacheKey: string;
+  readonly labelIndex: number;
+  readonly config: SearchConfig;
+}
+
 export class SearchIndex {
   private cache = new WeakMap<Option, Map<string, string[]>>();
 
@@ -36,30 +51,51 @@ export class SearchIndex {
     this.cache = new WeakMap();
   }
 
-  score(option: Option, query: string, config: SearchConfig): number {
-    const normalizedQuery = normalizeSearchText(query.trim(), config.accentInsensitive);
-    if (!normalizedQuery) return 1;
-    if (config.scorer) return config.scorer(option, query.trim(), normalizedQuery);
-    const key = `${config.accentInsensitive ? "1" : "0"}:${config.fields.join("\u0000")}`;
+  /**
+   * Hoists the query-invariant half of scoring out of the per-option loop.
+   * Normalizing the query (NFD plus two regex passes), splitting it into
+   * tokens, and building the haystack cache key depend only on the query and
+   * the config, so a filtering pass prepares once and scores per option.
+   */
+  prepare(query: string, config: SearchConfig): PreparedQuery {
+    const trimmed = query.trim();
+    const normalized = normalizeSearchText(trimmed, config.accentInsensitive);
+    return {
+      trimmed,
+      normalized,
+      tokens: config.tokenSearch ? normalized.split(/\s+/).filter(Boolean) : [normalized],
+      cacheKey: `${config.accentInsensitive ? "1" : "0"}:${config.fields.join("\u0000")}`,
+      labelIndex: config.fields.indexOf("label"),
+      config,
+    };
+  }
+
+  scorePrepared(option: Option, prepared: PreparedQuery): number {
+    const { normalized, config } = prepared;
+    if (!normalized) return 1;
+    if (config.scorer) return config.scorer(option, prepared.trimmed, normalized);
     let variants = this.cache.get(option);
     if (!variants) {
       variants = new Map();
       this.cache.set(option, variants);
     }
-    let haystacks = variants.get(key);
+    let haystacks = variants.get(prepared.cacheKey);
     if (!haystacks) {
       haystacks = config.fields.map((field) =>
         normalizeSearchText(getSearchField(option, field), config.accentInsensitive),
       );
-      variants.set(key, haystacks);
+      variants.set(prepared.cacheKey, haystacks);
     }
-    const tokens = config.tokenSearch ? normalizedQuery.split(/\s+/).filter(Boolean) : [normalizedQuery];
-    if (!tokens.every((token) => haystacks.some((field) => field.includes(token)))) return 0;
-    const label = haystacks[config.fields.indexOf("label")];
-    if (label === normalizedQuery) return 4;
-    if (label?.startsWith(normalizedQuery)) return 3;
-    if (label?.includes(normalizedQuery)) return 2;
+    if (!prepared.tokens.every((token) => haystacks.some((field) => field.includes(token)))) return 0;
+    const label = haystacks[prepared.labelIndex];
+    if (label === normalized) return 4;
+    if (label?.startsWith(normalized)) return 3;
+    if (label?.includes(normalized)) return 2;
     return 1;
+  }
+
+  score(option: Option, query: string, config: SearchConfig): number {
+    return this.scorePrepared(option, this.prepare(query, config));
   }
 }
 

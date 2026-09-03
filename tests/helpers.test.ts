@@ -6,6 +6,7 @@ import { computeDropdownPlacement } from "../src/dropdown-position";
 import { buildUrl, normalizeRemoteResult } from "../src/remote";
 import { RemoteCache } from "../src/remote-cache";
 import { findNormalizedRanges, getSearchField, normalizeSearchText, SearchIndex } from "../src/search";
+import type { SearchConfig } from "../src/search";
 import {
   arraysEqual,
   collectDescendantValues,
@@ -14,7 +15,7 @@ import {
   findOption,
   syncTreeAncestors,
 } from "../src/selection";
-import type { DataItem, Option } from "../src/types";
+import type { DataItem, Option, SearchField } from "../src/types";
 
 const tree: Option = {
   value: "root",
@@ -194,6 +195,56 @@ describe("search and cache helpers", () => {
     expect(index.score(option, "da", { ...config, fields: [...config.fields] })).toBeGreaterThan(0);
     expect(index.score(option, "missing", { ...config, fields: [...config.fields] })).toBe(0);
     index.clear();
+  });
+
+  it("scores a prepared query identically to the one-shot path", () => {
+    const option: Option = { value: "dn", label: "Đà Nẵng", description: "Thành phố biển" };
+    const other: Option = { value: "hn", label: "Hà Nội" };
+    const configs = [
+      { fields: ["label"] as SearchField[], tokenSearch: true, accentInsensitive: true },
+      { fields: ["label", "description"] as SearchField[], tokenSearch: true, accentInsensitive: true },
+      { fields: ["label"] as SearchField[], tokenSearch: false, accentInsensitive: true },
+      { fields: ["label"] as SearchField[], tokenSearch: true, accentInsensitive: false },
+      { fields: ["label"] as SearchField[], tokenSearch: true, accentInsensitive: true, scorer: () => 7 },
+    ];
+    // prepare() splits out the query-invariant half of score(); every path
+    // through it has to land on the number score() would have returned.
+    for (const config of configs) {
+      for (const query of ["", "  ", "da nang", "Đà", "bien", "missing", "Đà Nẵng"]) {
+        for (const subject of [option, other]) {
+          const prepared = new SearchIndex().prepare(query, config);
+          expect(new SearchIndex().scorePrepared(subject, prepared)).toBe(
+            new SearchIndex().score(subject, query, config),
+          );
+        }
+      }
+    }
+  });
+
+  it("reuses one prepared query across options without leaking the first option's haystack", () => {
+    const index = new SearchIndex();
+    const config = { fields: ["label"] as SearchField[], tokenSearch: true, accentInsensitive: true };
+    const prepared = index.prepare("nang", config);
+    expect(index.scorePrepared({ value: "dn", label: "Đà Nẵng" }, prepared)).toBeGreaterThan(0);
+    expect(index.scorePrepared({ value: "hn", label: "Hà Nội" }, prepared)).toBe(0);
+    expect(index.scorePrepared({ value: "x", label: "nang" }, prepared)).toBe(4);
+  });
+
+  it("ranks against the label even when it is not the first configured field", () => {
+    // The relevance tiers read one specific haystack, so a prepared query has
+    // to carry where "label" actually sits rather than assuming it leads.
+    const index = new SearchIndex();
+    const config: SearchConfig = {
+      fields: ["description", "label"],
+      tokenSearch: true,
+      accentInsensitive: true,
+    };
+    const option: Option = { value: "a", label: "Alpha", description: "Beta" };
+    // 4 is the exact-label tier; scoring the description haystack by mistake
+    // still matches, but only at the weakest tier.
+    expect(index.score(option, "alpha", config)).toBe(4);
+    expect(index.score(option, "beta", config)).toBe(1);
+    expect(index.score({ value: "b", label: "Alphabet", description: "" }, "alpha", config)).toBe(3);
   });
 
   it("expires cached remote pages", () => {
