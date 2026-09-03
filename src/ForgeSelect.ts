@@ -541,10 +541,14 @@ export default class ForgeSelect {
       this.opts.minSearchLength = Math.max(0, Math.floor(options.minSearchLength));
     if (options.minResultsForSearch !== undefined)
       this.opts.minResultsForSearch = Math.max(0, Math.floor(options.minResultsForSearch));
-    if (options.maxVisibleTags !== undefined)
-      this.opts.maxVisibleTags = Number.isFinite(options.maxVisibleTags)
-        ? Math.max(0, Math.floor(options.maxVisibleTags))
-        : undefined;
+    // Key presence, like maxSelections: both have "unset" as a meaningful
+    // state, so passing the key explicitly undefined has to clear the cap
+    // rather than read as "leave it alone".
+    if ("maxVisibleTags" in options)
+      this.opts.maxVisibleTags =
+        options.maxVisibleTags == null || !Number.isFinite(options.maxVisibleTags)
+          ? undefined
+          : Math.max(0, Math.floor(options.maxVisibleTags));
     if (options.isOptionDisabled !== undefined) this.opts.isOptionDisabled = options.isOptionDisabled;
     if (options.virtualScroll !== undefined) this.opts.virtualScroll = options.virtualScroll;
     if (options.itemHeight !== undefined) {

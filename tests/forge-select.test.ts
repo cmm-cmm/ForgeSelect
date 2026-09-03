@@ -564,6 +564,14 @@ describe("selection", () => {
     select.updateOptions({ maxVisibleTags: 10 });
     expect(tags()).toHaveLength(4);
     expect(overflow()).toBeNull();
+
+    // Unset is a state the option can return to, so passing the key explicitly
+    // undefined has to clear the cap rather than read as "leave it alone".
+    select.updateOptions({ maxVisibleTags: 1 });
+    expect(overflow()).toBe("+3 more");
+    select.updateOptions({ maxVisibleTags: undefined });
+    expect(tags()).toHaveLength(4);
+    expect(overflow()).toBeNull();
   });
 
   it("renders every tag when maxVisibleTags is unset, and localizes the counter", () => {
