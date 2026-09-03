@@ -49,8 +49,9 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 1. Branch from `main` and keep PRs focused on one change.
 2. CI (`.github/workflows/ci.yml`) must pass: lint, format check, typecheck, test with coverage, build (core and the React/Vue workspaces), `check:site`, `check:package`, `npm audit`, and the Playwright browser suite. Run `npm run verify` locally to cover the core-package subset (lint, format:check, typecheck, test:coverage, build) before pushing.
 3. Add or update tests for behavior changes; jsdom cannot model layout (e.g. `scrollTop` clamping), so verify scroll/visual behavior in a real browser too.
-4. Update the relevant docs page under `docs/` and add an entry to `CHANGELOG.md` under **Unreleased**.
+4. Update the relevant docs page under `docs/`, and add an entry to `CHANGELOG.md` under **Unreleased** for anything that reaches the published packages — behavior, API, types, or packaging. A change confined to contributor-facing files (this file, CI workflows, issue templates) doesn't need one; `CHANGELOG.md` tracks what a consumer of the package would notice.
 5. Keep the zero-dependency promise: no new runtime dependencies. Dev dependencies are fine when justified.
+6. Comment `@coderabbitai review` on the PR to get an AI review. CodeRabbit is still free for this repository, but it does not review automatically while the repository has fewer than 10 GitHub stars — and it says so in a comment rather than staying silent, so an unreviewed PR can read as one with no findings. No `.coderabbit.yaml` setting overrides this; the request has to be made per PR.
 
 ## Releasing (maintainers)
 
