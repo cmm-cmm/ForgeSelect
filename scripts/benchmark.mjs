@@ -116,7 +116,109 @@ try {
     };
   });
 
+  // Where the time actually goes, per phase. Wraps the prototype from the page
+  // rather than instrumenting the library: TypeScript's `private` is erased at
+  // runtime and esbuild leaves member names intact, so this costs the shipped
+  // bundle nothing. Each wrapper records self time — a phase that calls another
+  // wrapped phase has the callee's time subtracted — so the rows never double
+  // count and can be read against the totals beside them.
+  const phases = await page.evaluate(
+    (sizes) => {
+      const ForgeSelect = window.ForgeSelectBundle.default;
+      const PHASES = [
+        "buildDom",
+        "renderValue",
+        "rebuildOptionIndexes",
+        "buildRows",
+        "renderRows",
+        "announceStatus",
+        "positionDropdown",
+      ];
+      const selfTime = Object.create(null);
+      const stack = [];
+      const wrap = (name, original) =>
+        function instrumented(...args) {
+          const frame = { childTime: 0 };
+          stack.push(frame);
+          const start = performance.now();
+          try {
+            return original.apply(this, args);
+          } finally {
+            const elapsed = performance.now() - start;
+            stack.pop();
+            selfTime[name] = (selfTime[name] ?? 0) + elapsed - frame.childTime;
+            const parent = stack[stack.length - 1];
+            if (parent) parent.childTime += elapsed;
+          }
+        };
+      const missing = [];
+      for (const name of PHASES) {
+        const original = ForgeSelect.prototype[name];
+        if (typeof original === "function") ForgeSelect.prototype[name] = wrap(name, original);
+        else missing.push(name);
+      }
+      const reset = () => {
+        for (const name of PHASES) selfTime[name] = 0;
+        stack.length = 0;
+      };
+      const snapshot = () => Object.fromEntries(PHASES.map((name) => [name, selfTime[name] ?? 0]));
+      const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+
+      const host = document.createElement("div");
+      document.body.append(host);
+      const out = {};
+      for (const size of sizes) {
+        const data = Array.from({ length: size }, (_, index) => ({ value: String(index), label: `Item ${index}` }));
+        const runs = [];
+        for (let run = 0; run < 15; run += 1) {
+          const mount = document.createElement("select");
+          host.append(mount);
+
+          reset();
+          const constructStart = performance.now();
+          const select = new ForgeSelect(mount, { data });
+          const constructTotal = performance.now() - constructStart;
+          const constructPhases = snapshot();
+
+          reset();
+          const openStart = performance.now();
+          select.open();
+          // Read layout so the reflow for the rows just appended is paid inside
+          // this measurement rather than leaking into whatever runs next.
+          const flushed = select.el.parentElement.querySelector(".forge-select__list").offsetHeight;
+          const openTotal = performance.now() - openStart;
+          if (flushed < 0) throw new Error("unreachable: negative list height");
+          const openPhases = snapshot();
+
+          runs.push({ constructTotal, constructPhases, openTotal, openPhases });
+          select.destroy();
+          mount.remove();
+        }
+        const pick = (path, name) => median(runs.map((run) => (name ? run[path][name] : run[path])));
+        const construct = Object.fromEntries(PHASES.map((name) => [name, pick("constructPhases", name)]));
+        const open = Object.fromEntries(PHASES.map((name) => [name, pick("openPhases", name)]));
+        const sum = (record) => Object.values(record).reduce((total, value) => total + value, 0);
+        out[size] = {
+          constructTotalMs: pick("constructTotal"),
+          constructPhaseMs: construct,
+          constructUnattributedMs: pick("constructTotal") - sum(construct),
+          openTotalMs: pick("openTotal"),
+          openPhaseMs: open,
+          openUnattributedMs: pick("openTotal") - sum(open),
+        };
+      }
+      host.remove();
+      return { missing, bySize: out };
+    },
+    [100, 10_000],
+  );
+
   const round = (value) => Math.round(value * 100) / 100;
+  const roundDeep = (value) => {
+    if (typeof value === "number") return round(value);
+    if (Array.isArray(value)) return value;
+    return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, roundDeep(nested)]));
+  };
   const result = {
     generatedAt: new Date().toISOString(),
     environment: {
@@ -131,6 +233,8 @@ try {
     },
     budgets: BUDGETS,
     timings: Object.fromEntries(Object.entries(timings).map(([key, value]) => [key, round(value)])),
+    phases: roundDeep(phases.bySize),
+    ...(phases.missing.length ? { phasesUnavailable: phases.missing } : {}),
   };
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   const failures = [];
