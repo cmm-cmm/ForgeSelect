@@ -230,6 +230,21 @@ describe("search and cache helpers", () => {
     expect(index.scorePrepared({ value: "x", label: "nang" }, prepared)).toBe(4);
   });
 
+  it("keeps a prepared query on the config it was prepared with when the caller mutates it", () => {
+    const index = new SearchIndex();
+    const config: SearchConfig = { fields: ["label"], tokenSearch: true, accentInsensitive: true };
+    const option: Option = { value: "dn", label: "Đà Nẵng" };
+    const prepared = index.prepare("Đà", config);
+
+    // "Đà" was normalized to "da" under accentInsensitive. Scoring the label as
+    // "đà nẵng" afterwards would look for "da" in it and miss, so the prepared
+    // query has to keep the settings it was built from.
+    config.accentInsensitive = false;
+    config.tokenSearch = false;
+    config.fields.push("description");
+    expect(index.scorePrepared(option, prepared)).toBe(3);
+  });
+
   it("ranks against the label even when it is not the first configured field", () => {
     // The relevance tiers read one specific haystack, so a prepared query has
     // to carry where "label" actually sits rather than assuming it leads.

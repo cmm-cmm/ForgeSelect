@@ -66,10 +66,20 @@ export class SearchIndex {
       tokens: config.tokenSearch ? normalized.split(/\s+/).filter(Boolean) : [normalized],
       cacheKey: `${config.accentInsensitive ? "1" : "0"}:${config.fields.join("\u0000")}`,
       labelIndex: config.fields.indexOf("label"),
-      config,
+      // Snapshot rather than hold the caller's object: every value above is
+      // derived from the config as it reads now, so a later mutation would
+      // have scorePrepared() build haystacks under settings the query was
+      // never normalized for — accentInsensitive flipped between the two
+      // calls is enough to make a match miss.
+      config: { ...config, fields: [...config.fields] },
     };
   }
 
+  /**
+   * Scores one option against an already-prepared query. Pair it with
+   * `prepare()`; the prepared value carries its own copy of the config, so the
+   * two cannot disagree about how the query was normalized.
+   */
   scorePrepared(option: Option, prepared: PreparedQuery): number {
     const { normalized, config } = prepared;
     if (!normalized) return 1;
