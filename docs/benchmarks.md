@@ -32,6 +32,23 @@ The current baseline measures Forge Select itself so release-to-release regressi
 | Rows rendered after virtualization | `timings.renderedRowsAtTenThousand` | Must remain well below 10,000.          |
 | Residual DOM after destroy         | `timings.residualNodesAfterDestroy` | Must remain zero.                       |
 
+## Phase breakdown
+
+A single "init took N ms" number says nothing about which part to optimize, so the run also reports where the time goes, at 100 and 10,000 options, under `phases`:
+
+| Field                                    | Interpretation                                                         |
+| ---------------------------------------- | ---------------------------------------------------------------------- |
+| `phases.<size>.constructTotalMs`         | Wall time of `new ForgeSelect(...)`.                                   |
+| `phases.<size>.constructPhaseMs.<phase>` | Self time of each phase during construction.                           |
+| `phases.<size>.constructUnattributedMs`  | Construction time outside any measured phase (option resolve, wiring). |
+| `phases.<size>.openTotalMs`              | Wall time of `open()`, including a forced layout flush.                |
+| `phases.<size>.openPhaseMs.<phase>`      | Self time of each phase during open.                                   |
+| `phases.<size>.openUnattributedMs`       | Open time outside any measured phase.                                  |
+
+Phases are timed by wrapping the corresponding methods from the page, so nothing is added to the shipped bundle. Each row is **self** time — a phase that calls another measured phase has the callee's time subtracted — so rows never double count and can be read against the total beside them. If a rename ever breaks the mapping, the affected names are listed under `phasesUnavailable` instead of silently reporting zero.
+
+Read the rows as "which phase first pays a cost", not "which phase is inherently slow": a phase that reads layout is billed for the reflow of everything appended before it. At 100 options `positionDropdown` measures over a millisecond for exactly that reason — it is the first layout read after the full row list is appended — while at 10,000 options, where only the virtual window is in the DOM, the same call barely registers.
+
 ## Running benchmarks locally
 
 ```bash
