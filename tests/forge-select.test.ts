@@ -1056,6 +1056,59 @@ describe("filterOption and minSearchLength", () => {
 });
 
 describe("allowCreate (tags mode)", () => {
+  // The label index behind exact-match detection is filled on demand, so the
+  // paths that replace or re-normalize `data` have to invalidate it or the
+  // create row is decided against options that are no longer there.
+  it("re-derives exact-match detection after setData replaces the options", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      allowCreate: true,
+      data: [{ value: "vn", label: "Vietnam" }],
+    });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    const type = (value: string) => {
+      input.value = value;
+      input.dispatchEvent(new Event("input"));
+    };
+    const createRow = () => document.querySelector(".forge-select__option--create");
+
+    type("Vietnam");
+    expect(createRow()).toBeNull();
+
+    select.setData([{ value: "jp", label: "Japan" }]);
+    type("Vietnam");
+    expect(createRow()).not.toBeNull();
+    type("Japan");
+    expect(createRow()).toBeNull();
+  });
+
+  it("re-derives exact-match detection when accentInsensitive is switched off", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      allowCreate: true,
+      data: [{ value: "dn", label: "Đà Nẵng" }],
+    });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    const type = (value: string) => {
+      input.value = value;
+      input.dispatchEvent(new Event("input"));
+    };
+
+    // Accent-insensitive by default: the stripped spelling counts as a match.
+    type("Da Nang");
+    expect(document.querySelector(".forge-select__option--create")).toBeNull();
+
+    select.updateOptions({ accentInsensitive: false });
+    type("Da Nang");
+    expect(document.querySelector(".forge-select__option--create")).not.toBeNull();
+    type("Đà Nẵng");
+    expect(document.querySelector(".forge-select__option--create")).toBeNull();
+  });
+
   it("creates a new option from the query", () => {
     mountSelect();
     const select = new ForgeSelect("#country", { multiple: true, allowCreate: true });
