@@ -190,21 +190,28 @@ try {
           if (flushed < 0) throw new Error("unreachable: negative list height");
           const openPhases = snapshot();
 
-          runs.push({ constructTotal, constructPhases, openTotal, openPhases });
+          // Residuals are per run: the median is not linear, so subtracting one
+          // median from another mixes runs and can even go negative.
+          const sum = (record) => Object.values(record).reduce((total, value) => total + value, 0);
+          runs.push({
+            constructTotal,
+            constructPhases,
+            constructUnattributed: constructTotal - sum(constructPhases),
+            openTotal,
+            openPhases,
+            openUnattributed: openTotal - sum(openPhases),
+          });
           select.destroy();
           mount.remove();
         }
         const pick = (path, name) => median(runs.map((run) => (name ? run[path][name] : run[path])));
-        const construct = Object.fromEntries(PHASES.map((name) => [name, pick("constructPhases", name)]));
-        const open = Object.fromEntries(PHASES.map((name) => [name, pick("openPhases", name)]));
-        const sum = (record) => Object.values(record).reduce((total, value) => total + value, 0);
         out[size] = {
           constructTotalMs: pick("constructTotal"),
-          constructPhaseMs: construct,
-          constructUnattributedMs: pick("constructTotal") - sum(construct),
+          constructPhaseMs: Object.fromEntries(PHASES.map((name) => [name, pick("constructPhases", name)])),
+          constructUnattributedMs: pick("constructUnattributed"),
           openTotalMs: pick("openTotal"),
-          openPhaseMs: open,
-          openUnattributedMs: pick("openTotal") - sum(open),
+          openPhaseMs: Object.fromEntries(PHASES.map((name) => [name, pick("openPhases", name)])),
+          openUnattributedMs: pick("openUnattributed"),
         };
       }
       host.remove();
