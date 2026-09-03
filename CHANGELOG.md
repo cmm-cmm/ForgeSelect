@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-09-03
+
+### Changed
+
+- Construction no longer builds the option label index. It exists only so `allowCreate` can tell an exact match from a new tag, but it was filled for every instance, normalizing (NFD plus two regex passes) every label up front — work the majority of selects, which never create tags, never read. It is now built on first use, and warmed when an `allowCreate` select opens so the cost never lands on the keystroke the user is waiting on. Measured over a 10,000-option list: constructing a select without `allowCreate` drops from 6.6 ms to 2.5 ms, and with `allowCreate` the first keystroke goes from 20.6 ms to 18.0 ms and later ones are unchanged. Every path that already reindexed on a data or `accentInsensitive` change invalidates it too, so exact-match detection still follows the current options.
+
 ## [0.7.5] - 2026-09-02
 
 ### Fixed
@@ -228,7 +234,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.5...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.6...HEAD
+[0.7.6]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.2...v0.7.3

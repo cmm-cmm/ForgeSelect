@@ -106,7 +106,12 @@ export default class ForgeSelect {
   private strings: Strings;
   private data: DataItem[];
   private optionByValue = new Map<string, Option>();
-  private optionByLabel = new Map<string, Option>();
+  // Built on demand: only the allowCreate paths read it, and filling it eagerly
+  // normalizes every label (NFD + regex) at construction for the majority of
+  // selects that never create tags. rebuildOptionIndexes() nulls it, so every
+  // existing invalidation point — including an accentInsensitive change —
+  // already covers it.
+  private optionByLabel: Map<string, Option> | null = null;
   private selected: string[] = [];
   private selectedOptions = new Map<string, Option>();
   private suppressNextTagClick = false;
@@ -320,6 +325,10 @@ export default class ForgeSelect {
     if (this.opts.ajax && (this.opts.ajax.loadOnOpen ?? true) && !this.remoteLoaded) {
       this.scheduleRemoteLoad(this.query, 0);
     }
+    // allowCreate consults the label index on every keystroke to decide whether
+    // to offer a "create" row. Fill it here rather than on that first keystroke,
+    // where the user is waiting on the result.
+    if (this.opts.allowCreate) this.labelIndex();
     this.renderList();
     this.positionDropdown();
     window.addEventListener("resize", this.onWindowResize);
@@ -1211,19 +1220,31 @@ export default class ForgeSelect {
     return this.optionByValue.get(value);
   }
 
+  /** Fills the label index on first use; see the field for why it is deferred. */
+  private labelIndex(): Map<string, Option> {
+    if (this.optionByLabel) return this.optionByLabel;
+    const index = new Map<string, Option>();
+    const visit = (option: Option): void => {
+      const label = normalizeSearchText(option.label, this.opts.accentInsensitive);
+      if (!index.has(label)) index.set(label, option);
+      option.children?.forEach(visit);
+    };
+    for (const item of this.data) (isGroup(item) ? item.options : [item]).forEach(visit);
+    this.optionByLabel = index;
+    return index;
+  }
+
   private findOptionByLabel(label: string): Option | undefined {
-    return this.optionByLabel.get(normalizeSearchText(label, this.opts.accentInsensitive));
+    return this.labelIndex().get(normalizeSearchText(label, this.opts.accentInsensitive));
   }
 
   private rebuildOptionIndexes(): void {
     this.optionByValue.clear();
-    this.optionByLabel.clear();
+    this.optionByLabel = null;
     const duplicates = new Set<string>();
     const visit = (option: Option): void => {
       if (this.optionByValue.has(option.value)) duplicates.add(option.value);
       else this.optionByValue.set(option.value, option);
-      const label = normalizeSearchText(option.label, this.opts.accentInsensitive);
-      if (!this.optionByLabel.has(label)) this.optionByLabel.set(label, option);
       option.children?.forEach(visit);
     };
     for (const item of this.data) (isGroup(item) ? item.options : [item]).forEach(visit);
