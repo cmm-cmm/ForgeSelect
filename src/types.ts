@@ -157,6 +157,14 @@ export interface ForgeSelectOptions {
    */
   minResultsForSearch?: number;
   /**
+   * Caps how many tags a multiple select renders in its control. Selections
+   * past the cap collapse into a single "+N more" chip instead of adding a
+   * chip each, which keeps the control a fixed size — and keeps the cost of
+   * rendering it flat — however large the selection grows. Unset by default,
+   * meaning every selection is rendered. Ignored for a single select.
+   */
+  maxVisibleTags?: number;
+  /**
    * Dynamically disables an option, in addition to its static `disabled`
    * field. Re-evaluated on every render, so it can react to external state
    * (e.g. a quota) without rebuilding `data` via setData().

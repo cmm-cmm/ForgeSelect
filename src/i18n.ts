@@ -13,6 +13,7 @@ const locales: Record<string, Strings> = {
     reorderHint: "{label}. Press Alt+Left or Alt+Right to reorder.",
     minSearchLength: "Type {count} or more characters to search",
     maximumSelected: "Maximum of {count} selections reached",
+    moreTags: "+{count} more",
   },
   vi: {
     noResults: "Không tìm thấy kết quả",
@@ -26,6 +27,7 @@ const locales: Record<string, Strings> = {
     reorderHint: "{label}. Nhấn Alt+Trái hoặc Alt+Phải để sắp xếp lại.",
     minSearchLength: "Nhập thêm {count} ký tự để tìm kiếm",
     maximumSelected: "Đã đạt tối đa {count} lựa chọn",
+    moreTags: "+{count} nữa",
   },
 };
 

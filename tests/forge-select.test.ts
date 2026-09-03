@@ -532,6 +532,76 @@ describe("selection", () => {
     expect(nativeChanged).not.toHaveBeenCalled();
   });
 
+  it("collapses selections past maxVisibleTags into one counter chip", () => {
+    mountSelect("");
+    const tags = () => Array.from(document.querySelectorAll(".forge-select__tag"), (t) => t.textContent);
+    const overflow = () => document.querySelector(".forge-select__tag-overflow")?.textContent ?? null;
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      maxVisibleTags: 2,
+      data: [
+        { value: "a", label: "A" },
+        { value: "b", label: "B" },
+        { value: "c", label: "C" },
+        { value: "d", label: "D" },
+      ],
+    });
+
+    // At the cap every selection still gets its own tag and nothing is counted.
+    select.setValue(["a", "b"]);
+    expect(tags()).toHaveLength(2);
+    expect(overflow()).toBeNull();
+
+    // Past it the control stays the same size: the cap in tags, then a count
+    // of what is not shown.
+    select.setValue(["a", "b", "c", "d"]);
+    expect(tags().map((t) => t?.replace("×", ""))).toEqual(["A", "B"]);
+    expect(overflow()).toBe("+2 more");
+    // The value itself is untouched — only the rendering is capped.
+    expect(select.getValue()).toEqual(["a", "b", "c", "d"]);
+
+    // Raising the cap past the selection renders all of them again.
+    select.updateOptions({ maxVisibleTags: 10 });
+    expect(tags()).toHaveLength(4);
+    expect(overflow()).toBeNull();
+  });
+
+  it("renders every tag when maxVisibleTags is unset, and localizes the counter", () => {
+    mountSelect("");
+    const data = Array.from({ length: 5 }, (_, i) => ({ value: String(i), label: `Item ${i}` }));
+
+    // Unset is the default, so an existing multiple select renders as before.
+    const uncapped = new ForgeSelect("#country", { multiple: true, data });
+    uncapped.setValue(["0", "1", "2", "3", "4"]);
+    expect(document.querySelectorAll(".forge-select__tag")).toHaveLength(5);
+    expect(document.querySelector(".forge-select__tag-overflow")).toBeNull();
+    uncapped.destroy();
+
+    mountSelect("");
+    const vietnamese = new ForgeSelect("#country", {
+      multiple: true,
+      maxVisibleTags: 1,
+      language: "vi",
+      data,
+    });
+    vietnamese.setValue(["0", "1", "2"]);
+    expect(document.querySelector(".forge-select__tag-overflow")?.textContent).toBe("+2 nữa");
+    vietnamese.destroy();
+  });
+
+  it("ignores maxVisibleTags for a single select", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      maxVisibleTags: 0,
+      data: [{ value: "a", label: "A" }],
+    });
+    select.setValue("a");
+    // A single select renders one value, not tags, so the cap has nothing to
+    // apply to and must not blank the control.
+    expect(document.querySelector(".forge-select__single-value")?.textContent).toBe("A");
+    expect(document.querySelector(".forge-select__tag-overflow")).toBeNull();
+  });
+
   it("toggles values in multiple mode and renders tags", () => {
     mountSelect();
     const select = new ForgeSelect("#country", { multiple: true });

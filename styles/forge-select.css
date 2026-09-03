@@ -113,6 +113,20 @@
   border-radius: calc(var(--fs-radius) - 4px);
 }
 
+/* The counter standing in for selections past maxVisibleTags. It carries the
+   tag's shape but not its affordances: there is nothing here to remove or
+   drag, so it takes no remove button and no grab cursor. */
+.forge-select__tag-overflow {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: calc(var(--fs-radius) - 4px);
+  background: transparent;
+  color: var(--fs-muted);
+  border: 1px dashed var(--fs-border);
+  font-size: 0.9em;
+}
+
 .forge-select--sortable .forge-select__tag {
   cursor: grab;
   touch-action: none;

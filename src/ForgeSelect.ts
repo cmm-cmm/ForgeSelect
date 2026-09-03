@@ -79,6 +79,7 @@ interface ResolvedOptions {
   minSearchLength: number;
   isOptionDisabled?: (option: Option) => boolean;
   minResultsForSearch: number;
+  maxVisibleTags: number | undefined;
   virtualScroll: boolean | undefined;
   itemHeight: number;
   variableItemHeight: boolean;
@@ -283,6 +284,10 @@ export default class ForgeSelect {
       highlightSearch: options.highlightSearch ?? false,
       minSearchLength: Math.max(0, Math.floor(options.minSearchLength ?? 0)),
       minResultsForSearch: Math.max(0, Math.floor(options.minResultsForSearch ?? 0)),
+      maxVisibleTags:
+        options.maxVisibleTags == null || !Number.isFinite(options.maxVisibleTags)
+          ? undefined
+          : Math.max(0, Math.floor(options.maxVisibleTags)),
       isOptionDisabled: options.isOptionDisabled,
       virtualScroll: options.virtualScroll,
       itemHeight: typeof options.itemHeight === "number" ? Math.max(1, options.itemHeight) : DEFAULT_ITEM_HEIGHT,
@@ -536,6 +541,10 @@ export default class ForgeSelect {
       this.opts.minSearchLength = Math.max(0, Math.floor(options.minSearchLength));
     if (options.minResultsForSearch !== undefined)
       this.opts.minResultsForSearch = Math.max(0, Math.floor(options.minResultsForSearch));
+    if (options.maxVisibleTags !== undefined)
+      this.opts.maxVisibleTags = Number.isFinite(options.maxVisibleTags)
+        ? Math.max(0, Math.floor(options.maxVisibleTags))
+        : undefined;
     if (options.isOptionDisabled !== undefined) this.opts.isOptionDisabled = options.isOptionDisabled;
     if (options.virtualScroll !== undefined) this.opts.virtualScroll = options.virtualScroll;
     if (options.itemHeight !== undefined) {
@@ -1457,7 +1466,12 @@ export default class ForgeSelect {
     }
 
     if (this.opts.multiple) {
-      for (const value of this.selected) {
+      // Past the cap the remainder becomes one counter chip, so a control
+      // holding a very large selection costs a fixed number of nodes to build
+      // and to lay out rather than four per selection.
+      const cap = this.opts.maxVisibleTags;
+      const shown = cap == null || this.selected.length <= cap ? this.selected : this.selected.slice(0, cap);
+      for (const value of shown) {
         const option = this.selectedOptions.get(value) ?? { value, label: value };
         const tag = document.createElement("span");
         tag.className = "forge-select__tag";
@@ -1483,6 +1497,16 @@ export default class ForgeSelect {
           this.bindTagDrag(tag, value);
         }
         this.valueEl.append(tag);
+      }
+      if (shown !== this.selected) {
+        const overflow = document.createElement("span");
+        overflow.className = "forge-select__tag-overflow";
+        // Announced with the tags rather than skipped: a screen reader user
+        // otherwise has no way to tell that the control is showing a subset.
+        overflow.textContent = format(this.strings.moreTags, {
+          count: String(this.selected.length - shown.length),
+        });
+        this.valueEl.append(overflow);
       }
     } else {
       const option = this.selectedOptions.get(this.selected[0]) ?? {

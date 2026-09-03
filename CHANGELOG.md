@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.1] - 2026-09-03
+## [0.9.0] - 2026-09-03
+
+### Added
+
+- `maxVisibleTags` caps how many tags a multiple select renders in its control; selections past the cap collapse into a single `+N more` chip. It is unset by default, so an existing select renders every selection exactly as before. Without a cap the control builds four elements and one listener per selection, and the browser then has to lay all of them out: selecting 10,000 options cost 254 ms, 175 ms of it layout, for 40,000 tag nodes. With `maxVisibleTags: 20` the same operation costs 55 ms with 14 ms of layout — 4.6x faster — because the control's size no longer follows the selection's. The counter is rendered as text alongside the tags rather than hidden from assistive technology, so it is announced with them. Costs 165 gzipped bytes, to 14,248 against the 14,500 budget.
 
 ### Changed
 
@@ -283,8 +287,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.8.1...HEAD
-[0.8.1]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.8.0...v0.8.1
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.6...v0.8.0
 [0.7.6]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.4...v0.7.5
