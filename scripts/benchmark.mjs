@@ -123,7 +123,7 @@ try {
   // wrapped phase has the callee's time subtracted — so the rows never double
   // count and can be read against the totals beside them.
   const phases = await page.evaluate(
-    async (sizes) => {
+    (sizes) => {
       const ForgeSelect = window.ForgeSelectBundle.default;
       const PHASES = [
         "buildDom",
