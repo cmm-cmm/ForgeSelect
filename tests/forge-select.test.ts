@@ -2064,20 +2064,21 @@ describe("ajax pagination", () => {
     return { options: r.items.map((i) => ({ value: i.id, label: i.name })), hasMore: r.hasMore };
   }
 
-  function pagedFetchMock() {
+  const SECOND_PAGE: Item[] = [
+    { id: "c", name: "Gamma" },
+    { id: "d", name: "Delta" },
+  ];
+
+  function pagedFetchMock(secondPage: Item[] = SECOND_PAGE) {
     return vi.fn().mockImplementation((url: string) => {
-      const page = url.includes("page=1") ? 1 : 0;
-      const items: Item[] =
-        page === 0
-          ? [
-              { id: "a", name: "Alpha" },
-              { id: "b", name: "Beta" },
-            ]
-          : [
-              { id: "c", name: "Gamma" },
-              { id: "d", name: "Delta" },
-            ];
-      return Promise.resolve({ json: () => Promise.resolve({ items, hasMore: page === 0 }) });
+      const isSecond = url.includes("page=1");
+      const items: Item[] = isSecond
+        ? secondPage
+        : [
+            { id: "a", name: "Alpha" },
+            { id: "b", name: "Beta" },
+          ];
+      return Promise.resolve({ json: () => Promise.resolve({ items, hasMore: !isSecond }) });
     });
   }
 
@@ -2087,15 +2088,11 @@ describe("ajax pagination", () => {
     Object.defineProperty(list, "scrollTop", { value: 800, configurable: true, writable: true });
   }
 
-  it("appends the next page instead of replacing when scrolled near the bottom", async () => {
-    const fetchMock = pagedFetchMock();
-    vi.stubGlobal("fetch", fetchMock);
-
-    mountSelect("");
+  /** Opens the select, settles page 0, then scrolls to the bottom and settles page 1. */
+  async function loadTwoPages(): Promise<ForgeSelect> {
     const select = new ForgeSelect("#country", {
       ajax: { url: "/api/items", pagination: true, params: (q, page) => ({ q, page }), transform },
     });
-
     select.open();
     await new Promise((r) => setTimeout(r, 0));
     expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta"]);
@@ -2105,50 +2102,39 @@ describe("ajax pagination", () => {
     list.dispatchEvent(new Event("scroll"));
     await new Promise((r) => requestAnimationFrame(r));
     await new Promise((r) => setTimeout(r, 0));
+    return select;
+  }
+
+  it("appends the next page instead of replacing when scrolled near the bottom", async () => {
+    const fetchMock = pagedFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+    mountSelect("");
+
+    const select = await loadTwoPages();
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1][0]).toContain("page=1");
     expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta", "Gamma", "Delta"]);
-
+    select.destroy();
     vi.unstubAllGlobals();
   });
 
   it("drops options the next page repeats from one already loaded", async () => {
-    // Overlapping pages are ordinary for offset pagination over a table that
-    // is being written to: a row inserted before the cursor shifts everything
-    // after it down, so page 2 re-sends the tail of page 1.
-    const fetchMock = vi.fn().mockImplementation((url: string) => {
-      const items: Item[] = url.includes("page=1")
-        ? [
-            { id: "b", name: "Beta" },
-            { id: "c", name: "Gamma" },
-          ]
-        : [
-            { id: "a", name: "Alpha" },
-            { id: "b", name: "Beta" },
-          ];
-      return Promise.resolve({
-        json: () => Promise.resolve({ items, hasMore: !url.includes("page=1") }),
-      });
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
+    // Overlapping pages are ordinary for offset pagination over a table being
+    // written to: a row inserted before the cursor shifts everything after it
+    // down, so page 2 re-sends the tail of page 1.
+    vi.stubGlobal(
+      "fetch",
+      pagedFetchMock([
+        { id: "b", name: "Beta" },
+        { id: "c", name: "Gamma" },
+      ]),
+    );
     mountSelect("");
-    const select = new ForgeSelect("#country", {
-      ajax: { url: "/api/items", pagination: true, params: (q, page) => ({ q, page }), transform },
-    });
 
-    select.open();
-    await new Promise((r) => setTimeout(r, 0));
-    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta"]);
+    const select = await loadTwoPages();
 
-    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
-    mockNearBottom(list);
-    list.dispatchEvent(new Event("scroll"));
-    await new Promise((r) => requestAnimationFrame(r));
-    await new Promise((r) => setTimeout(r, 0));
-
-    // "Beta" arrives twice; it must land in the list once.
+    // "Beta" arrives on both pages; it must land in the list once.
     expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta", "Gamma"]);
     select.destroy();
     vi.unstubAllGlobals();
