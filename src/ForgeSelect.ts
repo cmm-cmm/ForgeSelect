@@ -9,7 +9,6 @@ import { findNormalizedRanges, normalizeSearchText, SearchIndex } from "./search
 import {
   arraysEqual,
   collectDescendantValues,
-  collectValues,
   computeCheckState,
   isGroup,
   syncTreeAncestors as syncDataTreeAncestors,
@@ -80,6 +79,7 @@ interface ResolvedOptions {
   minSearchLength: number;
   isOptionDisabled?: (option: Option) => boolean;
   minResultsForSearch: number;
+  maxVisibleTags: number | undefined;
   virtualScroll: boolean | undefined;
   itemHeight: number;
   variableItemHeight: boolean;
@@ -112,6 +112,12 @@ export default class ForgeSelect {
   // existing invalidation point — including an accentInsensitive change —
   // already covers it.
   private optionByLabel: Map<string, Option> | null = null;
+  // Whether any option in `data` has children, recorded by the walk
+  // rebuildOptionIndexes() already does. buildRows() skips its subtree-match
+  // cache when this is false, since a flat dataset visits every option exactly
+  // once per pass. Only ever a speed hint: subtree matching is pure, so a stale
+  // flag would recompute, never answer differently.
+  private hasNestedOptions = false;
   private selected: string[] = [];
   private selectedOptions = new Map<string, Option>();
   private suppressNextTagClick = false;
@@ -278,6 +284,10 @@ export default class ForgeSelect {
       highlightSearch: options.highlightSearch ?? false,
       minSearchLength: Math.max(0, Math.floor(options.minSearchLength ?? 0)),
       minResultsForSearch: Math.max(0, Math.floor(options.minResultsForSearch ?? 0)),
+      maxVisibleTags:
+        options.maxVisibleTags == null || !Number.isFinite(options.maxVisibleTags)
+          ? undefined
+          : Math.max(0, Math.floor(options.maxVisibleTags)),
       isOptionDisabled: options.isOptionDisabled,
       virtualScroll: options.virtualScroll,
       itemHeight: typeof options.itemHeight === "number" ? Math.max(1, options.itemHeight) : DEFAULT_ITEM_HEIGHT,
@@ -531,6 +541,14 @@ export default class ForgeSelect {
       this.opts.minSearchLength = Math.max(0, Math.floor(options.minSearchLength));
     if (options.minResultsForSearch !== undefined)
       this.opts.minResultsForSearch = Math.max(0, Math.floor(options.minResultsForSearch));
+    // Key presence, like maxSelections: both have "unset" as a meaningful
+    // state, so passing the key explicitly undefined has to clear the cap
+    // rather than read as "leave it alone".
+    if ("maxVisibleTags" in options)
+      this.opts.maxVisibleTags =
+        options.maxVisibleTags == null || !Number.isFinite(options.maxVisibleTags)
+          ? undefined
+          : Math.max(0, Math.floor(options.maxVisibleTags));
     if (options.isOptionDisabled !== undefined) this.opts.isOptionDisabled = options.isOptionDisabled;
     if (options.virtualScroll !== undefined) this.opts.virtualScroll = options.virtualScroll;
     if (options.itemHeight !== undefined) {
@@ -746,9 +764,13 @@ export default class ForgeSelect {
   }
 
   private shouldShowSearch(): boolean {
-    return (
-      this.opts.searchable && (this.opts.ajax != null || collectValues(this.data).size >= this.opts.minResultsForSearch)
-    );
+    // optionByValue rather than collectValues(this.data): both dedupe by value
+    // over the same walk, so the counts are identical, but the index is already
+    // built. Counting through a throwaway Set walked the whole dataset on every
+    // construction and every data change, to compare against a threshold in the
+    // tens. rebuildOptionIndexes() runs before buildDom() and before each
+    // updateSearchVisibility(), so the size read here is never stale.
+    return this.opts.searchable && (this.opts.ajax != null || this.optionByValue.size >= this.opts.minResultsForSearch);
   }
 
   private updateSearchVisibility(): void {
@@ -1310,11 +1332,15 @@ export default class ForgeSelect {
   private rebuildOptionIndexes(): void {
     this.optionByValue.clear();
     this.optionByLabel = null;
+    this.hasNestedOptions = false;
     const duplicates = new Set<string>();
     const visit = (option: Option): void => {
       if (this.optionByValue.has(option.value)) duplicates.add(option.value);
       else this.optionByValue.set(option.value, option);
-      option.children?.forEach(visit);
+      if (option.children?.length) {
+        this.hasNestedOptions = true;
+        option.children.forEach(visit);
+      }
     };
     for (const item of this.data) (isGroup(item) ? item.options : [item]).forEach(visit);
     if (duplicates.size === 0 || this.opts.duplicateValuePolicy === "ignore") return;
@@ -1444,7 +1470,12 @@ export default class ForgeSelect {
     }
 
     if (this.opts.multiple) {
-      for (const value of this.selected) {
+      // Past the cap the remainder becomes one counter chip, so a control
+      // holding a very large selection costs a fixed number of nodes to build
+      // and to lay out rather than four per selection.
+      const cap = this.opts.maxVisibleTags;
+      const shown = cap == null || this.selected.length <= cap ? this.selected : this.selected.slice(0, cap);
+      for (const value of shown) {
         const option = this.selectedOptions.get(value) ?? { value, label: value };
         const tag = document.createElement("span");
         tag.className = "forge-select__tag";
@@ -1470,6 +1501,16 @@ export default class ForgeSelect {
           this.bindTagDrag(tag, value);
         }
         this.valueEl.append(tag);
+      }
+      if (shown !== this.selected) {
+        const overflow = document.createElement("span");
+        overflow.className = "forge-select__tag-overflow";
+        // Announced with the tags rather than skipped: a screen reader user
+        // otherwise has no way to tell that the control is showing a subset.
+        overflow.textContent = format(this.strings.moreTags, {
+          count: String(this.selected.length - shown.length),
+        });
+        this.valueEl.append(overflow);
       }
     } else {
       const option = this.selectedOptions.get(this.selected[0]) ?? {
@@ -1591,32 +1632,43 @@ export default class ForgeSelect {
     let optionCount = 0;
     const trimmedQuery = this.query.trim();
     const query = normalizeSearchText(trimmedQuery, this.opts.accentInsensitive);
+    // Scoring is per option, but everything it derives from the query and the
+    // config is not, so both are built once here rather than inside the loop.
+    const prepared = this.searchIndex.prepare(trimmedQuery, {
+      fields: this.opts.searchFields,
+      tokenSearch: this.opts.tokenSearch,
+      accentInsensitive: this.opts.accentInsensitive,
+      scorer: this.opts.searchScorer,
+    });
     const matches = (option: Option): boolean =>
       query === "" ||
       (this.opts.filterOption
         ? this.opts.filterOption(option, trimmedQuery)
-        : this.searchIndex.score(option, trimmedQuery, {
-            fields: this.opts.searchFields,
-            tokenSearch: this.opts.tokenSearch,
-            accentInsensitive: this.opts.accentInsensitive,
-            scorer: this.opts.searchScorer,
-          }) > 0);
+        : this.searchIndex.scorePrepared(option, prepared) > 0);
 
     // A tree node is visible while searching if it matches, or any descendant
     // does (leaf options with no children just reduce to `matches()`).
-    const subtreeMatchCache = new Map<Option, boolean>();
+    const subtreeMatchCache = this.hasNestedOptions ? new Map<Option, boolean>() : null;
     const subtreeMatches = (option: Option): boolean => {
+      // With no query every node is visible, so the cache would only ever be
+      // filled with `true` for the whole dataset and never read back.
+      if (query === "") return true;
+      // The cache pays off only for a node reachable twice — once through its
+      // parent's `.some()` and again as that parent expands. Without nested
+      // options nothing is, so every entry would be written and never read.
+      if (!subtreeMatchCache) return matches(option);
       const cached = subtreeMatchCache.get(option);
       if (cached !== undefined) return cached;
-      const result = query === "" || matches(option) || (option.children ?? []).some(subtreeMatches);
+      const result = matches(option) || (option.children?.some(subtreeMatches) ?? false);
       subtreeMatchCache.set(option, result);
       return result;
     };
 
+    // Constant for the whole pass: `selected` cannot change while rows build.
+    const atMaximum = this.hasReachedMaximum();
     const pushOption = (option: Option, depth: number, parentValue?: string): void => {
       let navIndex = -1;
-      const interactionDisabled =
-        this.isOptionDisabled(option) || (this.hasReachedMaximum() && !this.selected.includes(option.value));
+      const interactionDisabled = this.isOptionDisabled(option) || (atMaximum && !this.selected.includes(option.value));
       if (!interactionDisabled) {
         navIndex = this.navItems.length;
         this.navItems.push({ kind: "option", option, parentValue });
@@ -2269,8 +2321,11 @@ export default class ForgeSelect {
       const { options, hasMore } = result;
 
       if (append) {
-        const existing = collectValues(this.data);
-        this.data = [...this.data, ...options.filter((o) => !existing.has(o.value))];
+        // optionByValue holds exactly the values a fresh collectValues() walk
+        // would produce, and rebuildOptionIndexes() below puts the appended page
+        // into it, so each page costs a lookup per incoming option rather than a
+        // rescan of everything loaded so far.
+        this.data = [...this.data, ...options.filter((o) => !this.optionByValue.has(o.value))];
       } else {
         // Copied so addCreatedOption()'s push lands on our array rather than
         // the one ajax.transform just built for us.

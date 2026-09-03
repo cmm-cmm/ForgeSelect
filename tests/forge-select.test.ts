@@ -532,6 +532,84 @@ describe("selection", () => {
     expect(nativeChanged).not.toHaveBeenCalled();
   });
 
+  it("collapses selections past maxVisibleTags into one counter chip", () => {
+    mountSelect("");
+    const tags = () => Array.from(document.querySelectorAll(".forge-select__tag"), (t) => t.textContent);
+    const overflow = () => document.querySelector(".forge-select__tag-overflow")?.textContent ?? null;
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      maxVisibleTags: 2,
+      data: [
+        { value: "a", label: "A" },
+        { value: "b", label: "B" },
+        { value: "c", label: "C" },
+        { value: "d", label: "D" },
+      ],
+    });
+
+    // At the cap every selection still gets its own tag and nothing is counted.
+    select.setValue(["a", "b"]);
+    expect(tags()).toHaveLength(2);
+    expect(overflow()).toBeNull();
+
+    // Past it the control stays the same size: the cap in tags, then a count
+    // of what is not shown.
+    select.setValue(["a", "b", "c", "d"]);
+    expect(tags().map((t) => t?.replace("×", ""))).toEqual(["A", "B"]);
+    expect(overflow()).toBe("+2 more");
+    // The value itself is untouched — only the rendering is capped.
+    expect(select.getValue()).toEqual(["a", "b", "c", "d"]);
+
+    // Raising the cap past the selection renders all of them again.
+    select.updateOptions({ maxVisibleTags: 10 });
+    expect(tags()).toHaveLength(4);
+    expect(overflow()).toBeNull();
+
+    // Unset is a state the option can return to, so passing the key explicitly
+    // undefined has to clear the cap rather than read as "leave it alone".
+    select.updateOptions({ maxVisibleTags: 1 });
+    expect(overflow()).toBe("+3 more");
+    select.updateOptions({ maxVisibleTags: undefined });
+    expect(tags()).toHaveLength(4);
+    expect(overflow()).toBeNull();
+  });
+
+  it("renders every tag when maxVisibleTags is unset, and localizes the counter", () => {
+    mountSelect("");
+    const data = Array.from({ length: 5 }, (_, i) => ({ value: String(i), label: `Item ${i}` }));
+
+    // Unset is the default, so an existing multiple select renders as before.
+    const uncapped = new ForgeSelect("#country", { multiple: true, data });
+    uncapped.setValue(["0", "1", "2", "3", "4"]);
+    expect(document.querySelectorAll(".forge-select__tag")).toHaveLength(5);
+    expect(document.querySelector(".forge-select__tag-overflow")).toBeNull();
+    uncapped.destroy();
+
+    mountSelect("");
+    const vietnamese = new ForgeSelect("#country", {
+      multiple: true,
+      maxVisibleTags: 1,
+      language: "vi",
+      data,
+    });
+    vietnamese.setValue(["0", "1", "2"]);
+    expect(document.querySelector(".forge-select__tag-overflow")?.textContent).toBe("+2 nữa");
+    vietnamese.destroy();
+  });
+
+  it("ignores maxVisibleTags for a single select", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      maxVisibleTags: 0,
+      data: [{ value: "a", label: "A" }],
+    });
+    select.setValue("a");
+    // A single select renders one value, not tags, so the cap has nothing to
+    // apply to and must not blank the control.
+    expect(document.querySelector(".forge-select__single-value")?.textContent).toBe("A");
+    expect(document.querySelector(".forge-select__tag-overflow")).toBeNull();
+  });
+
   it("toggles values in multiple mode and renders tags", () => {
     mountSelect();
     const select = new ForgeSelect("#country", { multiple: true });
@@ -625,6 +703,27 @@ describe("closeOnSelect and maxSelections", () => {
     // so navItems must be rebuilt via a full buildRows() re-scan.
     expect(filterOption.mock.calls.length).toBeGreaterThan(callsAfterSearch);
     expect(select.getValue()).toEqual(["a"]);
+  });
+
+  it("drops unselected options out of keyboard navigation once maxSelections is reached", () => {
+    mountSelect(`<option value="a">A</option><option value="b">B</option><option value="c">C</option>`);
+    const select = new ForgeSelect("#country", { multiple: true, maxSelections: 2 });
+    select.setValue(["a", "b"]);
+    select.open();
+
+    // At the cap only the already-selected rows stay navigable, so ArrowUp —
+    // which wraps to the *last* navigable row — must land on B. If C were left
+    // in the nav list it would take that slot while still rendering disabled,
+    // leaving the highlight on a row the user cannot see.
+    const search = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    search.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }));
+    const highlighted = document.querySelectorAll(".forge-select__option--highlighted");
+    expect(highlighted).toHaveLength(1);
+    expect(highlighted[0].textContent?.trim()).toBe("B");
+
+    const cRow = optionEls().find((li) => li.textContent?.trim() === "C")!;
+    cRow.click();
+    expect(select.getValue()).toEqual(["a", "b"]);
   });
 
   it("blocks creating a new tag via allowCreate once maxSelections is reached", () => {
@@ -1336,6 +1435,41 @@ describe("tree select", () => {
     expect(select.getValue()).toEqual(["apple"]);
   });
 
+  it("surfaces an ancestor whose descendant matches, and hides branches that match nothing", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { data: treeData() });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "carrot";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+
+    // "Vegetables" matches nothing itself; it is visible only because Carrot
+    // below it does. Fruits has no matching descendant and drops out entirely.
+    expect(optionEls().map(optionLabel)).toEqual(["Vegetables", "Carrot"]);
+  });
+
+  it("re-derives whether the dataset is nested when setData swaps a flat list for a tree", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      data: [
+        { value: "carrot", label: "Carrot" },
+        { value: "apple", label: "Apple" },
+      ],
+    });
+    select.open();
+    const input = document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    input.value = "carrot";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(optionEls().map(optionLabel)).toEqual(["Carrot"]);
+
+    // The flat dataset needs no subtree bookkeeping; the tree that replaces it
+    // does, so searching must still walk descendants to surface an ancestor.
+    select.setData(treeData());
+    input.value = "carrot";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(optionEls().map(optionLabel)).toEqual(["Vegetables", "Carrot"]);
+  });
+
   it("does not cascade selection onto a disabled descendant", () => {
     mountSelect("");
     const select = new ForgeSelect("#country", {
@@ -2008,20 +2142,21 @@ describe("ajax pagination", () => {
     return { options: r.items.map((i) => ({ value: i.id, label: i.name })), hasMore: r.hasMore };
   }
 
-  function pagedFetchMock() {
+  const SECOND_PAGE: Item[] = [
+    { id: "c", name: "Gamma" },
+    { id: "d", name: "Delta" },
+  ];
+
+  function pagedFetchMock(secondPage: Item[] = SECOND_PAGE) {
     return vi.fn().mockImplementation((url: string) => {
-      const page = url.includes("page=1") ? 1 : 0;
-      const items: Item[] =
-        page === 0
-          ? [
-              { id: "a", name: "Alpha" },
-              { id: "b", name: "Beta" },
-            ]
-          : [
-              { id: "c", name: "Gamma" },
-              { id: "d", name: "Delta" },
-            ];
-      return Promise.resolve({ json: () => Promise.resolve({ items, hasMore: page === 0 }) });
+      const isSecond = url.includes("page=1");
+      const items: Item[] = isSecond
+        ? secondPage
+        : [
+            { id: "a", name: "Alpha" },
+            { id: "b", name: "Beta" },
+          ];
+      return Promise.resolve({ json: () => Promise.resolve({ items, hasMore: !isSecond }) });
     });
   }
 
@@ -2031,15 +2166,11 @@ describe("ajax pagination", () => {
     Object.defineProperty(list, "scrollTop", { value: 800, configurable: true, writable: true });
   }
 
-  it("appends the next page instead of replacing when scrolled near the bottom", async () => {
-    const fetchMock = pagedFetchMock();
-    vi.stubGlobal("fetch", fetchMock);
-
-    mountSelect("");
+  /** Opens the select, settles page 0, then scrolls to the bottom and settles page 1. */
+  async function loadTwoPages(): Promise<ForgeSelect> {
     const select = new ForgeSelect("#country", {
       ajax: { url: "/api/items", pagination: true, params: (q, page) => ({ q, page }), transform },
     });
-
     select.open();
     await new Promise((r) => setTimeout(r, 0));
     expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta"]);
@@ -2049,11 +2180,41 @@ describe("ajax pagination", () => {
     list.dispatchEvent(new Event("scroll"));
     await new Promise((r) => requestAnimationFrame(r));
     await new Promise((r) => setTimeout(r, 0));
+    return select;
+  }
+
+  it("appends the next page instead of replacing when scrolled near the bottom", async () => {
+    const fetchMock = pagedFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+    mountSelect("");
+
+    const select = await loadTwoPages();
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1][0]).toContain("page=1");
     expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta", "Gamma", "Delta"]);
+    select.destroy();
+    vi.unstubAllGlobals();
+  });
 
+  it("drops options the next page repeats from one already loaded", async () => {
+    // Overlapping pages are ordinary for offset pagination over a table being
+    // written to: a row inserted before the cursor shifts everything after it
+    // down, so page 2 re-sends the tail of page 1.
+    vi.stubGlobal(
+      "fetch",
+      pagedFetchMock([
+        { id: "b", name: "Beta" },
+        { id: "c", name: "Gamma" },
+      ]),
+    );
+    mountSelect("");
+
+    const select = await loadTwoPages();
+
+    // "Beta" arrives on both pages; it must land in the list once.
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta", "Gamma"]);
+    select.destroy();
     vi.unstubAllGlobals();
   });
 
@@ -2513,6 +2674,39 @@ describe("advanced API integrations", () => {
       { value: "c", label: "C" },
     ]);
     expect(document.querySelector<HTMLInputElement>(".forge-select__search")!.hidden).toBe(false);
+  });
+
+  it("counts grouped and nested options toward minResultsForSearch, and a repeated value once", () => {
+    mountSelect("");
+    const searchBox = () => document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    const select = new ForgeSelect("#country", {
+      minResultsForSearch: 4,
+      duplicateValuePolicy: "ignore",
+      data: [
+        {
+          label: "Group",
+          options: [
+            { value: "a", label: "A" },
+            { value: "b", label: "B" },
+          ],
+        },
+        { value: "c", label: "C", children: [{ value: "d", label: "D" }] },
+      ],
+    });
+    // Two top-level entries, but four options once the group and the tree child
+    // are counted, so the threshold is met.
+    expect(searchBox().hidden).toBe(false);
+
+    select.setData([
+      { value: "a", label: "A" },
+      { value: "a", label: "A again" },
+      { value: "a", label: "A third" },
+      { value: "b", label: "B" },
+      { value: "b", label: "B again" },
+    ]);
+    // Five entries, two distinct values: the threshold counts options a user
+    // could pick, not array entries.
+    expect(searchBox().hidden).toBe(true);
   });
 
   it("uses a custom ajax request transport instead of fetch", async () => {
