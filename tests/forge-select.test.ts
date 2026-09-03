@@ -2113,6 +2113,47 @@ describe("ajax pagination", () => {
     vi.unstubAllGlobals();
   });
 
+  it("drops options the next page repeats from one already loaded", async () => {
+    // Overlapping pages are ordinary for offset pagination over a table that
+    // is being written to: a row inserted before the cursor shifts everything
+    // after it down, so page 2 re-sends the tail of page 1.
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      const items: Item[] = url.includes("page=1")
+        ? [
+            { id: "b", name: "Beta" },
+            { id: "c", name: "Gamma" },
+          ]
+        : [
+            { id: "a", name: "Alpha" },
+            { id: "b", name: "Beta" },
+          ];
+      return Promise.resolve({
+        json: () => Promise.resolve({ items, hasMore: !url.includes("page=1") }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      ajax: { url: "/api/items", pagination: true, params: (q, page) => ({ q, page }), transform },
+    });
+
+    select.open();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta"]);
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    mockNearBottom(list);
+    list.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => requestAnimationFrame(r));
+    await new Promise((r) => setTimeout(r, 0));
+
+    // "Beta" arrives twice; it must land in the list once.
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta", "Gamma"]);
+    select.destroy();
+    vi.unstubAllGlobals();
+  });
+
   it("passes a cursor returned by transform to the next custom request", async () => {
     const request = vi
       .fn()
@@ -2569,6 +2610,39 @@ describe("advanced API integrations", () => {
       { value: "c", label: "C" },
     ]);
     expect(document.querySelector<HTMLInputElement>(".forge-select__search")!.hidden).toBe(false);
+  });
+
+  it("counts grouped and nested options toward minResultsForSearch, and a repeated value once", () => {
+    mountSelect("");
+    const searchBox = () => document.querySelector<HTMLInputElement>(".forge-select__search")!;
+    const select = new ForgeSelect("#country", {
+      minResultsForSearch: 4,
+      duplicateValuePolicy: "ignore",
+      data: [
+        {
+          label: "Group",
+          options: [
+            { value: "a", label: "A" },
+            { value: "b", label: "B" },
+          ],
+        },
+        { value: "c", label: "C", children: [{ value: "d", label: "D" }] },
+      ],
+    });
+    // Two top-level entries, but four options once the group and the tree child
+    // are counted, so the threshold is met.
+    expect(searchBox().hidden).toBe(false);
+
+    select.setData([
+      { value: "a", label: "A" },
+      { value: "a", label: "A again" },
+      { value: "a", label: "A third" },
+      { value: "b", label: "B" },
+      { value: "b", label: "B again" },
+    ]);
+    // Five entries, two distinct values: the threshold counts options a user
+    // could pick, not array entries.
+    expect(searchBox().hidden).toBe(true);
   });
 
   it("uses a custom ajax request transport instead of fetch", async () => {

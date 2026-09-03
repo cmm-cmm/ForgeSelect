@@ -9,7 +9,6 @@ import { findNormalizedRanges, normalizeSearchText, SearchIndex } from "./search
 import {
   arraysEqual,
   collectDescendantValues,
-  collectValues,
   computeCheckState,
   isGroup,
   syncTreeAncestors as syncDataTreeAncestors,
@@ -752,9 +751,13 @@ export default class ForgeSelect {
   }
 
   private shouldShowSearch(): boolean {
-    return (
-      this.opts.searchable && (this.opts.ajax != null || collectValues(this.data).size >= this.opts.minResultsForSearch)
-    );
+    // optionByValue rather than collectValues(this.data): both dedupe by value
+    // over the same walk, so the counts are identical, but the index is already
+    // built. Counting through a throwaway Set walked the whole dataset on every
+    // construction and every data change, to compare against a threshold in the
+    // tens. rebuildOptionIndexes() runs before buildDom() and before each
+    // updateSearchVisibility(), so the size read here is never stale.
+    return this.opts.searchable && (this.opts.ajax != null || this.optionByValue.size >= this.opts.minResultsForSearch);
   }
 
   private updateSearchVisibility(): void {
@@ -2290,8 +2293,11 @@ export default class ForgeSelect {
       const { options, hasMore } = result;
 
       if (append) {
-        const existing = collectValues(this.data);
-        this.data = [...this.data, ...options.filter((o) => !existing.has(o.value))];
+        // optionByValue holds exactly the values a fresh collectValues() walk
+        // would produce, and rebuildOptionIndexes() below puts the appended page
+        // into it, so each page costs a lookup per incoming option rather than a
+        // rescan of everything loaded so far.
+        this.data = [...this.data, ...options.filter((o) => !this.optionByValue.has(o.value))];
       } else {
         // Copied so addCreatedOption()'s push lands on our array rather than
         // the one ajax.transform just built for us.

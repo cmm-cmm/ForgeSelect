@@ -7,9 +7,17 @@ export interface SearchConfig {
   scorer?: SearchScorer;
 }
 
+/**
+ * Anything the accent-insensitive pass could change is non-ASCII: NFD leaves
+ * ASCII alone, and neither combining marks nor d-with-stroke are ASCII. So an
+ * all-ASCII label is already normalized once lowercased, and skipping the
+ * decomposition for it keeps the common dataset off the expensive path.
+ */
+const NON_ASCII = /[\u0080-\uffff]/;
+
 export function normalizeSearchText(value: string, accentInsensitive = true): string {
   const lower = value.toLocaleLowerCase();
-  return accentInsensitive
+  return accentInsensitive && NON_ASCII.test(lower)
     ? lower
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
