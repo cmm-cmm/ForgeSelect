@@ -33,8 +33,14 @@ export function collectDescendantValues(option: Option, isDisabled: IsDisabled =
  */
 export type Selection = readonly string[] | ReadonlySet<string>;
 
+// Discriminates on the array, not on `instanceof Set`: the type admits any
+// ReadonlySet, and one from another realm or from a structural implementation
+// is not an instance of this realm's Set. Testing the array side instead keeps
+// every non-array on the `has()` branch the type promises it can use.
 const memberTest = (selected: Selection): ((value: string) => boolean) =>
-  selected instanceof Set ? (value) => selected.has(value) : (value) => (selected as readonly string[]).includes(value);
+  Array.isArray(selected)
+    ? (value: string) => selected.includes(value)
+    : (value: string) => (selected as ReadonlySet<string>).has(value);
 
 function checkState(option: Option, has: (value: string) => boolean, isDisabled: IsDisabled): "none" | "some" | "all" {
   if (!option.children?.length) return has(option.value) ? "all" : "none";
@@ -47,6 +53,13 @@ function checkState(option: Option, has: (value: string) => boolean, isDisabled:
   return "some";
 }
 
+/**
+ * Resolves a node's tri-state against the current selection: "all" when every
+ * enabled descendant is selected, "none" when none is, "some" in between. A
+ * childless node is simply selected or not. Membership is read through `has()`
+ * for anything that is not an array, so a caller with many nodes to resolve can
+ * hand it a set and pay for that once.
+ */
 export function computeCheckState(
   option: Option,
   selected: Selection,
