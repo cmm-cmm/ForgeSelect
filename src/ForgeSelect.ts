@@ -1228,6 +1228,9 @@ export default class ForgeSelect {
    * No-op for data with no `children` anywhere.
    */
   private syncTreeAncestors(): void {
+    // Nothing to reconcile without a parent anywhere: the walk would visit
+    // every option only to return at its own childless guard.
+    if (!this.hasNestedOptions) return;
     syncDataTreeAncestors(this.data, this.selected, this.isOptionDisabled);
   }
 
@@ -1868,10 +1871,15 @@ export default class ForgeSelect {
     // it rather than add it, silently dropping a row, so each element is
     // claimed at most once per render and later rows fall back to a new one.
     const claimed = new Set<HTMLLIElement>();
+    // Built once for the whole window: every row asks whether it is selected,
+    // and a tree row asks the same of each descendant, so scanning the
+    // selection array per question grows with the selection rather than with
+    // the handful of rows actually on screen.
+    const selectedNow = new Set(this.selected);
     for (let i = start; i < end; i++) {
       const key = this.rowElementKey(this.rows[i]);
       const cached = this.rowElementCache.get(key);
-      const element = this.renderRow(this.rows[i], cached && !claimed.has(cached) ? cached : undefined);
+      const element = this.renderRow(this.rows[i], selectedNow, cached && !claimed.has(cached) ? cached : undefined);
       claimed.add(element);
       this.rowElementCache.set(key, element);
       if (this.rowElementCache.size > ROW_CACHE_LIMIT) {
@@ -1911,7 +1919,7 @@ export default class ForgeSelect {
     this.updateActiveDescendant();
   }
 
-  private renderRow(row: Row, recycled?: HTMLLIElement): HTMLLIElement {
+  private renderRow(row: Row, selected: ReadonlySet<string>, recycled?: HTMLLIElement): HTMLLIElement {
     const li = recycled ?? document.createElement("li");
     li.replaceChildren();
     li.className = "";
@@ -1984,13 +1992,17 @@ export default class ForgeSelect {
         if (row.navIndex === this.highlightedIndex) li.classList.add("forge-select__option--highlighted");
         break;
       case "option":
-        this.renderOptionRow(li, row);
+        this.renderOptionRow(li, row, selected);
         break;
     }
     return li;
   }
 
-  private renderOptionRow(li: HTMLLIElement, row: Extract<Row, { kind: "option" }>): void {
+  private renderOptionRow(
+    li: HTMLLIElement,
+    row: Extract<Row, { kind: "option" }>,
+    selected: ReadonlySet<string>,
+  ): void {
     li.className = "forge-select__option";
     li.dataset.optionValue = row.option.value;
     if (row.option.className) li.classList.add(...row.option.className.trim().split(/\s+/).filter(Boolean));
@@ -1999,13 +2011,13 @@ export default class ForgeSelect {
     // thousands long, so without these a screen reader announces "1 of 20".
     li.setAttribute("aria-setsize", String(this.rowSetSize));
     li.setAttribute("aria-posinset", String(row.posInSet));
-    const isSelected = this.selected.includes(row.option.value);
+    const isSelected = selected.has(row.option.value);
     li.setAttribute("aria-selected", String(isSelected));
     if (isSelected) li.classList.add("forge-select__option--selected");
     if (
       this.opts.multiple &&
       row.hasChildren &&
-      computeCheckState(row.option, this.selected, this.isOptionDisabled) === "some"
+      computeCheckState(row.option, selected, this.isOptionDisabled) === "some"
     ) {
       li.classList.add("forge-select__option--indeterminate");
       li.dataset.selectionState = "mixed";
@@ -2013,7 +2025,7 @@ export default class ForgeSelect {
     if (row.depth > 0) {
       li.style.paddingLeft = `calc(12px + ${row.depth} * var(--fs-tree-indent, 18px))`;
     }
-    if (this.isOptionDisabled(row.option) || (this.hasReachedMaximum() && !this.selected.includes(row.option.value))) {
+    if (this.isOptionDisabled(row.option) || (this.hasReachedMaximum() && !selected.has(row.option.value))) {
       li.classList.add("forge-select__option--disabled");
       li.setAttribute("aria-disabled", "true");
     } else {

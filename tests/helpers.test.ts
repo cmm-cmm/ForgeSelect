@@ -34,6 +34,18 @@ describe("selection helpers", () => {
     expect(computeCheckState(tree, ["a", "b"])).toBe("all");
   });
 
+  it("reads membership through has() for any set, not only this realm's Set", () => {
+    // The parameter is typed ReadonlySet, which a cross-realm Set or a
+    // structural implementation satisfies without being an instance of this
+    // realm's Set. Only has() may be assumed.
+    const structural = {
+      has: (value: string) => value === "a",
+    } as unknown as ReadonlySet<string>;
+    expect(computeCheckState(tree, structural)).toBe("some");
+    expect(computeCheckState(tree, new Set(["a", "b"]))).toBe("all");
+    expect(computeCheckState(tree, new Set<string>())).toBe("none");
+  });
+
   it("excludes disabled descendants from cascade collection and check-state aggregation", () => {
     const withDisabled: Option = {
       value: "root",
