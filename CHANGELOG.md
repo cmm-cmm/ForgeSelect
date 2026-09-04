@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-09-04
+
+### Changed
+
+- Reconciling tree parents against the selection no longer scans the selection array per descendant. `computeCheckState()` decided each leaf with `selected.includes()`, and `syncTreeAncestors()` calls it for every parent, so the walk cost grew with the product of the tree and the selection: over a 10,000-node tree with everything selected it took 305 ms. It now resolves membership through one set built for the walk, and `computeCheckState()` accepts either an array or a set so a caller resolving a single node still needs no set of its own. `renderRows()` builds one set for the window it renders instead of leaving each row to scan.
+- `syncTreeAncestors()` is skipped outright for data with no nested options, where the walk could only visit every option and return at its own childless guard.
+- Measured in isolation, five runs per variant, a 10,000-node tree of 500 parents: `selectAll()` drops from 305 ms to 87 ms, about 3.5x. Flat data is unchanged, as expected — it was never paying the tree walk. Costs 92 gzipped bytes, to 14,340 against the 14,500 budget.
+
 ## [0.9.0] - 2026-09-03
 
 ### Added
@@ -287,7 +295,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.6...v0.8.0
 [0.7.6]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.5...v0.7.6

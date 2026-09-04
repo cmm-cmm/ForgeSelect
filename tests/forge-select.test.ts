@@ -1470,6 +1470,24 @@ describe("tree select", () => {
     expect(optionEls().map(optionLabel)).toEqual(["Vegetables", "Carrot"]);
   });
 
+  it("starts cascading again when setData turns a flat list into a tree", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", {
+      multiple: true,
+      data: [
+        { value: "apple", label: "Apple" },
+        { value: "banana", label: "Banana" },
+      ],
+    });
+
+    // Flat data needs no ancestor reconciliation at all. Once a tree replaces
+    // it, selecting every child of a parent has to mark the parent selected
+    // again, which only happens if that "is it a tree" answer was re-derived.
+    select.setData(treeData());
+    select.setValue(["apple", "banana"]);
+    expect(select.getValue()).toEqual(["apple", "banana", "fruits"]);
+  });
+
   it("does not cascade selection onto a disabled descendant", () => {
     mountSelect("");
     const select = new ForgeSelect("#country", {
