@@ -82,7 +82,7 @@ jobs:
         run: node scripts/check-site.mjs
 
       - name: Validate npm package contents
-        run: npm pack --dry-run --ignore-scripts && npm pack ./packages/react --dry-run --ignore-scripts && npm pack ./packages/vue --dry-run --ignore-scripts
+        run: npm run check:package
 
       - name: Audit dependencies
         run: npm audit --audit-level=moderate

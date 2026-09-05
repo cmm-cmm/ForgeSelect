@@ -353,7 +353,12 @@ export default class ForgeSelect {
     window.addEventListener("resize", this.onWindowResize);
     window.visualViewport?.addEventListener("resize", this.onWindowResize);
     window.visualViewport?.addEventListener("scroll", this.onWindowResize);
-    document.addEventListener("scroll", this.onAncestorScroll, true);
+    // Capture-phase and document-wide, so it fires for every scrollable element
+    // on the page while the dropdown is open. Only a portalled dropdown needs
+    // it — an inline one is positioned inside the root and tracks the control
+    // on its own — and the handler's first line already says so, so skip
+    // registering it at all rather than paying a call per scroll event.
+    if (this.portalHost) document.addEventListener("scroll", this.onAncestorScroll, true);
     if (this.searchInput && !this.searchInput.hidden) this.searchInput.focus();
 
     this.emitter.emit("open");
@@ -1185,11 +1190,18 @@ export default class ForgeSelect {
     const option = this.findOption(value) ?? this.selectedOptions.get(value) ?? { value, label: value };
     this.selectedOptions.set(value, option);
     if (this.opts.multiple) {
+      // Membership goes through one set built for this cascade rather than a
+      // scan of `selected` per descendant: selecting a tree node with many
+      // children otherwise costs the product of the two.
+      const present = new Set(this.selected);
       this.selected.push(value);
+      present.add(value);
       // Selecting a tree node cascades to its descendants too; for a plain
       // option (no children) this is a no-op.
       for (const v of collectDescendantValues(option, this.isOptionDisabled)) {
-        if (!this.selected.includes(v)) this.selected.push(v);
+        if (present.has(v)) continue;
+        this.selected.push(v);
+        present.add(v);
       }
       this.syncTreeAncestors();
     } else {
@@ -1208,10 +1220,10 @@ export default class ForgeSelect {
     this.selected.splice(index, 1);
     if (this.opts.multiple) {
       if (option) {
-        for (const v of collectDescendantValues(option, this.isOptionDisabled)) {
-          const i = this.selected.indexOf(v);
-          if (i !== -1) this.selected.splice(i, 1);
-        }
+        // One filtered pass rather than an indexOf plus a splice per
+        // descendant, each of which is itself linear in the selection.
+        const removing = new Set(collectDescendantValues(option, this.isOptionDisabled));
+        if (removing.size > 0) this.selected = this.selected.filter((v) => !removing.has(v));
       }
       this.syncTreeAncestors();
     }
@@ -1669,9 +1681,13 @@ export default class ForgeSelect {
 
     // Constant for the whole pass: `selected` cannot change while rows build.
     const atMaximum = this.hasReachedMaximum();
+    // Only built when the cap is actually reached, which is the only case that
+    // asks whether each option is already selected. A large maxSelections would
+    // otherwise scan the whole selection once per option, on every keystroke.
+    const selectedAtMaximum = atMaximum ? new Set(this.selected) : null;
     const pushOption = (option: Option, depth: number, parentValue?: string): void => {
       let navIndex = -1;
-      const interactionDisabled = this.isOptionDisabled(option) || (atMaximum && !this.selected.includes(option.value));
+      const interactionDisabled = this.isOptionDisabled(option) || (atMaximum && !selectedAtMaximum!.has(option.value));
       if (!interactionDisabled) {
         navIndex = this.navItems.length;
         this.navItems.push({ kind: "option", option, parentValue });
