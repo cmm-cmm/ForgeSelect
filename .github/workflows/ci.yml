@@ -81,8 +81,13 @@ jobs:
       - name: Validate generated site
         run: node scripts/check-site.mjs
 
+      # The build steps above already produced dist/ and both workspace builds,
+      # so this runs the checks themselves rather than `check:package`, which
+      # would repeat those builds. The checks live in one script either way —
+      # inlining the pack commands here is what let this job drift out of step
+      # with `check:package` and skip the peer-range guard entirely.
       - name: Validate npm package contents
-        run: npm run check:package
+        run: npm run check:package:built
 
       - name: Audit dependencies
         run: npm audit --audit-level=moderate

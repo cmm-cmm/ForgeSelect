@@ -12,20 +12,21 @@ cd ForgeSelect
 npm install
 ```
 
-| Command                 | What it does                                            |
-| ----------------------- | ------------------------------------------------------- |
-| `npm test`              | Run the vitest + jsdom test suite                       |
-| `npm run test:watch`    | Tests in watch mode                                     |
-| `npm run typecheck`     | Strict TypeScript check (`tsc --noEmit`)                |
-| `npm run build`         | Build ESM + CJS + IIFE bundles and `.d.ts` into `dist/` |
-| `npm run build:site`    | Build the library plus the full website into `_site/`   |
-| `npm run lint`          | Check TypeScript and JavaScript with ESLint             |
-| `npm run format:check`  | Check repository formatting with Prettier               |
-| `npm run test:coverage` | Run tests and enforce 80% coverage thresholds           |
-| `npm run test:browser`  | Run Playwright in Chromium, Firefox, and WebKit         |
-| `npm run bench`         | Measure bundle, initialization, search, and scrolling   |
-| `npm run check:site`    | Reject broken generated local links and assets          |
-| `npm run check:package` | Build and inspect all npm tarballs without publishing   |
+| Command                       | What it does                                                      |
+| ----------------------------- | ----------------------------------------------------------------- |
+| `npm test`                    | Run the vitest + jsdom test suite                                 |
+| `npm run test:watch`          | Tests in watch mode                                               |
+| `npm run typecheck`           | Strict TypeScript check (`tsc --noEmit`)                          |
+| `npm run build`               | Build ESM + CJS + IIFE bundles and `.d.ts` into `dist/`           |
+| `npm run build:site`          | Build the library plus the full website into `_site/`             |
+| `npm run lint`                | Check TypeScript and JavaScript with ESLint                       |
+| `npm run format:check`        | Check repository formatting with Prettier                         |
+| `npm run test:coverage`       | Run tests and enforce 80% coverage thresholds                     |
+| `npm run test:browser`        | Run Playwright in Chromium, Firefox, and WebKit                   |
+| `npm run bench`               | Measure bundle, initialization, search, and scrolling             |
+| `npm run check:site`          | Reject broken generated local links and assets                    |
+| `npm run check:package`       | Build and inspect all npm tarballs without publishing             |
+| `npm run check:package:built` | The same checks against an already-built tree, without rebuilding |
 
 To preview the website/demo/playground locally:
 
@@ -47,7 +48,7 @@ cd _site && python3 -m http.server 8080   # or: npx serve -l 8080
 ## Pull request guidelines
 
 1. Branch from `main` and keep PRs focused on one change.
-2. CI (`.github/workflows/ci.yml`) must pass: lint, format check, typecheck, test with coverage, build (core and the React/Vue workspaces), `check:site`, `check:package`, `npm audit`, and the Playwright browser suite. Run `npm run verify` locally to cover the core-package subset (lint, format:check, typecheck, test:coverage, build) before pushing.
+2. CI (`.github/workflows/ci.yml`) must pass: lint, format check, typecheck, test with coverage, build (core and the React/Vue workspaces), `check:site`, the `check:package` checks (as `check:package:built`, since the job has already built), `npm audit`, and the Playwright browser suite. Run `npm run verify` locally to cover the core-package subset (lint, format:check, typecheck, test:coverage, build) before pushing.
 3. Add or update tests for behavior changes; jsdom cannot model layout (e.g. `scrollTop` clamping), so verify scroll/visual behavior in a real browser too.
 4. Update the relevant docs page under `docs/`, and add an entry to `CHANGELOG.md` under **Unreleased** for anything that reaches the published packages — behavior, API, types, or packaging. A change confined to contributor-facing files (this file, CI workflows, issue templates) doesn't need one; `CHANGELOG.md` tracks what a consumer of the package would notice.
 5. Keep the zero-dependency promise: no new runtime dependencies. Dev dependencies are fine when justified.
