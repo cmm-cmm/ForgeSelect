@@ -78,15 +78,15 @@ that defines the global `ForgeSelectBundle`. Pin the version — the unversioned
 URL follows the latest release and will change under you:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/forge-select@0.9.1/styles/forge-select.css" />
-<script src="https://cdn.jsdelivr.net/npm/forge-select@0.9.1"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/forge-select@0.9.2/styles/forge-select.css" />
+<script src="https://cdn.jsdelivr.net/npm/forge-select@0.9.2"></script>
 <script>
   new ForgeSelectBundle.default("#country", { placeholder: "Select a country" });
 </script>
 ```
 
-`unpkg.com/forge-select@0.9.1` serves the same file. The bundle is also
-reachable by its explicit path (`.../forge-select@0.9.1/dist/index.global.js`)
+`unpkg.com/forge-select@0.9.2` serves the same file. The bundle is also
+reachable by its explicit path (`.../forge-select@0.9.2/dist/index.global.js`)
 if you prefer not to rely on the package's `unpkg`/`jsdelivr` fields.
 
 ## Quick Start

@@ -7,13 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- `npm run check:package` now verifies that each framework wrapper's `forge-select` peer range actually admits the core version being released, and that the core has not slipped from `peerDependencies` into `dependencies`. The wrappers asked for `^0.8.0`, which on a 0.x version means `>=0.8.0 <0.9.0`, so from 0.9.0 onward `npm install forge-select forge-select-react` failed outright with `ERESOLVE`. Nothing checked the two numbers against each other, so nothing caught it; `scripts/check-peer-range.mjs` does, from the same bounds npm resolves with. The wrappers themselves are fixed in their own 0.7.1 releases.
+## [0.9.2] - 2026-09-05
 
 ### Changed
 
+- Selecting or deselecting a tree parent no longer scans the selection once per descendant. The cascade checked each descendant with `selected.includes()` before pushing it, and deselection did an `indexOf` plus a `splice` per descendant, so both grew with the product of the subtree and the selection. Membership now goes through one set built for the cascade, and deselection removes the whole subtree in a single filtered pass. Measured over a parent of 8,000 children with the tag list capped so rendering does not dominate: selecting it drops from 58.4 ms to 8.4 ms, and the cost is now linear in the subtree rather than quadratic (1,000 -> 8,000 children scales 2.3x, not 14x). With tags uncapped the same select goes from 231 ms to 150 ms at 4,000 children -- the remainder is the control rendering one tag per selection, which is what `maxVisibleTags` exists for.
+- `buildRows()` builds one set for the `maxSelections` check instead of scanning the selection per option, and only when the cap is actually reached. Nothing changes for the common small cap; a large one no longer costs a full selection scan per option on every keystroke.
+- The document-wide capture-phase scroll listener is only registered when the dropdown is portalled. Its handler already returned immediately without a portal host, so an inline dropdown was paying a function call for every scroll event anywhere on the page to reach that guard. `portalHost` is built in the constructor, so whether it exists is known before any `open()`.
 - The README's bundle-size figures are re-measured against the current build rather than 0.7.5: 13.8 KB gzipped for minimal usage, 14.2 KB with every feature touched, 2.6 KB for `styles.css`, and ~14.0 KB for the CDN IIFE bundle. No code changed — the published numbers had simply not moved since they were written.
+
+### Fixed
+
+- `npm run check:package` now verifies that each framework wrapper's `forge-select` peer range actually admits the core version being released, and that the core has not slipped from `peerDependencies` into `dependencies`. The wrappers asked for `^0.8.0`, which on a 0.x version means `>=0.8.0 <0.9.0`, so from 0.9.0 onward `npm install forge-select forge-select-react` failed outright with `ERESOLVE`. Nothing checked the two numbers against each other, so nothing caught it; `scripts/check-peer-range.mjs` does, from the same bounds npm resolves with. The wrappers themselves are fixed in their own 0.7.1 releases.
+- CI now runs the package checks from the same script the `check:package` npm script uses, rather than an inlined copy of its `npm pack --dry-run` commands. The copy had drifted: the peer-range guard added alongside it ran in neither `verify` nor CI, so the check meant to stop a wrapper peer range from excluding the core it ships with was not actually running anywhere automatic. `CONTRIBUTING.md` already claimed CI ran `check:package`; the checks are now shared rather than duplicated. `check:package` still builds and then checks, for a working tree that may not be built; CI, which has already built by that point, calls `check:package:built` so the builds are not repeated.
+- Deselecting a tree parent had no test covering the cascade at all. With the descendant removal disabled the whole suite still passed, because the children stayed selected, `syncTreeAncestors()` then saw every child selected and put the parent back, and the click read as a no-op. Added a regression test that fails with exactly that symptom (`['apple','banana','fruits']` where `[]` is expected).
 
 ## [0.9.1] - 2026-09-04
 
@@ -303,7 +310,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.7.6...v0.8.0

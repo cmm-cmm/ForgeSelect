@@ -1399,6 +1399,26 @@ describe("tree select", () => {
     expect(select.getValue()).toEqual(["fruits", "apple", "banana"]);
   });
 
+  it("cascades deselecting a parent to every descendant it selected", () => {
+    mountSelect("");
+    const select = new ForgeSelect("#country", { multiple: true, data: treeData() });
+    select.open();
+
+    const fruitsLi = optionEls().find((li) => li.textContent?.includes("Fruits"))!;
+    fruitsLi.click();
+    expect(select.getValue()).toEqual(["fruits", "apple", "banana"]);
+
+    // Clicking the parent again must take its children with it. Leaving them
+    // behind does not merely strand two values: syncTreeAncestors() then sees
+    // every child selected and puts the parent straight back, so the click
+    // reads as doing nothing at all.
+    optionEls()
+      .find((li) => li.textContent?.includes("Fruits"))!
+      .click();
+
+    expect(select.getValue()).toEqual([]);
+  });
+
   it("shows the indeterminate class when only some descendants are selected", () => {
     mountSelect("");
     const select = new ForgeSelect("#country", { multiple: true, data: treeData() });
