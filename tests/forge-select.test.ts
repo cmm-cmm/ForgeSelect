@@ -2006,6 +2006,97 @@ describe("ajax", () => {
     vi.unstubAllGlobals();
   });
 
+  it("treats a cancelled request as a cancellation, not as a failed load", async () => {
+    mountSelect("");
+    let cancel = false;
+    const select = new ForgeSelect("#country", {
+      ajax: {
+        debounce: 0,
+        request: async () => {
+          if (cancel) throw new DOMException("Aborted", "AbortError");
+          return [
+            { value: "a", label: "Alpha" },
+            { value: "b", label: "Beta" },
+          ];
+        },
+      },
+    });
+    const onError = vi.fn();
+    select.on("error", onError);
+    select.open();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(optionEls()).toHaveLength(2);
+
+    // A caller-side cancellation says nothing about the data — the request
+    // simply never happened. Reporting it as a failure would wipe the list the
+    // user is looking at and fire `error` for something no one can act on.
+    cancel = true;
+    select.setSearchQuery("al");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(document.querySelector(".forge-select__error")).toBeNull();
+    // The already-loaded options survive and filter locally; wiping `data`
+    // would leave the empty state instead.
+    expect(document.querySelector(".forge-select__empty")).toBeNull();
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha"]);
+  });
+
+  it("does not retry a request that cancelled itself", async () => {
+    mountSelect("");
+    const request = vi.fn(async () => {
+      throw new DOMException("Aborted", "AbortError");
+    });
+    // Retrying a cancellation calls back into the very request that just said
+    // it was giving up, and does so after a backoff the caller never asked to
+    // wait through.
+    const select = new ForgeSelect("#country", { ajax: { request, debounce: 0, retry: 2, retryDelay: 1 } });
+    select.open();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(request).toHaveBeenCalledTimes(1);
+    select.destroy();
+  });
+
+  it("does not page past a fresh load that was cancelled", async () => {
+    mountSelect("");
+    let cancel = false;
+    const request = vi.fn(async (_query: string, page: number) => {
+      if (cancel) throw new DOMException("Aborted", "AbortError");
+      return page === 0
+        ? [
+            { value: "a", label: "Alpha" },
+            { value: "b", label: "Beta" },
+          ]
+        : [{ value: "c", label: "Gamma" }];
+    });
+    const select = new ForgeSelect("#country", {
+      ajax: { request, debounce: 0, pagination: true },
+    });
+    select.open();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(optionEls().map((li) => li.textContent)).toEqual(["Alpha", "Beta"]);
+
+    // The cancelled search leaves the loaded options on screen, so the list is
+    // still scrollable. Page 0 of this query never arrived, so page 1 of it
+    // must not be fetched and appended to the options from the previous one.
+    cancel = true;
+    select.setSearchQuery("z");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const callsAfterCancel = request.mock.calls.length;
+
+    const list = document.querySelector<HTMLElement>(".forge-select__list")!;
+    Object.defineProperty(list, "scrollHeight", { value: 1000, configurable: true });
+    Object.defineProperty(list, "clientHeight", { value: 260, configurable: true });
+    Object.defineProperty(list, "scrollTop", { value: 800, configurable: true, writable: true });
+    list.dispatchEvent(new Event("scroll"));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(request.mock.calls.length).toBe(callsAfterCancel);
+    select.destroy();
+  });
+
   it("refetches on reopen so a cleared search box never shows the previous query's page", async () => {
     mountSelect("");
     const queries: string[] = [];
