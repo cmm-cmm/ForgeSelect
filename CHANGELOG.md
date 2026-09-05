@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `npm run check:package` now verifies that each framework wrapper's `forge-select` peer range actually admits the core version being released, and that the core has not slipped from `peerDependencies` into `dependencies`. The wrappers asked for `^0.8.0`, which on a 0.x version means `>=0.8.0 <0.9.0`, so from 0.9.0 onward `npm install forge-select forge-select-react` failed outright with `ERESOLVE`. Nothing checked the two numbers against each other, so nothing caught it; `scripts/check-peer-range.mjs` does, from the same bounds npm resolves with. The wrappers themselves are fixed in their own 0.7.1 releases.
+
+### Changed
+
+- The README's bundle-size figures are re-measured against the current build rather than 0.7.5: 13.8 KB gzipped for minimal usage, 14.2 KB with every feature touched, 2.6 KB for `styles.css`, and ~14.0 KB for the CDN IIFE bundle. No code changed — the published numbers had simply not moved since they were written.
+
 ## [0.9.1] - 2026-09-04
 
 ### Changed
