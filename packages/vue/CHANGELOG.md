@@ -68,7 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `ForgeSelectVue` component wrapping the `forge-select` core library, with `v-model` support via `modelValue`/`update:modelValue`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.7.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.7.1...HEAD
+[0.7.1]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.7.0...vue-v0.7.1
 [0.7.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.6.0...vue-v0.7.0
 [0.6.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.5.0...vue-v0.6.0
 [0.5.0]: https://github.com/cmm-cmm/ForgeSelect/compare/vue-v0.4.0...vue-v0.5.0

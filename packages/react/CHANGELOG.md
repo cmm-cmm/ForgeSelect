@@ -78,7 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `ForgeSelectReact` component wrapping the `forge-select` core library, with controlled `value`/`onChange` support.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.7.0...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.7.1...HEAD
+[0.7.1]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.7.0...react-v0.7.1
 [0.7.0]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.6.0...react-v0.7.0
 [0.6.0]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.5.0...react-v0.6.0
 [0.5.0]: https://github.com/cmm-cmm/ForgeSelect/compare/react-v0.4.1...react-v0.5.0
