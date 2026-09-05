@@ -73,20 +73,20 @@ pnpm add forge-select
 
 ### CDN (no build step)
 
-The package also ships a self-contained minified IIFE bundle (~13.5 KB gzipped)
+The package also ships a self-contained minified IIFE bundle (~14.0 KB gzipped)
 that defines the global `ForgeSelectBundle`. Pin the version — the unversioned
 URL follows the latest release and will change under you:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/forge-select@0.8.0/styles/forge-select.css" />
-<script src="https://cdn.jsdelivr.net/npm/forge-select@0.8.0"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/forge-select@0.9.1/styles/forge-select.css" />
+<script src="https://cdn.jsdelivr.net/npm/forge-select@0.9.1"></script>
 <script>
   new ForgeSelectBundle.default("#country", { placeholder: "Select a country" });
 </script>
 ```
 
-`unpkg.com/forge-select@0.8.0` serves the same file. The bundle is also
-reachable by its explicit path (`.../forge-select@0.8.0/dist/index.global.js`)
+`unpkg.com/forge-select@0.9.1` serves the same file. The bundle is also
+reachable by its explicit path (`.../forge-select@0.9.1/dist/index.global.js`)
 if you prefer not to rely on the package's `unpkg`/`jsdelivr` fields.
 
 ## Quick Start
@@ -247,10 +247,10 @@ Forge Select ships as a single class, so **the whole feature set is in the bundl
 
 | Usage                                                           | JS      |
 | --------------------------------------------------------------- | ------- |
-| Minimal — `new ForgeSelect(el, { placeholder })`                | 13.3 KB |
-| Every feature — tree, AJAX, tags, sortable, measured rows, etc. | 13.4 KB |
+| Minimal — `new ForgeSelect(el, { placeholder })`                | 13.8 KB |
+| Every feature — tree, AJAX, tags, sortable, measured rows, etc. | 14.2 KB |
 
-Plus 1.7 KB gzipped for `forge-select/styles.css`. Budget ~15 KB gzipped total and the number won't move as you adopt more of the API. Splitting the core into opt-in subpath entrypoints is under consideration for a future major version; it is not planned as a patch, since it would change the public import surface.
+Plus 2.6 KB gzipped for `forge-select/styles.css`. Budget ~17 KB gzipped for the two together and the number won't move as you adopt more of the API. Splitting the core into opt-in subpath entrypoints is under consideration for a future major version; it is not planned as a patch, since it would change the public import surface.
 
 ## Benchmarks
 

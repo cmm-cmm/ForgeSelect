@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-05
+
+### Fixed
+
+- The `forge-select` peer range no longer excludes the core it is meant to be used with. It asked for `^0.8.0`, which on a 0.x version means `>=0.8.0 <0.9.0`, so once the core reached 0.9.0 `npm install forge-select forge-select-vue` failed outright with `ERESOLVE` rather than resolving. The range is now `>=0.8.0 <1.0.0`: the wrapper only uses the default export and the public option and value types, and both the type check and this package's tests pass against core 0.9.1, so every 0.x from 0.8 up is admitted. `npm run check:package` now verifies that the declared range actually admits the core version being released, which is the check whose absence let the mismatch ship.
+
 ## [0.7.0] - 2026-09-03
 
 ### Changed
