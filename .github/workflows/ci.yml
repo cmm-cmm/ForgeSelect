@@ -92,6 +92,31 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=moderate
 
+  # Split out of `test` so the three browser engines and the benchmark run
+  # alongside lint/typecheck/coverage rather than after them. Both jobs must
+  # pass, so nothing is skipped; the wall clock is now the longer of the two
+  # instead of their sum. It repeats `npm ci` and the build because a job is a
+  # fresh runner — cheap next to installing three browsers.
+  browser:
+    name: Browser tests and budgets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Both the e2e suite and the benchmark load the built bundle.
+      - name: Build
+        run: npm run build
+
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"

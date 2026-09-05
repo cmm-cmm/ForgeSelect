@@ -2250,6 +2250,12 @@ export default class ForgeSelect {
     cursor?: string,
   ): Promise<{ options: Option[]; hasMore: boolean; nextCursor?: string }> {
     const key = this.remoteCacheKey(query, page, cursor);
+    // Callers asking for the same page share one request, which therefore runs
+    // on whichever caller's signal started it — a prefetch's, typically, since
+    // prefetching happens in the constructor. A later caller's abort cannot
+    // cancel it (the prefetch still wants the result for its cache) and the
+    // starter's abort surfaces to everyone sharing it as an AbortError, which
+    // loadRemote() reads as the cancellation it is rather than a failed load.
     const pending = this.remoteInFlight.get(key);
     if (pending) return pending;
     const ajax = this.opts.ajax!;
@@ -2368,6 +2374,14 @@ export default class ForgeSelect {
       this.rebuildOptionIndexes();
     } catch (cause) {
       if (activeRequestId !== this.ajaxRequestId || this.destroyed || controller.signal.aborted) return;
+      // A cancellation is not a failure: the request never happened, so there
+      // is nothing to report and nothing to replace. It reaches here rather
+      // than the check above whenever the abort came from somewhere other than
+      // this call's own controller — a caller's `ajax.request` cancelling on
+      // its own terms, or a request being shared with another consumer whose
+      // signal aborted. Reporting it would wipe the list the user is looking
+      // at and emit an `error` nobody can act on.
+      if ((cause as { name?: string } | null)?.name === "AbortError") return;
       const error = cause instanceof Error ? cause : new Error(String(cause));
       if (!append) {
         this.data = [];
