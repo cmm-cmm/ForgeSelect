@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A cancelled remote request is no longer reported as a failed load. `loadRemote()` decided by checking its own controller, so an `AbortError` arriving from anywhere else — a caller's own `ajax.request` cancelling on its own terms, or a request shared with another consumer whose signal aborted — fell through to the failure path: it emptied `data`, rendered the error row and emitted `error` for something nobody can act on. A cancellation means the request never happened, so the already-loaded list now stays exactly as it was. Two consequences of that come with it: a cancelled fresh load clears `hasMore`, since `scheduleRemoteLoad()` had primed page 0 and a still-scrollable list would otherwise fetch page 1 of a page 0 that never arrived and append it to the previous query's options; and `ajax.retry` no longer retries a cancellation, which used to call a request that had just cancelled itself again after the backoff. The in-flight sharing that makes the second case possible is documented at `fetchRemoteResult()` rather than reworked: a later caller genuinely cannot cancel a request an earlier one still wants.
+
 ## [0.9.2] - 2026-09-05
 
 ### Changed
