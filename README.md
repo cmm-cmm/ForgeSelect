@@ -1,4 +1,9 @@
-# Forge Select
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cmm-cmm/ForgeSelect/main/site/assets/brand/forge-select-horizontal-reverse.svg">
+    <img src="https://raw.githubusercontent.com/cmm-cmm/ForgeSelect/main/site/assets/brand/forge-select-horizontal-color.svg" alt="Forge Select" width="320">
+  </picture>
+</h1>
 
 [![npm version](https://img.shields.io/npm/v/forge-select.svg)](https://www.npmjs.com/package/forge-select)
 [![CI](https://github.com/cmm-cmm/ForgeSelect/actions/workflows/ci.yml/badge.svg)](https://github.com/cmm-cmm/ForgeSelect/actions/workflows/ci.yml)
