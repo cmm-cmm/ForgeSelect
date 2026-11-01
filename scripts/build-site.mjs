@@ -233,11 +233,8 @@ function layout({ title, description, canonicalPath, jsonLdBlocks, active, conte
 <meta name="twitter:title" content="${title} · Forge Select">
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${SITE_URL}assets/og-banner.png">
-<link rel="icon" href="../assets/brand/favicon.ico" sizes="32x32">
 <link rel="icon" type="image/svg+xml" href="../assets/brand/favicon.svg">
-<link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
 <link rel="manifest" href="../site.webmanifest">
-<meta name="theme-color" content="#10B981">
 <link rel="stylesheet" href="../assets/site.css">
 <link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
 <link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
@@ -245,7 +242,7 @@ ${jsonLdBlocks.map((j) => `<script type="application/ld+json">${j}</script>`).jo
 </head>
 <body>
 <header class="site-header">
-  <a class="site-logo" href="../"><span class="mark"><svg viewBox="8 12 236 232" aria-hidden="true"><path class="mark-ink" d="M70 14H184C218 14 242 38 242 72V160L220 182V72C220 50 206 36 184 36H70C47 36 32 51 32 74V182C32 205 47 220 70 220H157L179 242H70C34 242 10 218 10 182V74C10 38 34 14 70 14Z"/><rect class="mark-bar1" x="58" y="78" width="136" height="36" rx="18"/><rect class="mark-bar2" x="58" y="138" width="110" height="34" rx="17"/><path class="mark-ink" d="M169 191C173 187 179 187 183 191L203 211L242 172V203L210 235C206 239 200 239 196 235L169 208C164 203 164 196 169 191Z"/></svg></span> Forge Select <span class="version">v${pkg.version}</span></a>
+  <a class="site-logo" href="../"><span class="mark" aria-hidden="true"></span> Forge Select <span class="version">v${pkg.version}</span></a>
   <nav class="site-nav">
     ${nav("../demo/", "Live Demo", "demo")}
     ${nav("./", "Docs", "docs")}
@@ -299,6 +296,11 @@ async function main() {
   // banner are shipped as the brand kit's own rasters rather than rendered
   // here, so what is deployed is exactly what was designed.
   await cp(path.join(root, "site/site.webmanifest"), path.join(out, "site.webmanifest"));
+  // Browsers request /favicon.ico and /apple-touch-icon.png from the site root
+  // on their own, so serving them there needs no tag on any page.
+  for (const icon of ["favicon.ico", "apple-touch-icon.png"]) {
+    await cp(path.join(root, "site/assets/brand", icon), path.join(out, icon));
+  }
   await cp(path.join(root, "site/playground"), path.join(out, "playground"), { recursive: true });
   await cp(path.join(root, "site/theme-builder"), path.join(out, "theme-builder"), { recursive: true });
   await cp(path.join(root, "demo"), path.join(out, "demo"), { recursive: true });

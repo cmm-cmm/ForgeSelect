@@ -121,37 +121,22 @@ a:hover {
   text-decoration: none;
 }
 .site-logo .mark {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
+  background: url("brand/forge-select-icon-color.svg") center / contain no-repeat;
 }
-.site-logo .mark svg {
-  width: 100%;
-  height: 100%;
-}
-/* Brand mark (Open Select). The frame and tick follow the text colour, so the
-   same inline SVG reads as the brand's ink on light pages and as white on
-   dark ones — the pair the brand kit specifies for color and reverse. */
-.site-logo .mark-ink {
-  fill: currentColor;
-}
-.site-logo .mark-bar1 {
-  fill: #10b981;
-}
-.site-logo .mark-bar2 {
-  fill: #059669;
-}
+/* The brand kit's reverse icon on dark pages: white frame and tick, brighter
+   second bar. Both follow the OS preference and the demo's manual toggle. */
 @media (prefers-color-scheme: dark) {
-  .site-logo .mark-bar2 {
-    fill: #22c55e;
+  .site-logo .mark {
+    background-image: url("brand/forge-select-icon-reverse.svg");
   }
 }
-:root[data-theme="light"] .site-logo .mark-bar2 {
-  fill: #059669;
+:root[data-theme="light"] .site-logo .mark {
+  background-image: url("brand/forge-select-icon-color.svg");
 }
-:root[data-theme="dark"] .site-logo .mark-bar2 {
-  fill: #22c55e;
+:root[data-theme="dark"] .site-logo .mark {
+  background-image: url("brand/forge-select-icon-reverse.svg");
 }
 .site-logo .version {
   font-size: 12px;
