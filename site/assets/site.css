@@ -123,12 +123,35 @@ a:hover {
 .site-logo .mark {
   display: grid;
   place-items: center;
-  width: 22px;
+  width: 26px;
   height: 26px;
 }
 .site-logo .mark svg {
   width: 100%;
   height: 100%;
+}
+/* Brand mark (Open Select). The frame and tick follow the text colour, so the
+   same inline SVG reads as the brand's ink on light pages and as white on
+   dark ones — the pair the brand kit specifies for color and reverse. */
+.site-logo .mark-ink {
+  fill: currentColor;
+}
+.site-logo .mark-bar1 {
+  fill: #10b981;
+}
+.site-logo .mark-bar2 {
+  fill: #059669;
+}
+@media (prefers-color-scheme: dark) {
+  .site-logo .mark-bar2 {
+    fill: #22c55e;
+  }
+}
+:root[data-theme="light"] .site-logo .mark-bar2 {
+  fill: #059669;
+}
+:root[data-theme="dark"] .site-logo .mark-bar2 {
+  fill: #22c55e;
 }
 .site-logo .version {
   font-size: 12px;
@@ -256,7 +279,7 @@ a:hover {
   letter-spacing: -0.03em;
 }
 .hero h1 .grad {
-  background: linear-gradient(90deg, #059669, #22c55e, #a3e635);
+  background: linear-gradient(90deg, #059669, #10b981, #22c55e);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

@@ -1,0 +1,19 @@
+{
+  "name": "Forge Select",
+  "short_name": "Forge Select",
+  "icons": [
+    {
+      "src": "assets/brand/android-chrome-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/brand/android-chrome-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#10B981",
+  "background_color": "#FFFFFF",
+  "display": "standalone"
+}

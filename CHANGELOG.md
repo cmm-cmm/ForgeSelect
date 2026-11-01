@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The website and README carry the new Forge Select logo (Concept 02, "Open Select"): an open dropdown frame with two selection bars and a tick. The header mark on every site, docs, demo, playground and theme-builder page is the new icon, drawn inline so its frame and tick follow the page's text colour — the brand's ink on light pages, white on dark — with the second bar switching between the kit's light and dark greens. Favicons (SVG, ICO, 16/32 px PNG), the Apple touch icon, Android icons, a web manifest, `theme-color` and the 1200 × 630 social banner all come from the brand kit. The SVG favicon adds a `prefers-color-scheme` swap so it stays legible in a dark browser tab. No change to the published package.
+- The site build no longer rasterizes its own banner and app icon, since the brand kit ships those as finished PNGs; `sharp`, which existed only for that, is dropped from the dev dependencies.
+
 ### Fixed
 
 - A cancelled remote request is no longer reported as a failed load. `loadRemote()` decided by checking its own controller, so an `AbortError` arriving from anywhere else — a caller's own `ajax.request` cancelling on its own terms, or a request shared with another consumer whose signal aborted — fell through to the failure path: it emptied `data`, rendered the error row and emitted `error` for something nobody can act on. A cancellation means the request never happened, so the already-loaded list now stays exactly as it was. Two consequences of that come with it: a cancelled fresh load clears `hasMore`, since `scheduleRemoteLoad()` had primed page 0 and a still-scrollable list would otherwise fetch page 1 of a page 0 that never arrived and append it to the previous query's options; and `ajax.retry` no longer retries a cancellation, which used to call a request that had just cancelled itself again after the backoff. The in-flight sharing that makes the second case possible is documented at `fetchRemoteResult()` rather than reworked: a later caller genuinely cannot cancel a request an earlier one still wants.

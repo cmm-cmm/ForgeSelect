@@ -11,7 +11,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
-import sharp from "sharp";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "_site");
@@ -234,8 +233,11 @@ function layout({ title, description, canonicalPath, jsonLdBlocks, active, conte
 <meta name="twitter:title" content="${title} · Forge Select">
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${SITE_URL}assets/og-banner.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2384cc16'/><stop offset='0.5' stop-color='%2322c55e'/><stop offset='1' stop-color='%2315803d'/></linearGradient></defs><path d='M4 3L12 9L20 3' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 12L12 18L20 12' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M4 21L12 27L20 21' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
-<link rel="apple-touch-icon" href="../assets/app-icon.png">
+<link rel="icon" href="../assets/brand/favicon.ico" sizes="32x32">
+<link rel="icon" type="image/svg+xml" href="../assets/brand/favicon.svg">
+<link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
+<link rel="manifest" href="../site.webmanifest">
+<meta name="theme-color" content="#10B981">
 <link rel="stylesheet" href="../assets/site.css">
 <link rel="stylesheet" href="../assets/hljs-light.css" media="(prefers-color-scheme: light)">
 <link rel="stylesheet" href="../assets/hljs-dark.css" media="(prefers-color-scheme: dark)">
@@ -243,7 +245,7 @@ ${jsonLdBlocks.map((j) => `<script type="application/ld+json">${j}</script>`).jo
 </head>
 <body>
 <header class="site-header">
-  <a class="site-logo" href="../"><span class="mark"><svg viewBox="0 0 24 28" fill="none" aria-hidden="true"><defs><linearGradient id="fsLogoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#84cc16"/><stop offset="0.5" stop-color="#22c55e"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs><path d="M4 3L12 9L20 3" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12L12 18L20 12" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21L12 27L20 21" stroke="url(#fsLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Forge Select <span class="version">v${pkg.version}</span></a>
+  <a class="site-logo" href="../"><span class="mark"><svg viewBox="8 12 236 232" aria-hidden="true"><path class="mark-ink" d="M70 14H184C218 14 242 38 242 72V160L220 182V72C220 50 206 36 184 36H70C47 36 32 51 32 74V182C32 205 47 220 70 220H157L179 242H70C34 242 10 218 10 182V74C10 38 34 14 70 14Z"/><rect class="mark-bar1" x="58" y="78" width="136" height="36" rx="18"/><rect class="mark-bar2" x="58" y="138" width="110" height="34" rx="17"/><path class="mark-ink" d="M169 191C173 187 179 187 183 191L203 211L242 172V203L210 235C206 239 200 239 196 235L169 208C164 203 164 196 169 191Z"/></svg></span> Forge Select <span class="version">v${pkg.version}</span></a>
   <nav class="site-nav">
     ${nav("../demo/", "Live Demo", "demo")}
     ${nav("./", "Docs", "docs")}
@@ -292,17 +294,11 @@ async function main() {
   // Static pieces
   await cp(path.join(root, "site/index.html"), path.join(out, "index.html"));
   await cp(path.join(root, "site/assets"), path.join(out, "assets"), { recursive: true });
-  // Rasterize the OG banner at build time (not committed) — Twitter/X and
-  // LinkedIn render svg og:image/twitter:image inconsistently, so a real
-  // PNG is required for a reliable social preview.
-  await sharp(path.join(out, "assets/og-banner.svg")).png().toFile(path.join(out, "assets/og-banner.png"));
-  // Separate square app icon for apple-touch-icon — the wide 1200x630
-  // og-banner is the wrong aspect ratio for a home-screen icon and gets
-  // squished/cropped on iOS.
-  await sharp(path.join(out, "assets/app-icon.svg"))
-    .resize(180, 180)
-    .png()
-    .toFile(path.join(out, "assets/app-icon.png"));
+  // The web manifest sits at the site root so its relative icon paths resolve
+  // to assets/brand/ from every page. The favicons, app icons and the social
+  // banner are shipped as the brand kit's own rasters rather than rendered
+  // here, so what is deployed is exactly what was designed.
+  await cp(path.join(root, "site/site.webmanifest"), path.join(out, "site.webmanifest"));
   await cp(path.join(root, "site/playground"), path.join(out, "playground"), { recursive: true });
   await cp(path.join(root, "site/theme-builder"), path.join(out, "theme-builder"), { recursive: true });
   await cp(path.join(root, "demo"), path.join(out, "demo"), { recursive: true });
