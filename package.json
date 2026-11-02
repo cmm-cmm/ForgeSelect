@@ -93,7 +93,7 @@
     "markdown-it": "^14.3.3",
     "prettier": "^3.9.5",
     "tsup": "^8.3.5",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.65.0",
     "vitest": "^4.1.12",
     "wrangler": "^4.156.1"
