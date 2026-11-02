@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-02
+
 ### Added
 
 - **Adjustable dropdown transparency.** A new `dropdownOpacity` option (`0`–`1`, changeable through `updateOptions()`) and the `--fs-dropdown-opacity` CSS property (`0%`–`100%`, default `100%`) make the dropdown's background see-through by mixing `--fs-dropdown-bg` with transparent, so it follows the light and dark themes and never fades option text. `--fs-dropdown-backdrop` (default `none`) sets its `backdrop-filter` for a frosted-glass look. Both work on portalled dropdowns, the Theme Builder has controls for them, the live demo and the playground (new "Translucent menu" preset) show them with an opacity slider, browsers without `color-mix()` keep the dropdown opaque, and forced-colors mode always draws it opaque. Modelled on Autumn Note's `--an-menu-opacity`.
@@ -15,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The website and README carry the new Forge Select logo (Concept 02, "Open Select"): an open dropdown frame with two selection bars and a tick. The header mark on every site, docs, demo, playground and theme-builder page is the brand kit's icon, set from the stylesheet so it switches between the kit's colour and reverse versions with the page theme, following both the OS preference and the demo's manual toggle. Favicons (SVG, plus ICO served from the site root), the Apple touch icon (also at the root, where iOS looks for it), Android icons, a web manifest and the 1200 × 630 social banner all come from the kit. The SVG favicon adds a `prefers-color-scheme` swap so it stays legible in a dark browser tab. No change to the published package.
 - The site build no longer rasterizes its own banner and app icon, since the brand kit ships those as finished PNGs; `sharp`, which existed only for that, is dropped from the dev dependencies.
+- Development tooling is patched against the 24 `npm audit` advisories that failed CI: vitest, markdown-it and wrangler move to their patched releases within the same major, and `minimatch`, `sharp` and `undici` are overridden where upstream ranges still pin vulnerable versions. None of these ship in the package, which still has zero runtime dependencies.
 
 ### Fixed
 
@@ -323,7 +326,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Website**: landing page, rendered documentation, interactive playground, and feature demo at <https://cmm-cmm.github.io/ForgeSelect/>.
 - **Documentation**: API reference, examples, playground guide, Select2 migration guide, benchmarks methodology, and plugin development guide under `docs/`.
 
-[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/cmm-cmm/ForgeSelect/compare/v0.8.0...v0.9.0
