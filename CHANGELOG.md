@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Adjustable dropdown transparency.** A new `dropdownOpacity` option (`0`–`1`, changeable through `updateOptions()`) and the `--fs-dropdown-opacity` CSS property (`0%`–`100%`, default `100%`) make the dropdown's background see-through by mixing `--fs-dropdown-bg` with transparent, so it follows the light and dark themes and never fades option text. `--fs-dropdown-backdrop` (default `none`) sets its `backdrop-filter` for a frosted-glass look. Both work on portalled dropdowns, the Theme Builder has controls for them, browsers without `color-mix()` keep the dropdown opaque, and forced-colors mode always draws it opaque. Modelled on Autumn Note's `--an-menu-opacity`.
+
 ### Changed
 
 - The website and README carry the new Forge Select logo (Concept 02, "Open Select"): an open dropdown frame with two selection bars and a tick. The header mark on every site, docs, demo, playground and theme-builder page is the brand kit's icon, set from the stylesheet so it switches between the kit's colour and reverse versions with the page theme, following both the OS preference and the demo's manual toggle. Favicons (SVG, plus ICO served from the site root), the Apple touch icon (also at the root, where iOS looks for it), Android icons, a web manifest and the 1200 × 630 social banner all come from the kit. The SVG favicon adds a `prefers-color-scheme` swap so it stays legible in a dark browser tab. No change to the published package.

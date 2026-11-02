@@ -784,6 +784,10 @@ a:hover {
   color: var(--fg);
   font-size: 12px;
 }
+.tb-var-row input[type="range"] {
+  width: 110px;
+  accent-color: var(--accent, #10b981);
+}
 .tb-preview-pane {
   display: flex;
   flex-direction: column;

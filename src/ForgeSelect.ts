@@ -83,6 +83,7 @@ interface ResolvedOptions {
   virtualScroll: boolean | undefined;
   itemHeight: number;
   variableItemHeight: boolean;
+  dropdownOpacity: number | undefined;
   language: string | Record<string, string>;
   plugins: ForgeSelectPlugin[];
   openOnFocus: boolean;
@@ -97,6 +98,12 @@ const PAGE_SIZE = 10;
 const TYPEAHEAD_RESET_MS = 500;
 
 let uidCounter = 0;
+
+/** Clamps a dropdownOpacity to 0..1; a missing or non-finite value means "unset". */
+function normalizeOpacity(value: number | undefined): number | undefined {
+  if (value == null || !Number.isFinite(value)) return undefined;
+  return Math.min(1, Math.max(0, value));
+}
 
 export default class ForgeSelect {
   /** The original element ForgeSelect was mounted on. */
@@ -292,6 +299,7 @@ export default class ForgeSelect {
       virtualScroll: options.virtualScroll,
       itemHeight: typeof options.itemHeight === "number" ? Math.max(1, options.itemHeight) : DEFAULT_ITEM_HEIGHT,
       variableItemHeight: options.itemHeight === "auto",
+      dropdownOpacity: normalizeOpacity(options.dropdownOpacity),
       language: options.language ?? "en",
       plugins: options.plugins ?? [],
       openOnFocus: options.openOnFocus ?? false,
@@ -562,6 +570,12 @@ export default class ForgeSelect {
       this.root.style.setProperty("--fs-item-height", `${this.opts.itemHeight}px`);
       this.portalHost?.style.setProperty("--fs-item-height", `${this.opts.itemHeight}px`);
     }
+    // Key presence, like maxSelections: passing it explicitly undefined hands
+    // the dropdown back to the stylesheet's --fs-dropdown-opacity.
+    if ("dropdownOpacity" in options) {
+      this.opts.dropdownOpacity = normalizeOpacity(options.dropdownOpacity);
+      this.applyDropdownOpacity();
+    }
     if (options.language !== undefined) {
       this.opts.language = options.language;
       this.strings = getStrings(options.language);
@@ -787,6 +801,20 @@ export default class ForgeSelect {
     }
   }
 
+  /**
+   * Sets --fs-dropdown-opacity on the root and the portal host (a portalled
+   * dropdown does not inherit from the root), or removes it so a value set in
+   * the page's CSS applies again.
+   */
+  private applyDropdownOpacity(): void {
+    const value = this.opts.dropdownOpacity;
+    for (const host of [this.root, this.portalHost]) {
+      if (!host) continue;
+      if (value === undefined) host.style.removeProperty("--fs-dropdown-opacity");
+      else host.style.setProperty("--fs-dropdown-opacity", `${value * 100}%`);
+    }
+  }
+
   private buildDom(): void {
     const portalParent =
       typeof this.opts.dropdownParent === "string"
@@ -868,6 +896,7 @@ export default class ForgeSelect {
       this.portalHost.append(this.dropdown);
       portalParent.append(this.portalHost);
     }
+    this.applyDropdownOpacity();
 
     this.bindEvents();
   }
