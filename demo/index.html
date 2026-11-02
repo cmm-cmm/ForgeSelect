@@ -130,13 +130,13 @@
     </div>
 
     <div class="demo-card demo-card--glass" id="glass-card">
-      <h2>Translucent dropdown</h2>
+      <h2 id="glass-title">Translucent dropdown</h2>
       <p><code>dropdownOpacity</code> + <code>--fs-dropdown-backdrop</code> — open the menu, then drag the slider.</p>
       <div class="glass-controls" id="glass-controls">
         <label>Opacity <input type="range" id="glass-opacity" min="0" max="100" value="60"> <output id="glass-opacity-value" for="glass-opacity">60%</output></label>
         <label><input type="checkbox" id="glass-blur" checked> Frosted glass</label>
       </div>
-      <select id="demo-glass"></select>
+      <select id="demo-glass" aria-labelledby="glass-title"></select>
       <div class="glass-backdrop" aria-hidden="true"><span>Content behind the menu</span></div>
     </div>
 
