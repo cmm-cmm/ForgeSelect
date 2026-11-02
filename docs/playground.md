@@ -8,7 +8,7 @@ Write and run Forge Select code directly in the browser — with presets for eve
 
 **<https://forgeselect.konexforge.com/playground/>**
 
-Pick a preset (Basic, Multiple + tags, Rich items ×1000, Option groups, Custom template, Dark theme, Events), edit the snippet, and press **Run** (or Ctrl/Cmd + Enter). Your code receives a fresh `el` (`<select>` element) and a `log()` helper that prints into the preview pane.
+Pick a preset (Basic, Multiple + tags, Rich items ×1000, Option groups, Custom template, Translucent menu, Dark theme, Events), edit the snippet, and press **Run** (or Ctrl/Cmd + Enter). Your code receives a fresh `el` (`<select>` element) and a `log()` helper that prints into the preview pane.
 
 ## Live demo
 
@@ -23,6 +23,7 @@ It showcases:
 - Option groups
 - Custom `templateResult` / `templateSelection`
 - Rich items (avatar + description) with 1,000 users
+- A translucent, frosted-glass dropdown (`dropdownOpacity` + `--fs-dropdown-backdrop`) with a live opacity slider
 - Virtual scrolling with 10,000 options
 - Vietnamese locale (`language: "vi"`)
 - A live event log of every `change` / `open` / `close` / `search` / `clear` event

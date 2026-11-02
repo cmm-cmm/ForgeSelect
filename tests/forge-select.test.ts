@@ -2895,6 +2895,37 @@ describe("advanced API integrations", () => {
     select.destroy();
     expect(portal.querySelector(".forge-select--portal-host")).toBeNull();
   });
+
+  it("sets --fs-dropdown-opacity on the root and the portal host, clamped to 0..1", () => {
+    mountSelect();
+    const select = new ForgeSelect("#country", { dropdownParent: document.body, dropdownOpacity: 0.6 });
+    const root = document.querySelector<HTMLElement>(".forge-select:not(.forge-select--portal-host)")!;
+    const host = document.querySelector<HTMLElement>(".forge-select--portal-host")!;
+    const opacity = (el: HTMLElement) => el.style.getPropertyValue("--fs-dropdown-opacity");
+    expect(opacity(root)).toBe("60%");
+    // A portalled dropdown does not inherit from the root, so the host needs its own copy.
+    expect(opacity(host)).toBe("60%");
+
+    select.updateOptions({ dropdownOpacity: 1.5 });
+    expect(opacity(root)).toBe("100%");
+    select.updateOptions({ dropdownOpacity: -1 });
+    expect(opacity(host)).toBe("0%");
+
+    // Leaving the key out keeps the value; passing it undefined hands it back to the stylesheet.
+    select.updateOptions({ placeholder: "x" });
+    expect(opacity(root)).toBe("0%");
+    select.updateOptions({ dropdownOpacity: undefined });
+    expect(opacity(root)).toBe("");
+    expect(opacity(host)).toBe("");
+  });
+
+  it("leaves --fs-dropdown-opacity to the stylesheet when dropdownOpacity is unset or not finite", () => {
+    mountSelect();
+    new ForgeSelect("#country", { dropdownOpacity: Number.NaN });
+    expect(document.querySelector<HTMLElement>(".forge-select")!.style.getPropertyValue("--fs-dropdown-opacity")).toBe(
+      "",
+    );
+  });
 });
 
 describe("aria-activedescendant targeting", () => {

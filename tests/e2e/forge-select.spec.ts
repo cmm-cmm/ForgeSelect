@@ -143,6 +143,41 @@ test("portals the dropdown outside an overflow-hidden container", async ({ page 
   await expect(page.locator(".forge-select__single-value")).toHaveText("Vietnam");
 });
 
+test("makes only the dropdown background translucent with dropdownOpacity", async ({ page }) => {
+  await loadForgeSelect(page, '<label for="target">Country</label><select id="target"></select>');
+  await page.evaluate(() => {
+    const ForgeSelect = window.ForgeSelectBundle.default;
+    window.testSelect = new ForgeSelect("#target", {
+      dropdownOpacity: 0.5,
+      data: [{ value: "vn", label: "Vietnam" }],
+    });
+  });
+  await page.locator(".forge-select__control").click();
+  const dropdown = page.locator(".forge-select__dropdown");
+  const styles = () =>
+    dropdown.evaluate((el) => {
+      const option = el.querySelector(".forge-select__option")!;
+      return { bg: getComputedStyle(el).backgroundColor, text: getComputedStyle(option).color };
+    });
+  // color-mix() serializes as color(srgb r g b / a); the alpha is what matters.
+  const alpha = (color: string) => {
+    const match = /\/\s*([\d.]+)\s*\)$/.exec(color) ?? /rgba\([^)]*,\s*([\d.]+)\)$/.exec(color);
+    return match ? Number(match[1]) : 1;
+  };
+  const translucent = await styles();
+  expect(alpha(translucent.bg)).toBeCloseTo(0.5, 2);
+  expect(alpha(translucent.text)).toBe(1);
+
+  // Without the option the page's own token applies, and inline dropdowns inherit it from :root.
+  await page.evaluate(() => {
+    window.testSelect?.destroy();
+    document.documentElement.style.setProperty("--fs-dropdown-opacity", "25%");
+    new window.ForgeSelectBundle.default("#target", { data: [{ value: "vn", label: "Vietnam" }] });
+  });
+  await page.locator(".forge-select__control").click();
+  expect(alpha((await styles()).bg)).toBeCloseTo(0.25, 2);
+});
+
 test("searches without accents and safely highlights the match", async ({ page }) => {
   await loadForgeSelect(page, '<select id="city"></select>');
   await page.evaluate(() => {

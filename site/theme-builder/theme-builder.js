@@ -24,6 +24,8 @@
     { name: "--fs-radius", label: "Corner radius", type: "text" },
     { name: "--fs-font-size", label: "Font size", type: "text" },
     { name: "--fs-dropdown-shadow", label: "Dropdown shadow", type: "text" },
+    { name: "--fs-dropdown-opacity", label: "Dropdown opacity", type: "range", unit: "%" },
+    { name: "--fs-dropdown-backdrop", label: "Dropdown backdrop", type: "text" },
   ];
 
   const LIGHT = {
@@ -41,6 +43,8 @@
     "--fs-tag-bg": "#e0e7ff",
     "--fs-tag-fg": "#3730a3",
     "--fs-font-size": "14px",
+    "--fs-dropdown-opacity": "100%",
+    "--fs-dropdown-backdrop": "none",
   };
 
   const DARK = {
@@ -95,7 +99,7 @@
 
   function currentValues() {
     const values = {};
-    for (const v of VARS) values[v.name] = inputs[v.name].value;
+    for (const v of VARS) values[v.name] = inputs[v.name].value + (v.unit ?? "");
     return values;
   }
 
@@ -114,7 +118,7 @@
   }
 
   function loadPreset(preset) {
-    for (const v of VARS) inputs[v.name].value = preset[v.name];
+    for (const v of VARS) inputs[v.name].value = v.unit ? parseFloat(preset[v.name]) : preset[v.name];
     applyVars(preset);
   }
 
@@ -125,7 +129,11 @@
     span.textContent = v.label;
     const input = document.createElement("input");
     input.type = v.type;
-    input.value = LIGHT[v.name];
+    if (v.type === "range") {
+      input.min = "0";
+      input.max = "100";
+    }
+    input.value = v.unit ? parseFloat(LIGHT[v.name]) : LIGHT[v.name];
     input.addEventListener("input", () => applyVars(currentValues()));
     inputs[v.name] = input;
     row.append(span, input);

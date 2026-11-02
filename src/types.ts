@@ -177,6 +177,16 @@ export interface ForgeSelectOptions {
   virtualScroll?: boolean;
   /** Row height in px, or "auto" to measure variable-height rows. Default 36. */
   itemHeight?: number | "auto";
+  /**
+   * How opaque the dropdown's background is, from 0 (see-through) to 1
+   * (opaque). It mixes --fs-dropdown-bg with transparent, so it follows the
+   * light and dark themes without a colour of its own; only the background
+   * fades, never the options' text. Sets the --fs-dropdown-opacity custom
+   * property on this instance; unset leaves it to the stylesheet (opaque by
+   * default). Pair it with --fs-dropdown-backdrop (e.g. blur(10px)) for
+   * frosted glass. Browsers without color-mix() keep the dropdown opaque.
+   */
+  dropdownOpacity?: number;
   language?: string | Record<string, string>;
   plugins?: ForgeSelectPlugin[];
   /**

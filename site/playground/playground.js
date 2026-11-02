@@ -106,6 +106,44 @@ new ForgeSelect(el, {
 });`,
     },
     {
+      name: "Translucent menu",
+      code: `// A colourful backdrop under the menu, so its transparency shows.
+const backdrop = document.createElement("div");
+backdrop.style.cssText =
+  "height:150px;margin-top:12px;border-radius:10px;" +
+  "background:linear-gradient(135deg,#22c55e,#6366f1 55%,#f59e0b)";
+el.after(backdrop);
+
+const select = new ForgeSelect(el, {
+  placeholder: "Open me, then drag the slider",
+  clearable: true,
+  // 0 = see-through … 1 = opaque. Only the background fades, never the text.
+  dropdownOpacity: 0.6,
+  data: [
+    { value: "vn", label: "Vietnam" },
+    { value: "jp", label: "Japan" },
+    { value: "us", label: "United States" },
+    { value: "fr", label: "France" },
+  ],
+});
+
+// Frosted glass: blur what shows through. Set it on any ancestor —
+// the CSS variable is inherited by the dropdown.
+el.parentElement.style.setProperty("--fs-dropdown-backdrop", "blur(8px)");
+
+// updateOptions() changes the opacity live.
+const slider = document.createElement("input");
+slider.type = "range";
+slider.value = 60;
+slider.setAttribute("aria-label", "Dropdown opacity");
+slider.style.cssText = "display:block;margin-top:12px;width:220px";
+// The menu closes on a mousedown outside it; keep it open while dragging.
+slider.addEventListener("mousedown", (e) => e.stopPropagation());
+slider.addEventListener("input", () => select.updateOptions({ dropdownOpacity: slider.value / 100 }));
+slider.addEventListener("change", () => log("dropdownOpacity → " + slider.value / 100));
+backdrop.before(slider);`,
+    },
+    {
       name: "Dark theme",
       code: `new ForgeSelect(el, {
   placeholder: "Dark theme",
@@ -164,6 +202,8 @@ for (const event of ["change", "open", "close", "search", "clear"]) {
   function run() {
     errorBar.hidden = true;
     preview.textContent = "";
+    // Snippets may set CSS variables on the pane (el.parentElement); start each run clean.
+    preview.removeAttribute("style");
 
     const el = document.createElement("select");
     preview.append(el);

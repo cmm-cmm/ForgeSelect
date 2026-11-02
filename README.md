@@ -181,6 +181,7 @@ Write and run Forge Select code in the browser at **<https://forgeselect.konexfo
 | `isOptionDisabled`    | `(option) => boolean`              | `undefined` | Dynamically disable an option per render            |
 | `virtualScroll`       | `boolean`                          | _(auto)_    | Virtualize the list once it exceeds ~100 rows       |
 | `itemHeight`          | `number \| "auto"`                 | `36`        | Fixed or measured variable-height virtual rows      |
+| `dropdownOpacity`     | `number`                           | `undefined` | Dropdown background opacity, `0`–`1` (see Theming)  |
 | `language`            | `string \| Record<string, string>` | `"en"`      | Locale code or a custom string table for i18n       |
 | `plugins`             | `Array<ForgeSelectPlugin>`         | `[]`        | Plugins to register on this instance                |
 | `openOnFocus`         | `boolean`                          | `false`     | Open the dropdown on keyboard focus                 |
@@ -202,6 +203,24 @@ new ForgeSelect("#country", { theme: "dark" });
   --fs-radius: 4px;
 }
 ```
+
+### Translucent dropdown
+
+The dropdown's background can be made see-through, and optionally frosted, without touching its colour, so it keeps following the light and dark themes. Only the background fades; option text stays fully opaque.
+
+```js
+new ForgeSelect("#country", { dropdownOpacity: 0.7 });
+```
+
+```css
+/* or for every select on the page, portalled ones included */
+:root {
+  --fs-dropdown-opacity: 70%; /* 0% see-through … 100% opaque (default) */
+  --fs-dropdown-backdrop: blur(10px) saturate(1.4); /* frosted glass, default none */
+}
+```
+
+`dropdownOpacity` can be changed later with `updateOptions()`; passing it `undefined` hands control back to the stylesheet. Browsers without `color-mix()` keep the dropdown opaque, and forced-colors (high contrast) mode always draws it opaque. Try it live in the [Theme Builder](https://forgeselect.konexforge.com/theme-builder/).
 
 ## Framework Support
 

@@ -575,6 +575,45 @@ a:hover {
 .demo-card--log {
   grid-column: 1 / -1;
 }
+.glass-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+.glass-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.glass-controls input[type="range"] {
+  width: 110px;
+  accent-color: var(--accent);
+}
+.glass-controls output {
+  min-width: 3ch;
+  font-variant-numeric: tabular-nums;
+}
+/* Something colourful under the open menu, so its translucency shows. */
+.glass-backdrop {
+  display: flex;
+  align-items: flex-end;
+  height: 120px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 18% 35%, #22c55e 0 16%, transparent 17%),
+    radial-gradient(circle at 62% 30%, #6366f1 0 20%, transparent 21%),
+    radial-gradient(circle at 88% 75%, #f59e0b 0 14%, transparent 15%),
+    repeating-linear-gradient(45deg, var(--border) 0 6px, transparent 6px 14px);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
 #event-log {
   max-height: 180px;
   overflow-y: auto;
@@ -783,6 +822,10 @@ a:hover {
   background: var(--bg-raised);
   color: var(--fg);
   font-size: 12px;
+}
+.tb-var-row input[type="range"] {
+  width: 110px;
+  accent-color: var(--accent, #10b981);
 }
 .tb-preview-pane {
   display: flex;

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Live Demo · Forge Select</title>
-<meta name="description" content="Interactive showcase of every Forge Select feature: single/multi select, tags, drag-and-drop tag reordering, option groups, tree select, custom templates, rich items, virtual scrolling, i18n, and events.">
+<meta name="description" content="Interactive showcase of every Forge Select feature: single/multi select, tags, drag-and-drop tag reordering, option groups, tree select, custom templates, rich items, a translucent dropdown, virtual scrolling, i18n, and events.">
 <meta name="robots" content="index, follow">
 <meta name="author" content="KonexForge">
 <link rel="canonical" href="https://forgeselect.konexforge.com/demo/">
@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Forge Select">
 <meta property="og:title" content="Live Demo · Forge Select">
-<meta property="og:description" content="Interactive showcase of every Forge Select feature: single/multi select, tags, drag-and-drop tag reordering, option groups, tree select, custom templates, rich items, virtual scrolling, i18n, and events.">
+<meta property="og:description" content="Interactive showcase of every Forge Select feature: single/multi select, tags, drag-and-drop tag reordering, option groups, tree select, custom templates, rich items, a translucent dropdown, virtual scrolling, i18n, and events.">
 <meta property="og:url" content="https://forgeselect.konexforge.com/demo/">
 <meta property="og:image" content="https://forgeselect.konexforge.com/assets/og-banner.png">
 <meta property="og:image:type" content="image/png">
@@ -22,7 +22,7 @@
 <meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Live Demo · Forge Select">
-<meta name="twitter:description" content="Interactive showcase of every Forge Select feature: single/multi select, tags, drag-and-drop tag reordering, option groups, tree select, custom templates, rich items, virtual scrolling, i18n, and events.">
+<meta name="twitter:description" content="Interactive showcase of every Forge Select feature: single/multi select, tags, drag-and-drop tag reordering, option groups, tree select, custom templates, rich items, a translucent dropdown, virtual scrolling, i18n, and events.">
 <meta name="twitter:image" content="https://forgeselect.konexforge.com/assets/og-banner.png">
 <link rel="icon" type="image/svg+xml" href="../assets/brand/favicon.svg">
 <link rel="manifest" href="../site.webmanifest">
@@ -55,7 +55,7 @@
 </header>
 
 <main class="demo-main">
-  <p class="demo-intro">Forge Select is a zero-dependency, accessible select/combobox component that works with any framework — with official wrapper packages for <a href="https://www.npmjs.com/package/forge-select-react">React</a> and <a href="https://www.npmjs.com/package/forge-select-vue">Vue</a>. This page is a live, curated showcase — every widget below runs the real library, not screenshots or a video. Explore single and multi-select, tags with drag-and-drop reordering, option groups, tree select, custom templates, rich items, automatic virtual scrolling for large lists, i18n, and the public event API. See the <a href="../docs/">docs</a> for the full API reference, or open the <a href="../playground/">playground</a> to edit the code yourself.</p>
+  <p class="demo-intro">Forge Select is a zero-dependency, accessible select/combobox component that works with any framework — with official wrapper packages for <a href="https://www.npmjs.com/package/forge-select-react">React</a> and <a href="https://www.npmjs.com/package/forge-select-vue">Vue</a>. This page is a live, curated showcase — every widget below runs the real library, not screenshots or a video. Explore single and multi-select, tags with drag-and-drop reordering, option groups, tree select, custom templates, rich items, a translucent frosted-glass dropdown, automatic virtual scrolling for large lists, i18n, and the public event API. See the <a href="../docs/">docs</a> for the full API reference, or open the <a href="../playground/">playground</a> to edit the code yourself.</p>
   <div class="demo-grid">
     <div class="demo-card">
       <h2>Single select</h2>
@@ -127,6 +127,17 @@
       <h2>Custom HTML template</h2>
       <p><code>templateResult</code> returning an HTML string, with a status dot from <code>meta</code>.</p>
       <select id="demo-html"></select>
+    </div>
+
+    <div class="demo-card demo-card--glass" id="glass-card">
+      <h2 id="glass-title">Translucent dropdown</h2>
+      <p><code>dropdownOpacity</code> + <code>--fs-dropdown-backdrop</code> — open the menu, then drag the slider.</p>
+      <div class="glass-controls" id="glass-controls">
+        <label>Opacity <input type="range" id="glass-opacity" min="0" max="100" value="60"> <output id="glass-opacity-value" for="glass-opacity">60%</output></label>
+        <label><input type="checkbox" id="glass-blur" checked> Frosted glass</label>
+      </div>
+      <select id="demo-glass" aria-labelledby="glass-title"></select>
+      <div class="glass-backdrop" aria-hidden="true"><span>Content behind the menu</span></div>
     </div>
 
     <div class="demo-card demo-card--log">
@@ -271,6 +282,28 @@
         return `<span style="width:8px;height:8px;border-radius:50%;background:${colors[o.meta.status]}"></span> ${o.label} <em style="opacity:.6">(${o.meta.status})</em>`;
       },
     })),
+    watch("glass", (() => {
+      const opacity = document.getElementById("glass-opacity");
+      const opacityValue = document.getElementById("glass-opacity-value");
+      const blur = document.getElementById("glass-blur");
+      const card = document.getElementById("glass-card");
+      const select = new ForgeSelect("#demo-glass", {
+        placeholder: "Open me, then drag the slider", clearable: true, data: countries,
+        dropdownOpacity: opacity.value / 100,
+      });
+      // The menu closes on a mousedown outside it; keep it open while the
+      // controls are dragged so the change is visible live.
+      document.getElementById("glass-controls").addEventListener("mousedown", (e) => e.stopPropagation());
+      opacity.addEventListener("input", () => {
+        opacityValue.textContent = `${opacity.value}%`;
+        select.updateOptions({ dropdownOpacity: opacity.value / 100 });
+      });
+      // Not declared on .forge-select, so setting it on the card reaches the dropdown.
+      const syncBlur = () => card.style.setProperty("--fs-dropdown-backdrop", blur.checked ? "blur(6px)" : "none");
+      blur.addEventListener("change", syncBlur);
+      syncBlur();
+      return select;
+    })()),
   ];
 
   // Generate a user list with self-contained SVG data-URI avatars (no network).
