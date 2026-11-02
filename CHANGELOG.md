@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Adjustable dropdown transparency.** A new `dropdownOpacity` option (`0`–`1`, changeable through `updateOptions()`) and the `--fs-dropdown-opacity` CSS property (`0%`–`100%`, default `100%`) make the dropdown's background see-through by mixing `--fs-dropdown-bg` with transparent, so it follows the light and dark themes and never fades option text. `--fs-dropdown-backdrop` (default `none`) sets its `backdrop-filter` for a frosted-glass look. Both work on portalled dropdowns, the Theme Builder has controls for them, browsers without `color-mix()` keep the dropdown opaque, and forced-colors mode always draws it opaque. Modelled on Autumn Note's `--an-menu-opacity`.
+- **Adjustable dropdown transparency.** A new `dropdownOpacity` option (`0`–`1`, changeable through `updateOptions()`) and the `--fs-dropdown-opacity` CSS property (`0%`–`100%`, default `100%`) make the dropdown's background see-through by mixing `--fs-dropdown-bg` with transparent, so it follows the light and dark themes and never fades option text. `--fs-dropdown-backdrop` (default `none`) sets its `backdrop-filter` for a frosted-glass look. Both work on portalled dropdowns, the Theme Builder has controls for them, the live demo and the playground (new "Translucent menu" preset) show them with an opacity slider, browsers without `color-mix()` keep the dropdown opaque, and forced-colors mode always draws it opaque. Modelled on Autumn Note's `--an-menu-opacity`.
 
 ### Changed
 
