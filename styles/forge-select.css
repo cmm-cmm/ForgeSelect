@@ -182,16 +182,8 @@
   overflow: hidden;
 }
 
-/*
- * Translucent dropdown: --fs-dropdown-opacity (0%-100%, default 100%) mixes
- * --fs-dropdown-bg with transparent, so it follows the light and dark themes
- * on its own and only the background fades, never the options' text. Neither
- * token is declared on .forge-select, so a value set on any ancestor (:root,
- * a modal) reaches inline and portalled dropdowns alike. The @supports guard
- * keeps older browsers opaque: an unsupported color-mix() inside var() would
- * make the declaration invalid at computed time and drop the background
- * entirely, not fall back to the one above.
- */
+/* Translucent dropdown. Guarded: an unsupported color-mix() in var() would drop
+ * the background entirely instead of falling back to the opaque one above. */
 @supports (color: color-mix(in srgb, red 50%, transparent)) {
   .forge-select__dropdown {
     background: color-mix(in srgb, var(--fs-dropdown-bg) var(--fs-dropdown-opacity, 100%), transparent);
@@ -395,8 +387,7 @@
     border-color: ButtonBorder;
   }
 
-  /* Forced colors keep the author alpha, so a translucent dropdown would let
-   * the page show through the system colors. */
+  /* Forced colors keep author alpha: never let the page show through. */
   .forge-select__dropdown {
     background: Canvas;
     -webkit-backdrop-filter: none;
