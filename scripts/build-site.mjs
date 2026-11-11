@@ -264,7 +264,7 @@ ${content}
   </article>
 </div>
 <footer class="site-footer">
-  MIT License · Built with ❤️ by KonexForge · <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
+  MIT License · Built with ❤️ by <a href="https://konexforge.com/">KonexForge</a> · <a href="https://github.com/cmm-cmm/ForgeSelect">GitHub</a>
 </footer>
 </body>
 </html>
