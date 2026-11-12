@@ -152,6 +152,10 @@ rather than inspecting the array you passed in.
 
 When mounted on a real `<select>`, `required: true` participates in the browser's Constraint Validation API exactly like a native `<select required>`: an empty selection blocks `<form>` submission, and Forge Select shows its own inline invalid styling (`forge-select__control--invalid`, `aria-invalid`) and opens the dropdown in response to the native `invalid` event, since the hidden native element can't display its own validation bubble. The styling clears as soon as a valid selection is made. On a plain-element mount (no native `<select>` to hook into), `required: true` only sets `aria-required` for assistive tech — there's no native form to participate in.
 
+### Disabled native controls
+
+When mounted on a native select, Forge Select blocks opening and option selection while that select is disabled. This includes a select inside a disabled fieldset and applies if the dropdown is already open.
+
 ### Dynamic option disabling (`isOptionDisabled`)
 
 `isOptionDisabled` is re-evaluated on every render, so an option can be disabled based on external state (e.g. a quota) without rebuilding `data` via `setData()`:

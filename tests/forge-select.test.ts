@@ -3137,3 +3137,34 @@ describe("bulk selection", () => {
     expect(Array.from(native.selectedOptions, (option) => option.value)).toEqual(["jp"]);
   });
 });
+
+it("ignores open options after the native select's fieldset is disabled", () => {
+  const native = mountSelect();
+  const fieldset = document.createElement("fieldset");
+  fieldset.append(native);
+  document.body.append(fieldset);
+  const select = new ForgeSelect(native);
+  select.setValue("vn");
+  const change = vi.fn();
+  native.addEventListener("change", change);
+
+  try {
+    select.open();
+    const japan = () =>
+      optionEls()
+        .find((option) => option.dataset.optionValue === "jp")!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    fieldset.disabled = true;
+    japan();
+    expect(native.value).toBe("vn");
+    expect(change).not.toHaveBeenCalled();
+
+    fieldset.disabled = false;
+    japan();
+    expect(native.value).toBe("jp");
+    expect(change).toHaveBeenCalledOnce();
+  } finally {
+    select.destroy();
+  }
+});
