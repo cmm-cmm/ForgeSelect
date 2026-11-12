@@ -341,7 +341,7 @@ export default class ForgeSelect {
   // ---------------------------------------------------------------- public API
 
   open(): void {
-    if (this.isOpen || this.isDisabled || this.destroyed) return;
+    if (this.isOpen || this.isDisabled || this.nativeSelect?.matches(":disabled") || this.destroyed) return;
     this.isOpen = true;
     this.dropdown.hidden = false;
     this.root.classList.add("forge-select--open");
@@ -1464,6 +1464,7 @@ export default class ForgeSelect {
   }
 
   private activateNavItem(navIndex: number): void {
+    if (this.isDisabled || this.nativeSelect?.matches(":disabled")) return;
     const item = this.navItems[navIndex];
     if (!item) return;
     if (item.kind === "create") {
